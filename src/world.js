@@ -232,6 +232,11 @@ export class WinterWorld {
 
   clampCamera() {
     const c = gridToWorld(GRID_SIZE * 0.5, GRID_SIZE * 0.5);
+    if (!Number.isFinite(this.cam.x)) this.cam.x = c.x;
+    if (!Number.isFinite(this.cam.y)) this.cam.y = c.y;
+    if (!Number.isFinite(this.cam.zoom)) this.cam.zoom = 0.84;
+    if (!Number.isFinite(this.cam.vx)) this.cam.vx = 0;
+    if (!Number.isFinite(this.cam.vy)) this.cam.vy = 0;
     this.cam.x = Math.max(c.x - 720, Math.min(c.x + 720, this.cam.x));
     this.cam.y = Math.max(c.y - 460, Math.min(c.y + 460, this.cam.y));
     this.cam.zoom = Math.max(0.42, Math.min(1.65, this.cam.zoom));
@@ -314,9 +319,16 @@ export class WinterWorld {
   hitTestVillager(wx, wy) {
     for (const v of this.villagers) {
       const p = gridToWorld(v.gx, v.gy);
-      if (Math.abs(wx - p.x) < 28 && wy > p.y - 54 && wy < p.y + 12) return v;
+      const topPad = v.offer ? 88 : 54;
+      if (Math.abs(wx - p.x) < 34 && wy > p.y - topPad && wy < p.y + 14) return v;
     }
     return null;
+  }
+
+  hitTestDailyChest(wx, wy, chestReady) {
+    if (!chestReady) return false;
+    const p = gridToWorld(6.5, 4.5);
+    return Math.abs(wx - p.x) < 42 && wy > p.y - 84 && wy < p.y + 20;
   }
 
   getAnimalMotion(an) {
@@ -1111,7 +1123,7 @@ export class WinterWorld {
       });
     }
 
-    // E) Hero Farmhouse Chalet
+    // E) Hero Farmhouse Chalet (+ Season-Reactive Autumn Roof Trim!)
     {
       const c = state.chalet;
       const pos = gridToWorld(c.gx + 1, c.gy + 1);
@@ -1125,9 +1137,42 @@ export class WinterWorld {
           ctx.translate(pos.x, pos.y + 18);
           ctx.scale(b.sx, b.sy);
           if (spr) ctx.drawImage(spr, -124, -222, 248, 238);
+          if (aut > 0.08) this._drawAutumnRoofTrim(ctx, aut, 248, 238, sec, 'chalet');
           ctx.restore();
           glows.push({ x: pos.x - 36, y: pos.y - 54, r: 95 });
           glows.push({ x: pos.x + 42, y: pos.y - 42, r: 85 });
+        }
+      });
+    }
+
+    // E2) Daily Glowing Treasure Chest on Village Plaza!
+    if (uiState.dailyChestReady) {
+      const pos = gridToWorld(6.5, 4.5);
+      list.push({
+        depth: 6.5 + 4.5 + 0.36,
+        draw: (ctx, glows) => {
+          const spr = sprites.get('treasure_chest');
+          const pulse = 1 + Math.sin(sec * 3.8) * 0.055;
+          const bob = Math.sin(sec * 2.8) * 2.5;
+          this._drawShadow(ctx, pos.x, pos.y + 6, 36, 16);
+          ctx.save();
+          ctx.translate(pos.x, pos.y + 8 + bob);
+          // Warm golden beacon halo
+          const hg = ctx.createRadialGradient(0, -34, 6, 0, -34, 52 * pulse);
+          hg.addColorStop(0, 'rgba(254, 240, 138, 0.72)');
+          hg.addColorStop(1, 'rgba(254, 240, 138, 0)');
+          ctx.fillStyle = hg;
+          ctx.beginPath(); ctx.arc(0, -34, 52 * pulse, 0, Math.PI * 2); ctx.fill();
+          ctx.scale(pulse, pulse);
+          if (spr) ctx.drawImage(spr, -40, -76, 80, 76);
+          // Floating pill badge
+          ctx.fillStyle = '#FFFDF5'; ctx.strokeStyle = '#D97706'; ctx.lineWidth = 2.2;
+          this._roundRect(ctx, -40, -98, 80, 22, 11); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#8A1C17'; ctx.font = '900 11px ui-rounded, system-ui, sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('Tages-Schatz', 0, -87);
+          ctx.restore();
+          glows.push({ x: pos.x, y: pos.y - 32, r: 88 });
         }
       });
     }
@@ -1251,10 +1296,46 @@ export class WinterWorld {
           ctx.save();
           ctx.translate(pos.x, pos.y + 18);
           ctx.scale(b.sx * workPulse, b.sy / workPulse);
+          let drawnW = st.type === 'teahouse' ? 208 : 232;
+          let drawnH = drawnW;
           if (spr) {
-            const w = st.type === 'teahouse' ? 208 : 232;
-            const h = (w * spr.height) / spr.width;
-            ctx.drawImage(spr, -w * 0.5, -h + 16, w, h);
+            drawnH = (drawnW * spr.height) / spr.width;
+            ctx.drawImage(spr, -drawnW * 0.5, -drawnH + 16, drawnW, drawnH);
+          }
+
+          // Season-Reactive Autumn Foliage & Pumpkin Garland on Roofs!
+          if (aut > 0.08) {
+            this._drawAutumnRoofTrim(ctx, aut, drawnW, drawnH, sec, st.type);
+          }
+
+          // Rotating Wooden Windmill Sails on Mill & Dairy (idle breeze vs brisk grinding!)
+          if (st.type === 'mill_dairy') {
+            const sailSpeed = isWorking ? 2.6 : 0.45;
+            ctx.save();
+            ctx.translate(-37, -121);
+            ctx.rotate(sec * sailSpeed);
+            for (let k = 0; k < 4; k++) {
+              ctx.rotate(Math.PI * 0.5);
+              ctx.fillStyle = '#F5E6C8';
+              ctx.strokeStyle = '#5C2B0D';
+              ctx.lineWidth = 2.4;
+              ctx.beginPath();
+              ctx.rect(5, -6, 38, 12);
+              ctx.fill();
+              ctx.stroke();
+              ctx.strokeStyle = '#9A531C';
+              ctx.lineWidth = 1.6;
+              ctx.beginPath();
+              ctx.moveTo(0, 0); ctx.lineTo(44, 0);
+              ctx.moveTo(18, -6); ctx.lineTo(18, 6);
+              ctx.moveTo(31, -6); ctx.lineTo(31, 6);
+              ctx.stroke();
+            }
+            ctx.fillStyle = '#FACC15';
+            ctx.strokeStyle = '#5C2B0D';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.restore();
           }
 
           // LIVE PRODUCTION ANIMATIONS right on the building (like Hay Day!)
@@ -1419,8 +1500,27 @@ export class WinterWorld {
           ctx.font = '18px system-ui, sans-serif';
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
           ctx.fillText(v.emoji, 0, -31);
-          // Speech bubble if chatting!
-          if (v.quoteTimer > 0 && v.quote) {
+          // Active Doorstep Buy Offer Bubble (Hay-Day Style!)
+          if (v.offer) {
+            const bobO = Math.sin(sec * 4.2 + v.gx) * 3;
+            ctx.save();
+            ctx.translate(0, -68 + bobO);
+            ctx.fillStyle = '#FFFBEB';
+            ctx.strokeStyle = '#D97706';
+            ctx.lineWidth = 2.5;
+            this._roundRect(ctx, -34, -18, 68, 30, 15);
+            ctx.fill();
+            ctx.stroke();
+            const oImg = sprites.getIconImg(v.offer.itemId);
+            if (oImg) ctx.drawImage(oImg, -28, -14, 22, 22);
+            ctx.fillStyle = '#78350F';
+            ctx.font = '900 11px ui-rounded, system-ui, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${v.offer.price}★`, -2, -2);
+            ctx.restore();
+          } else if (v.quoteTimer > 0 && v.quote) {
+            // Speech bubble if chatting!
             ctx.font = '800 11px ui-rounded, system-ui, sans-serif';
             const tw = ctx.measureText(v.quote).width;
             const bw = tw + 18;
@@ -1487,6 +1587,73 @@ export class WinterWorld {
     }
 
     return list;
+  }
+
+  _drawAutumnRoofTrim(ctx, aut, w, h, sec, kind) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, aut * 0.95);
+    const roofY = -h * 0.62;
+    const span = w * 0.34;
+    const flutter = Math.sin(sec * 2.2) * 1.4;
+
+    // Warm golden-amber autumn sunlight glaze over snowy upper roof
+    const glaze = ctx.createRadialGradient(0, roofY - 14, 10, 0, roofY, span * 1.35);
+    glaze.addColorStop(0, 'rgba(249, 115, 22, 0.42)');
+    glaze.addColorStop(0.6, 'rgba(234, 88, 12, 0.28)');
+    glaze.addColorStop(1, 'rgba(217, 119, 6, 0)');
+    ctx.fillStyle = glaze;
+    ctx.beginPath();
+    ctx.ellipse(0, roofY - 8, span * 1.25, h * 0.24, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Festive draped autumn garland along the front eave
+    const eaveY = kind === 'teahouse' ? -h * 0.46 : -h * 0.52;
+    ctx.strokeStyle = '#7C2D12';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-span, eaveY - 4);
+    ctx.quadraticCurveTo(0, eaveY + 18, span, eaveY - 4);
+    ctx.stroke();
+
+    // Colorful maple leaves + mini pumpkins along the garland & roof ridge
+    const leafCols = ['#EA580C', '#F59E0B', '#DC2626', '#F97316', '#D97706'];
+    const garlandPts = [
+      [-span * 0.82, eaveY + 1],
+      [-span * 0.42, eaveY + 7],
+      [0, eaveY + 9],
+      [span * 0.42, eaveY + 7],
+      [span * 0.82, eaveY + 1],
+      [-span * 0.48, roofY - 22],
+      [span * 0.36, roofY - 20],
+      [0, roofY - 34]
+    ];
+    for (let i = 0; i < garlandPts.length; i++) {
+      const [lx, ly] = garlandPts[i];
+      ctx.save();
+      ctx.translate(lx, ly + (i < 5 ? flutter * 0.5 : 0));
+      ctx.rotate((i % 2 === 0 ? 0.35 : -0.35) + flutter * 0.04);
+      if (i === 2 || i === 0 || i === 4) {
+        // Tiny hanging autumn pumpkin charm
+        ctx.fillStyle = '#F97316';
+        ctx.strokeStyle = '#7C2D12';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.ellipse(0, 3, 7, 5.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#15803D';
+        ctx.fillRect(-1.5, -4, 3, 3);
+      } else {
+        // Autumn maple leaf cluster
+        ctx.fillStyle = leafCols[i % leafCols.length];
+        ctx.strokeStyle = '#7C2D12';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.ellipse(-4, 0, 7, 4.2, -0.4, 0, Math.PI * 2);
+        ctx.ellipse(4, 1, 6.5, 4, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    ctx.restore();
   }
 
   _drawWrappedConstruction(ctx, x, y, sec, b) {

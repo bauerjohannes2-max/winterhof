@@ -1,4 +1,4 @@
-const CACHE_NAME = 'winterhof-v3';
+const CACHE_NAME = 'winterhof-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -39,6 +39,7 @@ const ASSETS = [
   './assets/sprites/deco_lantern.webp',
   './assets/sprites/deco_pumpkin.webp',
   './assets/sprites/deco_ghost.webp',
+  './assets/sprites/deco_spider.webp',
   './assets/sprites/deco_sorting_hat.webp',
   './assets/sprites/deco_cauldron.webp'
 ];

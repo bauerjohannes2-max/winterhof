@@ -21,8 +21,8 @@ Danach im Browser öffnen: `http://localhost:8080`
 
 Erstellt in `dist/`:
 - `winterhof-pwa.zip` – fertiges PWA-Paket (z. B. für Netlify Drop)
-- `winterhof-standalone.html` – einzelne komplett offline lauffähige HTML-Datei (alle 28 3D-Sprites & Splash-Art eingebettet)
-- `winterhof-v3-source.zip` – sauberes Quellcode-Archiv
+- `winterhof-standalone.html` – einzelne komplett offline lauffähige HTML-Datei (alle 29 3D-Sprites & Splash-Art eingebettet)
+- `winterhof-v4-source.zip` – sauberes Quellcode-Archiv
 
 ```powershell
 python scripts/build_bundle.py
@@ -36,7 +36,7 @@ python scripts/build_bundle.py
 2. In den GitHub-Repo-Einstellungen unter **Settings → Pages**:
    - **Source:** `Deploy from a branch`
    - **Branch:** `main` / `/ (root)` → **Save**
-3. Nach ca. 1 Minute ist das Spiel unter `https://<dein-github-name>.github.io/zauberhof/` live!
+3. Nach ca. 1 Minute ist das Spiel unter `https://bauerjohannes2-max.github.io/winterhof/` live!
 4. Am iPhone (Safari) oder Android (Chrome) öffnen und **„Zum Home-Bildschirm hinzufügen“** wählen.
 
 ---

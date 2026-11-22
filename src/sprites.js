@@ -1,5 +1,5 @@
 // ============================================================================
-// WINTERHOF & ZAUBERHERBST — 28 Hand-Painted 3D WebP Sprites + Glossy Icons
+// WINTERHOF & ZAUBERHERBST — 29 Hand-Painted 3D WebP Sprites + Glossy Icons
 // ============================================================================
 
 const WEBP_SPRITES = [
@@ -29,12 +29,89 @@ const WEBP_SPRITES = [
   'deco_lantern',
   'deco_pumpkin',
   'deco_ghost',
+  'deco_spider',
   'deco_sorting_hat',
   'deco_cauldron'
 ];
 
 // Remaining crisp glossy 2.5D vector sprites (for props not yet converted to WebP)
 const VECTOR_SPRITES_SVG = {
+  mill_dairy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360">
+    <defs>
+      <linearGradient id="mWallL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFF5E1"/><stop offset="100%" stop-color="#DFC498"/></linearGradient>
+      <linearGradient id="mWallR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E5CAA0"/><stop offset="100%" stop-color="#B99668"/></linearGradient>
+      <linearGradient id="mRoof" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#B84B32"/><stop offset="55%" stop-color="#8F2D1E"/><stop offset="100%" stop-color="#5E1A12"/></linearGradient>
+      <linearGradient id="mSnow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="70%" stop-color="#EBF5FF"/><stop offset="100%" stop-color="#C9E0F7"/></linearGradient>
+      <linearGradient id="mWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C97E3B"/><stop offset="100%" stop-color="#7A3E14"/></linearGradient>
+      <radialGradient id="mGlow" cx="50%" cy="50%" r="55%"><stop offset="0%" stop-color="#FFFBEB"/><stop offset="55%" stop-color="#FDE047"/><stop offset="100%" stop-color="#D97706"/></radialGradient>
+    </defs>
+    <!-- Stone Foundation -->
+    <g stroke="#4A2B14" stroke-width="4" stroke-linejoin="round">
+      <polygon points="56,256 180,320 304,256 304,284 180,348 56,284" fill="#9E9489"/>
+      <polygon points="180,320 304,256 304,284 180,348" fill="#7D746B"/>
+    </g>
+    <!-- Main Timber-Framed Mill & Creamery Walls -->
+    <g stroke="#4A240E" stroke-width="4.5" stroke-linejoin="round">
+      <polygon points="62,158 180,218 180,320 62,260" fill="url(#mWallL)"/>
+      <polygon points="180,218 298,158 298,260 180,320" fill="url(#mWallR)"/>
+      <!-- Timber beams -->
+      <path d="M62,158 L62,260 M180,218 L180,320 M298,158 L298,260 M120,188 L120,290 M240,188 L240,290" stroke="#7A3E14" stroke-width="8"/>
+      <path d="M62,210 L180,270 M180,270 L298,210" stroke="#7A3E14" stroke-width="6"/>
+    </g>
+    <!-- Warm Glowing Arch Window (Left) & Creamery Door (Right) -->
+    <g stroke="#4A240E" stroke-width="3.5">
+      <path d="M88,224 L88,200 C88,184 114,196 114,212 L114,237 Z" fill="url(#mGlow)"/>
+      <line x1="101" y1="192" x2="101" y2="230" stroke="#7A3E14" stroke-width="3"/>
+      <line x1="88" y1="212" x2="114" y2="225" stroke="#7A3E14" stroke-width="3"/>
+      <!-- Arched Wood Door -->
+      <path d="M214,288 L214,238 C214,222 252,202 252,220 L252,268 Z" fill="url(#mWood)"/>
+      <circle cx="242" cy="246" r="4" fill="#FACC15" stroke="#78350F" stroke-width="2"/>
+      <!-- Upper Mill Window -->
+      <rect x="196" y="138" width="28" height="32" rx="14" fill="url(#mGlow)"/>
+      <line x1="210" y1="138" x2="210" y2="170" stroke="#7A3E14" stroke-width="3"/>
+      <line x1="196" y1="154" x2="224" y2="154" stroke="#7A3E14" stroke-width="3"/>
+    </g>
+    <!-- Sloped Cozy Alpine Roof + Thick Snow Blanket -->
+    <g stroke="#4A240E" stroke-width="4.5" stroke-linejoin="round">
+      <polygon points="44,166 180,82 316,166 180,236" fill="url(#mRoof)"/>
+      <polygon points="180,82 316,166 180,236" fill="#742216"/>
+      <!-- Brick Chimney -->
+      <polygon points="234,90 264,76 286,88 286,130 256,144 234,132" fill="#B84B32"/>
+      <polygon points="256,102 286,88 286,130 256,144" fill="#8C3220"/>
+      <!-- Fluffy Snow Cap on Roof -->
+      <path d="M46,162 C64,132 130,90 180,76 C228,88 296,132 314,162 C298,176 274,170 258,184 C236,198 206,222 180,224 C150,222 122,196 96,184 C78,172 58,176 46,162 Z" fill="url(#mSnow)" stroke="#8DB0D4" stroke-width="3.5"/>
+    </g>
+    <!-- Mill Hub Center (live rotating sails drawn dynamically on canvas!) -->
+    <circle cx="122" cy="146" r="14" fill="url(#mWood)" stroke="#4A240E" stroke-width="3.5"/>
+    <circle cx="122" cy="146" r="6" fill="#FACC15" stroke="#78350F" stroke-width="2"/>
+    <!-- Foreground Creamery Details: Copper Milk Churn & Tied Wheat Flour Sacks -->
+    <g stroke="#4A240E" stroke-width="3">
+      <!-- Flour Sacks -->
+      <ellipse cx="144" cy="298" rx="22" ry="18" fill="#F5E6C8"/>
+      <ellipse cx="166" cy="306" rx="18" ry="15" fill="#EBD3A8"/>
+      <path d="M136,282 Q144,274 152,282" fill="none" stroke="#B91C1C" stroke-width="3.5"/>
+      <!-- Shiny Milk Churn -->
+      <rect x="266" y="246" width="22" height="32" rx="6" fill="#E2E8F0"/>
+      <rect x="269" y="238" width="16" height="9" rx="3" fill="#CBD5E1"/>
+      <rect x="266" y="256" width="22" height="5" fill="#FACC15" stroke="none"/>
+    </g>
+  </svg>`,
+  treasure_chest: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 170">
+    <defs>
+      <linearGradient id="chWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B85D19"/><stop offset="100%" stop-color="#6B2E08"/></linearGradient>
+      <linearGradient id="chGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FEF08A"/><stop offset="50%" stop-color="#F59E0B"/><stop offset="100%" stop-color="#B45309"/></linearGradient>
+    </defs>
+    <g stroke="#3B1B09" stroke-width="4" stroke-linejoin="round">
+      <rect x="26" y="74" width="128" height="68" rx="12" fill="url(#chWood)"/>
+      <path d="M22,76 C22,38 158,38 158,76 Z" fill="#C96B24"/>
+      <rect x="22" y="70" width="136" height="14" rx="5" fill="url(#chGold)"/>
+      <rect x="44" y="46" width="14" height="96" rx="4" fill="url(#chGold)"/>
+      <rect x="122" y="46" width="14" height="96" rx="4" fill="url(#chGold)"/>
+      <rect x="76" y="72" width="28" height="30" rx="7" fill="url(#chGold)"/>
+      <circle cx="90" cy="85" r="4.5" fill="#3B1B09" stroke="none"/>
+    </g>
+    <polygon points="90,14 95,28 110,28 98,36 102,50 90,41 78,50 82,36 70,28 85,28" fill="#FEF08A" stroke="#D97706" stroke-width="2.5"/>
+  </svg>`,
   golden_snitch: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 90">
     <defs><radialGradient id="snG" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#FFFBEB"/><stop offset="45%" stop-color="#FACC15"/><stop offset="100%" stop-color="#B45309"/></radialGradient></defs>
     <path d="M56,46 C26,12 4,14 10,36 C16,52 38,52 56,50Z" fill="#FFFDF7" stroke="#CBD5E1" stroke-width="2.5" opacity="0.92"/>
@@ -78,23 +155,6 @@ const VECTOR_SPRITES_SVG = {
     <g transform="translate(64,148) rotate(-14)"><path d="M0,0 L0,-76 C0,-102 -36,-102 -36,-76" fill="none" stroke="#7F1D1D" stroke-width="22" stroke-linecap="round"/><path d="M0,0 L0,-76 C0,-102 -36,-102 -36,-76" fill="none" stroke="url(#ccStripe)" stroke-width="17" stroke-linecap="round"/></g>
     <g transform="translate(156,148) rotate(14)"><path d="M0,0 L0,-76 C0,-102 36,-102 36,-76" fill="none" stroke="#7F1D1D" stroke-width="22" stroke-linecap="round"/><path d="M0,0 L0,-76 C0,-102 36,-102 36,-76" fill="none" stroke="url(#ccStripe)" stroke-width="17" stroke-linecap="round"/></g>
     <g transform="translate(106,158)"><path d="M0,0 L0,-98 C0,-130 44,-130 44,-96" fill="none" stroke="#7F1D1D" stroke-width="28" stroke-linecap="round"/><path d="M0,0 L0,-98 C0,-130 44,-130 44,-96" fill="none" stroke="url(#ccStripe)" stroke-width="22" stroke-linecap="round"/></g>
-  </svg>`,
-  deco_spider: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 200">
-    <path d="M26,184 L36,42 Q95,22 154,42 L164,184" fill="none" stroke="#6B3A18" stroke-width="11" stroke-linecap="round"/>
-    <g stroke="#E2E8F0" stroke-width="2.2" fill="none" opacity="0.9">
-      <line x1="36" y1="44" x2="156" y2="146"/><line x1="154" y1="44" x2="34" y2="146"/>
-      <line x1="95" y1="30" x2="95" y2="156"/><line x1="32" y1="95" x2="158" y2="95"/>
-      <circle cx="95" cy="95" r="22"/><circle cx="95" cy="95" r="42"/><circle cx="95" cy="95" r="60"/>
-    </g>
-    <g stroke="#111827" stroke-width="3" stroke-linecap="round">
-      <path d="M74,94 Q54,82 48,100 M74,102 Q52,102 48,118 M78,110 Q60,118 58,132" fill="none" stroke-width="4.5"/>
-      <path d="M116,94 Q136,82 142,100 M116,102 Q138,102 142,118 M112,110 Q130,118 132,132" fill="none" stroke-width="4.5"/>
-      <circle cx="95" cy="96" r="24" fill="#312E4A"/>
-    </g>
-    <circle cx="86" cy="94" r="7" fill="#FFF"/><circle cx="104" cy="94" r="7" fill="#FFF"/>
-    <circle cx="87" cy="94" r="4" fill="#111827"/><circle cx="103" cy="94" r="4" fill="#111827"/>
-    <circle cx="85" cy="92" r="1.8" fill="#FFF"/><circle cx="101" cy="92" r="1.8" fill="#FFF"/>
-    <path d="M90,106 Q95,111 100,106" fill="none" stroke="#FDA4AF" stroke-width="2.5" stroke-linecap="round"/>
   </svg>`,
   deco_floating_candles: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 230">
     <g stroke="#92400E" stroke-width="2.2">
@@ -150,6 +210,9 @@ const VECTOR_SPRITES_SVG = {
 
 // Glossy Product & Resource Icons
 const ITEM_ICONS_SVG = {
+  flour: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><path d="M20,28 C16,38 14,56 18,66 C22,70 58,70 62,66 C66,56 64,38 60,28 L52,18 L28,18 Z" fill="#F5E6C8" stroke="#7C4A1E" stroke-width="3.8" stroke-linejoin="round"/><path d="M24,20 Q40,26 56,20" fill="none" stroke="#C84B31" stroke-width="4" stroke-linecap="round"/><path d="M40,34 L40,56 M34,40 L40,34 L46,40 M33,48 L40,42 L47,48" fill="none" stroke="#D97706" stroke-width="3" stroke-linecap="round"/></svg>`,
+  butter: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><ellipse cx="40" cy="56" rx="30" ry="12" fill="#E2E8F0" stroke="#64748B" stroke-width="3"/><polygon points="18,42 42,28 64,40 40,54" fill="#FEF08A" stroke="#B45309" stroke-width="3" stroke-linejoin="round"/><polygon points="18,42 40,54 40,64 18,52" fill="#FACC15" stroke="#B45309" stroke-width="3" stroke-linejoin="round"/><polygon points="64,40 40,54 40,64 64,50" fill="#EAB308" stroke="#B45309" stroke-width="3" stroke-linejoin="round"/></svg>`,
+  mascarpone: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><path d="M16,38 C16,60 28,68 40,68 C52,68 64,60 64,38 Z" fill="#60A5FA" stroke="#1E3A8A" stroke-width="3.5"/><path d="M14,38 C14,24 26,18 40,18 C54,18 66,24 66,38 C56,44 24,44 14,38 Z" fill="#FFFDF7" stroke="#CBD5E1" stroke-width="3"/><path d="M32,26 Q40,12 48,26" fill="#FFFDF7" stroke="#CBD5E1" stroke-width="2.5"/></svg>`,
   cocoa: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="22" ry="30" transform="rotate(-24 40 42)" fill="#8C4218" stroke="#3D1808" stroke-width="4"/><path d="M26,26 Q42,40 54,58 M34,18 Q48,34 60,50" fill="none" stroke="#59260C" stroke-width="3"/><ellipse cx="31" cy="30" rx="5" ry="10" transform="rotate(-24 31 30)" fill="#E9A263" opacity="0.7"/></svg>`,
   cinnamon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><g stroke="#4A1F06" stroke-width="3.5"><rect x="18" y="14" width="18" height="54" rx="7" transform="rotate(-14 27 40)" fill="#C96B1B"/><rect x="42" y="14" width="18" height="54" rx="7" transform="rotate(14 51 40)" fill="#B85D19"/><rect x="30" y="12" width="20" height="58" rx="8" fill="#D97B2B"/></g><rect x="20" y="38" width="40" height="10" rx="4" fill="#E62937" stroke="#7F1D1D" stroke-width="2.5"/></svg>`,
   candycane: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><defs><pattern id="cs" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><rect width="12" height="12" fill="#FFF"/><rect width="6" height="12" fill="#E62937"/></pattern></defs><path d="M32,68 L32,28 C32,12 56,12 56,28" fill="none" stroke="#7F1D1D" stroke-width="18" stroke-linecap="round"/><path d="M32,68 L32,28 C32,12 56,12 56,28" fill="none" stroke="url(#cs)" stroke-width="13" stroke-linecap="round"/></svg>`,

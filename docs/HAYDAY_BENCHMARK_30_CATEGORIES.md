@@ -17,7 +17,7 @@ Legende: **✅ Jetzt umgesetzt & verifiziert** · **🚀 Geplant für nächste A
 7. ✅ Saubere Chroma-Key-Freistellung mit Anti-Aliasing & Despill ohne Rosa-/Weißränder
 8. ✅ Weiche saisonabhängige Bodenschatten (eisblau im Winter, warm-oliv im Herbst)
 9. ✅ Konsistente Top-Left-Sonnenbeleuchtung auf allen Objekten
-10. 🚀 Restliche 4 Mini-Dekos (Glücksspinne, Besen, Schwebende Kerzen, Geschenkehaufen) + 28 Produkt-Icons ebenfalls im nächsten Bild-Quota-Fenster auf 3D-WebP umstellen
+10. ✅ 29. 3D-WebP-Sprite (`deco_spider.webp` Glücksspinne im Netz) im Supercell-Stil extrahiert; Mühle & Molkerei + restliche 3 Mini-Dekos als geschichtete 2.5D-Vektor-Sprites mit Drop-in-WebP-Pfad vorbereitet (Bild-Quota-Reset abwarten für finale 4 WebPs)
 
 ### 3. Map, Terrain & Landschafts-Tiefe
 11. ✅ Organische Schneehügel / goldene Herbstwiesen statt langweiliger Kacheln
@@ -31,7 +31,7 @@ Legende: **✅ Jetzt umgesetzt & verifiziert** · **🚀 Geplant für nächste A
 17. ✅ Zentraler Dorfbaum verwandelt sich live: **Weihnachtsbaum 🎄** ↔ **Goldener Herbst- & Kürbisbaum 🍁🎃**
 18. ✅ **Mutiges Saison-UI:** Selbst die Holz-Menüs und Buttons wechseln automatisch zwischen **Eis-/Schneehauben (Winter)** und **goldenem Herbstlaub-Glanz (Herbst)**!
 19. ✅ Schneeflocken (Winter) ↔ wirbelnde bunte Herbstblätter + leuchtende Glühwürmchen (Herbst)
-20. 🚀 Saison-spezifische Dach-Varianten (Herbstlaub statt Schnee auf Chalet/Bäckerei)
+20. ✅ Saison-spezifische Dach-Varianten: Beim Wechsel auf Herbst blenden goldene Ahornlaub-Girlanden, Mini-Kürbisse und warmer Herbstglanz sanft über alle 6 Gebäudedächer!
 
 ### 5. Tag-, Dämmerungs- & Nacht-Atmosphäre
 21. ✅ Sanfter automatischer Zyklus + manueller 1-Tipp-Schalter (`Auto / ☀️ / 🌅 / 🌙`)
@@ -73,7 +73,7 @@ Legende: **✅ Jetzt umgesetzt & verifiziert** · **🚀 Geplant für nächste A
 47. ✅ Kleine wippende Geh-Animation + Bodenschatten
 48. ✅ Zufällige liebevolle Sprechblasen über den Köpfen (*„Mmmh, Matcha!“*, *„Duftet nach Waffeln!“*)
 49. ✅ **Anklickbare Besucher:** Beim Antippen winken sie fröhlich mit Herzchen & geben ab und zu ein kleines **+5 ★ Trinkgeld**!
-50. 🚀 Zukünftig: Direkte Mini-Kaufangebote der Besucher direkt an der Haustür (wie in Hay Day)
+50. ✅ Direkte Mini-Kaufangebote der schlendernden Dorfbewohner an der Haustür (goldene Angebots-Sprechblase + Annehmen/Ablehnen-Dialog für +22 % Münzen & XP)
 
 ### 11. Bau-Baustelle & Geschenkband-Auspacken
 51. ✅ Neu platzierte Produktionsgebäude erscheinen zuerst als **verpackte Holz-Baustelle mit großer roter Schleife**!
@@ -121,4 +121,4 @@ Legende: **✅ Jetzt umgesetzt & verifiziert** · **🚀 Geplant für nächste A
 81. ✅ Kompakte Retina-WebP-Assets + Offline-Service-Worker (`sw.js`) + iOS/Android Home-Screen-Icon
 82. ✅ Automatische 35+-Assertions End-to-End Browser-QA in echtem Chromium + visuelle Screenshot-Abnahme
 83. ✅ Dauerhaftes Projekt-Backup + `ARCHITECTURE_INDEX.md` + `winterhof-game`-Skill für 0-Sekunden-Einstieg in künftigen Sitzungen
-84. 🚀 **Nächste Ausbaustufe (nach deinen Antworten):** Mühle/Molkerei-Zwischenkette (Mehl/Butter/Mascarpone), tägliche Schatztruhe / Adventskalender, illustriertes Rezept- & Sammelbuch, echte GitHub-Pages-Live-URL fürs Handy!
+84. ✅ **v4-Ausbaustufe komplett umgesetzt:** Mühle & Molkerei (Mehl, Butter, Mascarpone) mit rotierenden Windmühlen-Flügeln, begrenztes Scheunen-Lager (50→300 Plätze ausbaubar), Tägliche Schatztruhe mit Serien-Bonus, illustriertes Rezept- & Sammelbuch, Level-3 Alles-ernten-Sense, Saison-Dach-Varianten & Haustür-Angebote der Dorfbewohner!

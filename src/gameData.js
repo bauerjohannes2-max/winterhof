@@ -186,6 +186,47 @@ export const ITEMS = {
     desc: 'Goldschimmernder Zauberhonig, den deine Schnee-Eule aus dem Zauberwald bringt.'
   },
 
+  // ---- Station 0: Mühle & Molkerei (Zwischenprodukte: Mehl, Butter, Mascarpone) ----
+  flour: {
+    id: 'flour',
+    name: 'Feines Mehl',
+    category: 'crafted',
+    station: 'mill_dairy',
+    craftTime: 45,
+    ingredients: { wheat: 2 },
+    sellPrice: 26,
+    xp: 10,
+    unlockLevel: 1,
+    color: '#FEF3C7',
+    desc: 'Frisch gemahlenes Goldweizen-Mehl – Basis für Plätzchen, Waffeln, Quiche & Stollen!'
+  },
+  butter: {
+    id: 'butter',
+    name: 'Hof-Butter',
+    category: 'crafted',
+    station: 'mill_dairy',
+    craftTime: 60,
+    ingredients: { starmilk: 1 },
+    sellPrice: 54,
+    xp: 16,
+    unlockLevel: 1,
+    color: '#FDE047',
+    desc: 'Goldgelbe, cremig gerührte Hof-Butter aus frischer Wintermilch.'
+  },
+  mascarpone: {
+    id: 'mascarpone',
+    name: 'Cremiger Mascarpone',
+    category: 'crafted',
+    station: 'mill_dairy',
+    craftTime: 120,
+    ingredients: { starmilk: 2, egg: 1 },
+    sellPrice: 112,
+    xp: 28,
+    unlockLevel: 2,
+    color: '#FFFBEB',
+    desc: 'Samtiger Mascarpone aus der Hof-Molkerei – unverzichtbar für echtes Tiramisu!'
+  },
+
   // ---- Station 1: Backstube & Waffel-Ofen (4 Recipes) ----
   butterplaetzchen: {
     id: 'butterplaetzchen',
@@ -193,12 +234,12 @@ export const ITEMS = {
     category: 'crafted',
     station: 'bakery',
     craftTime: 120,
-    ingredients: { wheat: 2, egg: 1, starmilk: 1 },
-    sellPrice: 95,
-    xp: 26,
+    ingredients: { flour: 1, butter: 1, egg: 1 },
+    sellPrice: 125,
+    xp: 32,
     unlockLevel: 1,
     color: '#F6C873',
-    desc: 'Zarte, goldbraune Ausstech-Butterplätzchen – perfekt pur oder für Tiramisu!'
+    desc: 'Zarte, goldbraune Ausstech-Butterplätzchen aus feinem Mehl & Hof-Butter!'
   },
   waffles: {
     id: 'waffles',
@@ -206,12 +247,12 @@ export const ITEMS = {
     category: 'crafted',
     station: 'bakery',
     craftTime: 180,
-    ingredients: { wheat: 2, egg: 1, pumpkin: 1 },
-    sellPrice: 112,
-    xp: 32,
+    ingredients: { flour: 1, butter: 1, egg: 1, pumpkin: 1 },
+    sellPrice: 155,
+    xp: 38,
     unlockLevel: 1,
     color: '#E59F49',
-    desc: 'Goldene Herzwaffeln mit feiner Kürbis-Puderzucker-Note.'
+    desc: 'Goldene Herzwaffeln mit Hof-Butter und feiner Kürbis-Puderzucker-Note.'
   },
   lebkuchen: {
     id: 'lebkuchen',
@@ -219,9 +260,9 @@ export const ITEMS = {
     category: 'crafted',
     station: 'bakery',
     craftTime: 300,
-    ingredients: { wheat: 2, cocoa: 1, egg: 1 },
-    sellPrice: 145,
-    xp: 42,
+    ingredients: { flour: 1, cocoa: 1, egg: 1 },
+    sellPrice: 160,
+    xp: 45,
     unlockLevel: 3,
     color: '#A0522D',
     desc: 'Würziger Lebkuchenmann mit fröhlichem Zuckerguss-Lächeln.'
@@ -232,12 +273,12 @@ export const ITEMS = {
     category: 'crafted',
     station: 'bakery',
     craftTime: 480,
-    ingredients: { wheat: 3, berries: 2, cinnamon: 1, starmilk: 1 },
-    sellPrice: 275,
-    xp: 68,
+    ingredients: { flour: 2, butter: 1, berries: 2, cinnamon: 1 },
+    sellPrice: 325,
+    xp: 78,
     unlockLevel: 4,
     color: '#F8F0E3',
-    desc: 'Saftiger Festtagsstollen mit Winterbeeren und dicker Puderzuckerschicht.'
+    desc: 'Saftiger Festtagsstollen mit Hof-Butter, Winterbeeren & Puderzucker.'
   },
 
   // ---- Station 2: Matcha- & Zauber-Teehaus (5 Recipes) ----
@@ -314,12 +355,12 @@ export const ITEMS = {
     category: 'crafted',
     station: 'patisserie',
     craftTime: 210,
-    ingredients: { mushroom: 2, wheat: 2, egg: 1 },
-    sellPrice: 142,
-    xp: 38,
+    ingredients: { mushroom: 2, flour: 1, egg: 1 },
+    sellPrice: 158,
+    xp: 42,
     unlockLevel: 2,
     color: '#C68B3C',
-    desc: 'Ofenwarme Waldpilz-Quiche mit frischen Herbst-Schwammerln und Kräutern.'
+    desc: 'Ofenwarme Waldpilz-Quiche mit frischen Herbst-Schwammerln und feinem Mehl.'
   },
   chocofrog: {
     id: 'chocofrog',
@@ -340,9 +381,9 @@ export const ITEMS = {
     category: 'crafted',
     station: 'patisserie',
     craftTime: 360,
-    ingredients: { butterplaetzchen: 1, cocoa: 1, egg: 1, starmilk: 1 },
-    sellPrice: 265,
-    xp: 66,
+    ingredients: { butterplaetzchen: 1, mascarpone: 1, cocoa: 1 },
+    sellPrice: 360,
+    xp: 84,
     unlockLevel: 3,
     color: '#8D5524',
     desc: 'Luftige Mascarpone-Creme auf hausgemachten Butterplätzchen, fein bestäubt mit Kakao.'
@@ -353,12 +394,12 @@ export const ITEMS = {
     category: 'crafted',
     station: 'patisserie',
     craftTime: 420,
-    ingredients: { butterplaetzchen: 1, matcha: 2, starmilk: 1, egg: 1 },
-    sellPrice: 295,
-    xp: 76,
+    ingredients: { butterplaetzchen: 1, mascarpone: 1, matcha: 2 },
+    sellPrice: 395,
+    xp: 94,
     unlockLevel: 3,
     color: '#4F9D45',
-    desc: 'Das absolute Lieblings-Dessert: zartes Tiramisu gekrönt mit edlem grünem Matcha!'
+    desc: 'Das absolute Lieblings-Dessert: zartes Mascarpone-Tiramisu gekrönt mit edlem grünem Matcha!'
   },
 
   // ---- Station 4: Wichtel- & Zauberwerkstatt (3 Recipes) ----
@@ -469,6 +510,18 @@ export const ANIMALS = {
 };
 
 export const STATIONS = {
+  mill_dairy: {
+    id: 'mill_dairy',
+    name: 'Mühle & Molkerei',
+    sprite: 'mill_dairy',
+    footprint: 2,
+    unlockLevel: 1,
+    cost: 0,
+    recipes: ['flour', 'butter', 'mascarpone'],
+    chimneyOffset: { x: 0.22, y: -0.78 },
+    glowPoints: [{ x: 0.05, y: -0.32, r: 0.3 }],
+    desc: 'Mahlt Goldweizen zu Feinem Mehl und rührt Wintermilch zu Hof-Butter & Mascarpone.'
+  },
   bakery: {
     id: 'bakery',
     name: 'Backstube & Waffel-Ofen',
@@ -713,16 +766,16 @@ export const ACHIEVEMENTS = [
 ];
 
 export const LEVELS = [
-  { level: 1,  xpNeeded: 0,    coinBonus: 0,   treeStage: 1, unlockText: 'Willkommen auf deinem Herbst-, Winter- & Zauberhof!' },
-  { level: 2,  xpNeeded: 95,   coinBonus: 75,  treeStage: 1, unlockText: 'Freigeschaltet: Tiramisu-Küche, Wollschaf, Winterbeeren, Kräutertee & Zauber-Butterbier!' },
-  { level: 3,  xpNeeded: 240,  coinBonus: 120, treeStage: 2, unlockText: 'Freigeschaltet: Schnee-Eule 🦉, Kakao, Tiramisu, Matcha-Tiramisu & Schokofrosch!' },
+  { level: 1,  xpNeeded: 0,    coinBonus: 0,   treeStage: 1, unlockText: 'Willkommen auf deinem Winterhof & Zauberherbst!' },
+  { level: 2,  xpNeeded: 95,   coinBonus: 75,  treeStage: 1, unlockText: 'Freigeschaltet: Tiramisu-Küche, Mascarpone, Wollschaf, Winterbeeren, Kräutertee & Zauber-Butterbier!' },
+  { level: 3,  xpNeeded: 240,  coinBonus: 120, treeStage: 2, unlockText: 'Freigeschaltet: Alles-ernten-Sense, Schnee-Eule 🦉, Kakao, Tiramisu, Matcha-Tiramisu & Schokofrosch!' },
   { level: 4,  xpNeeded: 450,  coinBonus: 170, treeStage: 2, unlockText: 'Freigeschaltet: Zauberwerkstatt, Zimt & Vanille, Stollen, Kürbis-Latte & Strickschal!' },
   { level: 5,  xpNeeded: 730,  coinBonus: 230, treeStage: 3, unlockText: 'Freigeschaltet: Zuckerstangen, Plätzchendose & Zauber-Geschenkkorb! Dein Dorfbaum erstrahlt voll!' },
-  { level: 6,  xpNeeded: 1080, coinBonus: 300, treeStage: 3, unlockText: 'Meister der Backstube & Zauberküche!' },
+  { level: 6,  xpNeeded: 1080, coinBonus: 300, treeStage: 3, unlockText: 'Meister der Backstube & Molkerei!' },
   { level: 7,  xpNeeded: 1520, coinBonus: 380, treeStage: 3, unlockText: 'Goldener Matcha- & Herbstzauber-Ehrengast!' },
   { level: 8,  xpNeeded: 2050, coinBonus: 480, treeStage: 3, unlockText: 'Hüter des magischen Herbst- & Wintertals!' },
   { level: 9,  xpNeeded: 2700, coinBonus: 600, treeStage: 3, unlockText: 'Legende zwischen Hogsmeade und Nordpol!' },
-  { level: 10, xpNeeded: 3500, coinBonus: 800, treeStage: 3, unlockText: 'Höchste Gemütlichkeit auf dem Zauberhof!' }
+  { level: 10, xpNeeded: 3500, coinBonus: 800, treeStage: 3, unlockText: 'Höchste Gemütlichkeit auf dem Winterhof!' }
 ];
 
 export const NPCS = [
@@ -795,10 +848,32 @@ export const NPCS = [
 ];
 
 export const SORTING_HAT_QUOTES = [
-  '„Hmm… viel Herz, eine Schwäche für Matcha und perfekte Waffeln… eindeutig ZAUBERHOF!“',
+  '„Hmm… viel Herz, eine Schwäche für Matcha und perfekte Waffeln… eindeutig WINTERHOF!“',
   '„Ich sehe Herbstlaub, fliegende Eulen und himmlisches Tiramisu in deiner Zukunft!“',
   '„Mutig beim Backen, gemütlich im Herzen – 50 Punkte für deinen Hof!“',
   '„Schwammerl im Korb, Butterbier im Krug – wahrhaft magisch!“'
+];
+
+export const BARN_CONFIG = {
+  baseCapacity: 50,
+  stepCapacity: 25,
+  maxCapacity: 300,
+  baseCost: 80,
+  costStep: 65
+};
+
+export function getBarnUpgradeCost(currentCapacity = BARN_CONFIG.baseCapacity) {
+  const tier = Math.max(0, Math.floor((currentCapacity - BARN_CONFIG.baseCapacity) / BARN_CONFIG.stepCapacity));
+  return BARN_CONFIG.baseCost + tier * BARN_CONFIG.costStep;
+}
+
+export const ALBUM_SECRETS = [
+  { id: 'secret_snitch', title: 'Goldener Schnatz', desc: 'Fange den fliegenden Goldenen Schnatz über dem Dorf.', check: (s) => (s.stats.snitches || 0) > 0 },
+  { id: 'secret_mushroom', title: 'Waldschwammerl-Fund', desc: 'Sammle wilde Wald-Schwammerl direkt am Waldrand.', check: (s) => (s.stats.wildMushrooms || 0) > 0 },
+  { id: 'secret_season', title: 'Jahreszeiten-Zauber', desc: 'Wechsle zwischen verschneitem Winter und goldenem Herbst.', check: (s) => (s.stats.seasonSwitches || 0) > 0 },
+  { id: 'secret_hat', title: 'Sprechender Zauberhut', desc: 'Tippe den Flicken-Zauberhut auf dem Dorfplatz an.', check: (s) => (s.stats.hatTalks || 0) > 0 },
+  { id: 'secret_chest', title: 'Tägliche Schatztruhe', desc: 'Öffne die leuchtende Glückstruhe auf deinem Winterhof.', check: (s) => (s.stats.chestsOpened || 0) > 0 },
+  { id: 'secret_villager', title: 'Haustür-Handel', desc: 'Erfülle ein persönliches Kaufangebot eines Dorfbewohners.', check: (s) => (s.stats.villagerDeals || 0) > 0 }
 ];
 
 export const CHAPTERS = [

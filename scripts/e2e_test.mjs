@@ -262,9 +262,22 @@ try {
   assert(buildRes.canShift1Tile === true && buildRes.bakeryMovedTo[0] === 2 && buildRes.bakeryMovedTo[1] === 6, '2x2 Bakery moved cleanly by 1 tile without self-collision!');
   assert(buildRes.decoStored === true, 'Decoration stored cleanly into free re-placement storage!');
 
-  // Test 5: Crafting Butterplätzchen + Matcha-Latte + Mastery + Story Chapter 1 & 2 + Villager Greeting!
+  // Test 5: Mühle & Molkerei (Flour + Butter) -> Bakery (Butterplätzchen) + Matcha-Latte + Mastery + Chapters + Villager Tip!
   const craftRes = await cdp.eval(`
     const g = window.__WINTERHOF__;
+    // Craft Flour & Butter in Mühle & Molkerei!
+    g.startCraft('st_mill_dairy', 'flour');
+    g.startCraft('st_mill_dairy', 'butter');
+    const mill = g.state.stations.find(s => s.id === 'st_mill_dairy');
+    mill.queue[0].finishAt = Date.now() - 2000;
+    g.tickSimulation(Date.now());
+    if (mill.queue.length > 0) {
+      mill.queue[0].finishAt = Date.now() - 1000;
+      g.tickSimulation(Date.now());
+    }
+    const millReady = mill.ready.length;
+    g.interactStation(mill);
+
     g.startCraft('st_bakery', 'butterplaetzchen');
     g.startCraft('st_teahouse', 'matcha_latte');
     const bak = g.state.stations.find(s => s.id === 'st_bakery');
@@ -278,11 +291,15 @@ try {
     // Claim Chapter 1 & 2!
     g.claimChapter('ch_1');
     g.claimChapter('ch_2');
-    // Greet strolling villager for +5 tip!
+    // Greet strolling villager (clear any random offer first to test tip path)
+    g.world.villagers[0].offer = null;
     const vcBefore = g.state.coins;
     g.greetVillager(g.world.villagers[0]);
     const villagerTip = g.state.coins - vcBefore;
     return {
+      millReady,
+      hasFlour: g.state.inventory.flour || 0,
+      hasButter: g.state.inventory.butter || 0,
       readyCounts,
       hasCookies: g.state.inventory.butterplaetzchen || 0,
       hasMatchaLatte: g.state.inventory.matcha_latte || 0,
@@ -292,11 +309,67 @@ try {
       villagerTip
     };
   `);
+  assert(craftRes.millReady === 2, `Mühle & Molkerei finished Flour & Butter (got ${craftRes.millReady})`);
   assert(craftRes.readyCounts[0] === 1 && craftRes.readyCounts[1] === 1, 'Bakery & Teahouse finish queued items cleanly');
-  assert(craftRes.hasCookies >= 1 && craftRes.hasMatchaLatte >= 1, 'Collected Butterplätzchen & Matcha-Latte into barn');
+  assert(craftRes.hasCookies >= 1 && craftRes.hasMatchaLatte >= 1, 'Collected Butterplätzchen (via Flour+Butter) & Matcha-Latte into barn');
   assert(craftRes.matchaStat === 1 && craftRes.masteryCount === 1, 'Matcha stat & Machine Mastery count tracked');
   assert(craftRes.chaptersClaimed === 2, 'Story Chapters 1 & 2 completed and rewards claimed!');
   assert(craftRes.villagerTip === 5, 'Greeting strolling villager awards +5 coin tip!');
+
+  // Test 5b (v4): Barn Capacity Guard & Upgrade + Daily Chest + Villager Doorstep Offer + Level-3 Harvest-All Scythe + Album!
+  const v4Res = await cdp.eval(`
+    const g = window.__WINTERHOF__;
+    g.state.coins = 600;
+    // 1. Barn capacity upgrade (50 -> 75)
+    const capBefore = g.getBarnCapacity();
+    const upOk = g.upgradeBarn();
+    const capAfter = g.getBarnCapacity();
+
+    // 2. Daily Treasure Chest claim + duplicate guard
+    const chestBefore = g.isDailyChestReady();
+    const chestCoinsBefore = g.state.coins;
+    const reward = g.claimDailyChest();
+    const chestAfter = g.isDailyChestReady();
+    const chestCoinsDelta = g.state.coins - chestCoinsBefore;
+    g.closeModal();
+
+    // 3. Villager Doorstep Buy Offer
+    const v = g.world.villagers[1];
+    const offer = g.generateVillagerOffer(v);
+    g.greetVillager(v);
+    const offerModalOpened = g.ui.activeModal?.kind === 'villager_offer';
+    const dealCoinsBefore = g.state.coins;
+    const dealOk = g.acceptVillagerOffer(v.id);
+    const dealCoinsDelta = g.state.coins - dealCoinsBefore;
+
+    // 4. Level-3 Harvest-All Scythe
+    g.state.xp = 260; // Level 3!
+    const now = Date.now();
+    g.state.fields[0].cropId = 'wheat'; g.state.fields[0].plantedAt = now - 300000;
+    g.state.fields[1].cropId = 'pumpkin'; g.state.fields[1].plantedAt = now - 300000;
+    g.updateHUD();
+    const scytheVisible = !document.getElementById('btn-scythe').classList.contains('hidden');
+    const scytheHarvested = g.harvestAllReadyFields();
+
+    // 5. Album discovery tracking
+    g.openModal('village', {}, 'album');
+    const albumText = document.getElementById('modal-body').textContent;
+    const albumHasBook = albumText.includes('Rezept-') && albumText.includes('Butterplätzchen');
+    g.closeModal();
+
+    return {
+      capBefore, upOk, capAfter,
+      chestBefore, chestAfter, chestCoinsDelta, streak: reward?.streak,
+      offerModalOpened, dealOk, dealCoinsDelta, dealsStat: g.state.stats.villagerDeals,
+      scytheVisible, scytheHarvested, albumHasBook,
+      discoveredCount: (g.state.discoveredItems || []).length
+    };
+  `);
+  assert(v4Res.capBefore === 50 && v4Res.upOk && v4Res.capAfter === 75, `Barn capacity upgraded 50 -> ${v4Res.capAfter}`);
+  assert(v4Res.chestBefore && !v4Res.chestAfter && v4Res.chestCoinsDelta >= 55 && v4Res.streak === 1, `Daily Treasure Chest claimed (+${v4Res.chestCoinsDelta} coins, streak ${v4Res.streak})`);
+  assert(v4Res.offerModalOpened && v4Res.dealOk && v4Res.dealCoinsDelta > 0 && v4Res.dealsStat === 1, `Villager Doorstep Offer accepted (+${v4Res.dealCoinsDelta} coins)`);
+  assert(v4Res.scytheVisible && v4Res.scytheHarvested === 2, `Level-3 Harvest-All Scythe visible & harvested ${v4Res.scytheHarvested} fields`);
+  assert(v4Res.albumHasBook && v4Res.discoveredCount >= 10, `Recipe & Collection Album tracks ${v4Res.discoveredCount} discovered items`);
 
   // Test 6: Hofladen (Roadside Stand) listing, sale & coin collection
   const standRes = await cdp.eval(`
@@ -387,10 +460,18 @@ try {
   await sleep(350);
   await cdp.screenshot('05_winter_night_landscape.png');
 
-  // Open Shop -> Herbst & Magie tab screenshot
+  // Open Shop -> Herbst & Magie tab screenshot + Album + Barn Capacity screenshots
   await cdp.eval(`window.__WINTERHOF__.openModal('shop', {}, 'autumn_magic');`);
   await sleep(250);
   await cdp.screenshot('06_shop_autumn_magic.png');
+
+  await cdp.eval(`window.__WINTERHOF__.openModal('village', {}, 'album');`);
+  await sleep(250);
+  await cdp.screenshot('07_album_modal.png');
+
+  await cdp.eval(`window.__WINTERHOF__.openModal('barn', {}, 'inv');`);
+  await sleep(250);
+  await cdp.screenshot('08_barn_capacity.png');
 
   // Test 10: Save & Reload Persistence Check
   await cdp.eval(`window.__WINTERHOF__.saveState();`);

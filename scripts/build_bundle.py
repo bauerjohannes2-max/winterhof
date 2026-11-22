@@ -90,7 +90,7 @@ def build_pwa_zip() -> Path:
 
 
 def build_source_zip() -> Path:
-    zip_path = DIST / "winterhof-v3-source.zip"
+    zip_path = DIST / "winterhof-v4-source.zip"
     skip_dirs = {".git", "dist", "qa", "__pycache__", "node_modules"}
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for root, dirs, files in os.walk(ROOT):
@@ -100,7 +100,7 @@ def build_source_zip() -> Path:
                     continue
                 fp = Path(root) / fname
                 rel = fp.relative_to(ROOT).as_posix()
-                zf.write(fp, f"zauberhof/{rel}")
+                zf.write(fp, f"winterhof/{rel}")
 
     print(f"Built full source zip: {zip_path} ({zip_path.stat().st_size / 1024:.1f} KB)")
     return zip_path
