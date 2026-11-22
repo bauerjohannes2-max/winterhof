@@ -1,23 +1,21 @@
-# 🤝 Übergabe-Notiz an die neue Sitzung (2026-11-22)
+# Winterhof — Handoff Note für neue Sitzung (Stand: v5 AAA, 2026-11-23)
 
-Hallo neue Sitzung! Hier ist der exakte aktuelle Stand aus Sitzung 1 – **du musst das Projekt NICHT neu scannen**:
+## 1. Aktueller Projektstand (alles lokal gespeichert & auf Google Drive gesynct)
+- **Lokales Git-Repo (Windows):** `c:\Users\hannes.bauer\OneDrive - Farbenbauer GmbH & Co KG\Privat\Hannes\Programmieren_Spiele\Antigravity\winterhof` (Branch `main`, Commit `f6aea7d`+).
+- **Google Drive Backup (`Winterhof`):** https://drive.google.com/drive/folders/1R5uN6cih27bQP56rs0ZRjOoeELPLcRJM (`winterhof-pwa.zip`, `winterhof-standalone.html`, `winterhof-v5-source.zip`, Docs).
+- **GitHub CLI installiert:** `C:\Users\hannes.bauer\Tools\gh\bin\gh.exe` (Account: `bauerjohannes2-max`, Ziel-Repo: `winterhof` -> GitHub Pages `https://bauerjohannes2-max.github.io/winterhof/`).
+- **Thema (fixiert):** 100 % reines **Alpen-Weihnachtsdorf („Winterhof“)** — kein Halloween/Herbst/Harry-Potter-Mix.
+- **UI-Standard (fixiert):** Strikte **0-Emoji-Politik**, kommerzieller Minimalismus, Hay-Day-Ecken-Medaillons, ruhiger Level-1-Start ohne Begrüßungsbrief-Popup.
+- **Format-Entscheidung (NEU):** **Nur Querformat (`Landscape`)** wie echtes Hay Day (mit sauberem „Handy drehen“-Overlay im Hochformat).
+- **QA-Status v5:** Alle E2E-Tests (`scripts/e2e_test.mjs`) bestanden, 0 Konsolenfehler, 0 Emojis im gesamten DOM/Modals.
 
-## 1. Alles ist fertig gebaut, getestet & hier im Ordner komplett aktuell
-- **Stand:** v3 (Hay-Day Benchmark Mega-Polish) — **34/34 automatisierte Chromium-E2E-Tests bestanden, 0 Konsolenfehler!**
-- **Grafik:** 28 freigestellte 3D-Supercell-WebP-Sprites in `assets/sprites/` + Vollbild-Ladescreen `assets/splash_art.webp` + `assets/icon-512.png` / `icon-180.png`.
-- **Fertige Pakete in `dist/`:**
-  - `dist/winterhof-pwa.zip` (1,1 MB)
-  - `dist/winterhof-standalone.html` (1,4 MB)
-- **Wissens- & Architektur-Dateien:**
-  - `ARCHITECTURE_INDEX.md` (komplette Datei-/Funktions-Karte – zuerst lesen!)
-  - `HAYDAY_BENCHMARK_30_CATEGORIES.md` (30-Kategorien-Benchmark-Checkliste)
-  - `PROJECT_MEMORY_AND_ROADMAP.md` (alle persönlichen Wünsche & nächste Ideen)
-- **Skill:** `winterhof-game` ist bereits auf v3 aktualisiert.
-
-## 2. Was Sitzung 1 NICHT tun konnte (jetzt dein erster Schritt!)
-- In Sitzung 1 waren `github` und `gdrive` noch als `Connected plugins: none` geladen.
-- **Bitte führe sofort aus (sobald Plugins bei dir verbunden sind):**
-  1. Kopiere `/home/antigravity/.gemini/winterhof-project/` nach `/home/antigravity/winterhof/`.
-  2. Erstelle das GitHub-Repository (Standardname `zauberhof`, falls der Nutzer keinen anderen nennt), pushe den kompletten Code **inkl. `ARCHITECTURE_INDEX.md`, `HAYDAY_BENCHMARK_30_CATEGORIES.md`, `PROJECT_MEMORY_AND_ROADMAP.md`** und aktiviere **GitHub Pages** (Branch `main`, Root `/`) → gib dem Nutzer sofort den funktionierenden **HTTPS-Link fürs iPhone & Android**!
-  3. Lade `dist/winterhof-pwa.zip`, `dist/winterhof-standalone.html` und die Wissens-Markdown-Dateien als Backup in sein **Google Drive** (z. B. Ordner `Winterhof-Zauberherbst`) hoch.
-  4. Danach setze alle Antworten des Nutzers auf die 9 Designfragen um und halte am Ende `/home/antigravity/.gemini/winterhof-project/` + Skill `winterhof-game` synchron!
+## 2. Zentrale Architektur-Entscheidung für v6 (Echte Hay-Day-Technik!)
+Der Nutzer will keinen einfachen „statische Bilder auf flachem 2D-Canvas“-Ansatz mehr, sondern die **echte Technik von Top-Spielen wie Hay Day**:
+1. **Querformat-Lock (`Landscape-Only`)** für echtes filmisches Farm-Framing.
+2. **Kein prozedurales Flach-Terrain (`ctx.ellipse`/Linien) mehr:** Umstieg auf **WebGL / PixiJS (2.5D GPU) oder Three.js (echtes 3D-Isometrie-Mesh)** mit:
+   - Handgemaltem, kachellosem **Terrain-Textur-Atlas** (Schnee, Trampelpfade, Eisbach-Shader, Autotile-Wege & Zäune).
+   - **Animierten Figuren & Gebäuden** (Mehrteil-Rigging / Sprite-Sheet-Zyklen für laufende Tiere, Dorfbewohner, drehende Räder/Klappen/Schlitten — keine starren 1-Frame-Sticker).
+   - **GPU-Beleuchtung, weichen Kontaktschatten & Partikel-Shadern** (Schnee, Kaminrauch, warmes Abendlicht).
+3. **Nächster erster Schritt in der neuen Sitzung:**
+   - Zuerst Architektur-Entscheidung mit dem Nutzer final bestätigen: **Option A: PixiJS WebGL 2.5D (Supercell-Hybrid: gemalte Terrain-Tiles + animierte Sprite-Sheets/Rigging + GPU-Lighting)** vs. **Option B: Three.js Echtes 3D (orthografische Isometrie + 3D-Terrain-Mesh + stilisierte 3D-Modelle `.glb`)**.
+   - Danach `implementation_plan.md` schreiben, Querformat-Lock + neue Rendering-Engine umsetzen, per Chromium-Screenshots gegen echtes Hay-Day-Referenzniveau abnehmen und per `git push` direkt auf GitHub Pages aktualisieren.
