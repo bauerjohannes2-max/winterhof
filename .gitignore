@@ -1,0 +1,9 @@
+# Build artifacts & temporary test outputs
+dist/
+scripts/qa/
+scripts/*.png
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+node_modules/
