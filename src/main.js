@@ -1,5 +1,6 @@
 // ============================================================================
-// WINTERHOF & ZAUBERHERBST — Hay-Day Benchmark Main Controller
+// WINTERHOF — AAA Alpine Christmas Main Controller
+// Calm Uncluttered Onboarding · Strict Zero-Emoji Policy · 60 FPS Hardened
 // ============================================================================
 
 import {
@@ -13,7 +14,6 @@ import {
   ACHIEVEMENTS,
   CHAPTERS,
   NPCS,
-  SORTING_HAT_QUOTES,
   BARN_CONFIG,
   ALBUM_SECRETS,
   getBarnUpgradeCost,
@@ -22,7 +22,7 @@ import {
 } from './gameData.js';
 import { sprites } from './sprites.js';
 import { audio } from './audio.js';
-import { WinterWorld, gridToWorld, worldToGrid } from './world.js';
+import { WinterWorld, DAILY_CHEST_POS, gridToWorld, worldToGrid } from './world.js';
 import {
   encodeGiftParcel,
   decodeGiftParcel,
@@ -31,14 +31,13 @@ import {
   clearIncomingUrlGift
 } from './giftExchange.js';
 
-const SAVE_KEY = 'winterhof_save_v2';
+const SAVE_KEY = 'winterhof_save_v5';
 
 const LOADING_TIPS = [
-  '🦉 Tipp: Die Schnee-Eule trägt persönliche Päckchen per WhatsApp-Link!',
-  '✨ Tipp: Halte Ausschau nach dem fliegenden Goldenen Schnatz!',
-  '🍄 Tipp: Tippe wilde Wald-Schwammerl am Rand der Wiese an!',
-  '🌾 Tipp: Wische mit einem Finger über alle reifen Felder zum Ernten!',
-  '🍂 Tipp: Oben rechts kannst du jederzeit zwischen Winter & Herbst wechseln!'
+  'Wische mit einem Finger über reife Felder zum Ernten.',
+  'Im Hofladen zahlen Dorfbewohner 25 % mehr Münzen.',
+  'Tippe auf fertige Backwaren über deiner Backstube.',
+  'Neue Gebäude und Tiere schaltest du Stufe für Stufe frei.'
 ];
 
 function formatDuration(sec) {
@@ -48,86 +47,74 @@ function formatDuration(sec) {
   return s ? `${m}m ${s}s` : `${m}m`;
 }
 
+function getInitials(name) {
+  return String(name || 'W')
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0] || '')
+    .join('')
+    .toUpperCase();
+}
+
+// Calm, spacious, composed starter estate (like Hay Day Level 1!)
 function createInitialState() {
   const now = Date.now();
   return {
-    version: 4,
-    welcomeSeen: false,
-    villageName: 'Unser Winterhof',
-    playerName: 'Weihnachtsfreund',
-    season: 'winter',
+    version: 5,
+    villageName: 'Winterhof',
+    playerName: 'Winterhof-Gast',
     coins: 145,
     xp: 0,
     lastLevel: 1,
     barnCapacity: BARN_CONFIG.baseCapacity,
     lastDailyChestDate: null,
     dailyStreak: 0,
-    discoveredItems: ['wheat', 'mushroom', 'pumpkin', 'matcha', 'egg', 'starmilk', 'flour', 'butter'],
+    discoveredItems: ['wheat', 'berries', 'egg'],
     unlockedLands: [],
     storedDecos: {},
     inventory: {
       wheat: 4,
-      mushroom: 2,
-      pumpkin: 2,
-      matcha: 2,
-      egg: 1,
-      starmilk: 1,
-      flour: 2,
-      butter: 1
+      berries: 2,
+      egg: 2
     },
+    // Composed grid-aligned starter architecture around main road (gy = 5.5)
     chalet: { gx: 5, gy: 2 },
     christmasTree: { gx: 8, gy: 2 },
-    wishlistBoard: { gx: 11, gy: 3 },
-    sleighPos: { gx: 12, gy: 5 },
+    wishlistBoard: { gx: 10, gy: 4 },
+    sleighPos: { gx: 12, gy: 4 },
     mailbox: { gx: 4, gy: 4 },
     stations: [
-      { id: 'st_mill_dairy', type: 'mill_dairy', gx: 2, gy: 2, built: true, wrapped: false, craftedCount: 0, queue: [], ready: [] },
-      { id: 'st_bakery', type: 'bakery', gx: 3, gy: 6, built: true, wrapped: false, craftedCount: 0, queue: [], ready: [] },
-      { id: 'st_teahouse', type: 'teahouse', gx: 10, gy: 6, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
+      { id: 'st_bakery', type: 'bakery', gx: 3, gy: 7, built: true, wrapped: false, craftedCount: 0, queue: [], ready: [] },
+      { id: 'st_teahouse', type: 'teahouse', gx: 10, gy: 7, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
       { id: 'st_patisserie', type: 'patisserie', gx: 3, gy: 10, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
       { id: 'st_workshop', type: 'gift_workshop', gx: 10, gy: 10, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] }
     ],
+    // Clean, tidy 2x2 starter wheat block on open sunny snow terrace (zero road overlap!)
     fields: [
-      { id: 'f_1', gx: 5, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_2', gx: 6, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_3', gx: 7, gy: 8, cropId: 'mushroom', plantedAt: now - 300000 },
-      { id: 'f_4', gx: 5, gy: 9, cropId: 'pumpkin', plantedAt: now - 300000 },
-      { id: 'f_5', gx: 6, gy: 9, cropId: 'matcha', plantedAt: now - 300000 },
-      { id: 'f_6', gx: 7, gy: 9, cropId: null, plantedAt: 0 }
+      { id: 'f_1', gx: 6, gy: 7, cropId: 'wheat', plantedAt: now - 300000 },
+      { id: 'f_2', gx: 7, gy: 7, cropId: 'wheat', plantedAt: now - 300000 },
+      { id: 'f_3', gx: 6, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
+      { id: 'f_4', gx: 7, gy: 8, cropId: 'wheat', plantedAt: now - 300000 }
     ],
+    // 1 cozy starter Chicken in a proper fenced pen beside the terrace
     animals: [
-      { id: 'a_1', type: 'chicken', nick: 'Flöckchen', gx: 8, gy: 10, state: 'ready', readyAt: now - 1000, lastPet: 0 },
-      { id: 'a_2', type: 'reindeer', nick: 'Rudi', gx: 10, gy: 10, state: 'ready', readyAt: now - 1000, lastPet: 0 }
+      { id: 'a_1', type: 'chicken', nick: 'Flöckchen', gx: 9, gy: 7, state: 'ready', readyAt: now - 1000, lastPet: 0 }
     ],
+    // Minimal tasteful road lanterns + 1 snowman flanking the village road cleanly
     decorations: [
-      { id: 'd_1', type: 'snowman', gx: 4, gy: 9 },
-      { id: 'd_2', type: 'pumpkin_lantern', gx: 4, gy: 8 },
-      { id: 'd_3', type: 'ghost', gx: 11, gy: 8 },
-      { id: 'd_4', type: 'sorting_hat', gx: 8, gy: 4 },
-      { id: 'd_5', type: 'lantern', gx: 6, gy: 5 },
-      { id: 'd_6', type: 'lantern', gx: 9, gy: 6 },
-      { id: 'd_7', type: 'giftpile', gx: 10, gy: 4 },
-      { id: 'd_8', type: 'mushrooms', gx: 3, gy: 9 }
+      { id: 'd_1', type: 'lantern', gx: 4, gy: 6 },
+      { id: 'd_2', type: 'lantern', gx: 10, gy: 6 },
+      { id: 'd_3', type: 'snowman', gx: 7, gy: 4 }
     ],
-    wildMushrooms: [
-      { id: 'wm_1', gx: 2, gy: 5 },
-      { id: 'wm_2', gx: 12, gy: 11 }
-    ],
-    lastWildSpawn: now,
     standSlots: [null, null, null, null, null, null],
     orders: [],
     stats: {
       harvests: 0,
-      wildMushrooms: 0,
       crafted: 0,
-      matchaMade: 0,
       pets: 0,
-      snitches: 0,
       ordersDone: 0,
       standSales: 0,
-      seasonSwitches: 0,
       landsUnlocked: 0,
-      hatTalks: 0,
       chestsOpened: 0,
       villagerDeals: 0,
       barnUpgrades: 0
@@ -138,7 +125,7 @@ function createInitialState() {
     settings: {
       sfx: true,
       music: false,
-      lighting: 'auto'
+      lighting: 'day'
     }
   };
 }
@@ -154,10 +141,8 @@ class WinterhofGame {
     }
 
     audio.setSfx(this.state.settings.sfx);
-    audio.setSeason(this.state.season);
-    this.world.lightingMode = this.state.settings.lighting || 'auto';
-    this.world.seasonBlend = this.state.season === 'autumn' ? 1 : 0;
-    this.applySeasonBodyClass();
+    audio.setSeason('winter');
+    this.world.lightingMode = this.state.settings.lighting || 'day';
 
     this.ui = {
       mode: 'normal',
@@ -170,8 +155,10 @@ class WinterhofGame {
       dailyChestReady: false,
       giftDraft: { items: {}, note: '', generatedCode: null }
     };
+
     this._saveTimer = null;
-    this._lastVillagerOfferCheck = 0;
+    // Delay first villager offer so opening minutes stay calm & uncluttered
+    this._lastVillagerOfferCheck = Date.now() + 25000;
 
     this.pointers = new Map();
     this.pinchStartDist = 0;
@@ -186,19 +173,29 @@ class WinterhofGame {
     this.lastFrame = performance.now();
     this.lastModalRefresh = 0;
 
+    this.mountHudIcons();
     this.bindUI();
     this.bindCanvasEvents();
     this.updateHUD();
     window.__WINTERHOF__ = this;
   }
 
-  applySeasonBodyClass() {
-    document.body.classList.remove('season-winter', 'season-autumn');
-    document.body.classList.add(this.state.season === 'autumn' ? 'season-autumn' : 'season-winter');
+  mountHudIcons() {
+    const map = {
+      'ico-shop': 'shop',
+      'ico-move': 'move',
+      'ico-barn': 'barn',
+      'ico-orders': 'orders',
+      'ico-gifts': 'mail',
+      'btn-settings': 'gear'
+    };
+    for (const [elId, iconName] of Object.entries(map)) {
+      const el = document.getElementById(elId);
+      if (el) el.innerHTML = sprites.getUiIcon(iconName);
+    }
   }
 
   async start() {
-    // Support embedded splash art in standalone HTML build
     const splashBg = document.getElementById('splash-bg');
     if (splashBg && window.__WINTERHOF_ASSETS__?.splash_art) {
       splashBg.style.backgroundImage = `url("${window.__WINTERHOF_ASSETS__.splash_art}")`;
@@ -212,25 +209,18 @@ class WinterhofGame {
     });
 
     if (barEl) barEl.style.width = '100%';
-    await new Promise((r) => setTimeout(r, 260));
+    await new Promise((r) => setTimeout(r, 240));
 
     const splash = document.getElementById('loading-screen');
     if (splash) {
       splash.classList.add('hidden');
-      setTimeout(() => splash.remove(), 580);
+      setTimeout(() => splash.remove(), 550);
     }
 
     const incoming = getIncomingUrlGift();
     if (incoming) {
       clearIncomingUrlGift();
-      this.state.welcomeSeen = true;
-      setTimeout(() => this.receiveGiftParcel(incoming), 650);
-    } else if (!this.state.welcomeSeen) {
-      this.state.welcomeSeen = true;
-      this.saveState();
-      setTimeout(() => this.openModal('welcome'), 420);
-    } else {
-      this.showToast('✨ Wische über reife Felder oder sammle Wald-Schwammerl!', 3800);
+      setTimeout(() => this.receiveGiftParcel(incoming), 550);
     }
 
     setInterval(() => this.saveState(), 8000);
@@ -253,7 +243,7 @@ class WinterhofGame {
       const merged = {
         ...base,
         ...parsed,
-        version: 4,
+        version: 5,
         storedDecos: parsed.storedDecos || {},
         claimedChapters: parsed.claimedChapters || [],
         lastDailyChestDate: parsed.lastDailyChestDate || null,
@@ -261,35 +251,14 @@ class WinterhofGame {
         stats: { ...base.stats, ...(parsed.stats || {}) },
         settings: { ...base.settings, ...(parsed.settings || {}) }
       };
-      // Ensure new fields exist on saved stations
-      merged.stations = merged.stations.map((st) => ({
-        wrapped: false,
-        craftedCount: 0,
-        ...st
-      }));
-      // Backward-compatible migration: inject Mühle & Molkerei for pre-v4 saves
-      if (!merged.stations.some((s) => s.type === 'mill_dairy')) {
-        merged.stations.unshift({
-          id: 'st_mill_dairy',
-          type: 'mill_dairy',
-          gx: 2,
-          gy: 2,
-          built: true,
-          wrapped: false,
-          craftedCount: 0,
-          queue: [],
-          ready: []
-        });
-        if (!merged.inventory.flour) merged.inventory.flour = 2;
-        if (!merged.inventory.butter) merged.inventory.butter = 1;
-      }
-      // Backward-compatible barn capacity: never lock out an existing large inventory
+      merged.stations = merged.stations
+        .filter((st) => STATIONS[st.type])
+        .map((st) => ({ wrapped: false, craftedCount: 0, ...st }));
       const used = Object.values(merged.inventory || {}).reduce((sum, q) => sum + (q > 0 ? q : 0), 0);
       merged.barnCapacity = Math.max(
         parsed.barnCapacity || BARN_CONFIG.baseCapacity,
         used > BARN_CONFIG.baseCapacity ? Math.min(BARN_CONFIG.maxCapacity, Math.ceil((used + 15) / 25) * 25) : BARN_CONFIG.baseCapacity
       );
-      // Backfill discovered items album from current inventory
       const disc = new Set(parsed.discoveredItems || base.discoveredItems);
       for (const [id, q] of Object.entries(merged.inventory || {})) {
         if (q > 0 && ITEMS[id]) disc.add(id);
@@ -370,19 +339,8 @@ class WinterhofGame {
         slot.sold = true;
         const buyer = NPCS[Math.floor(Math.random() * NPCS.length)];
         slot.buyerName = buyer.name;
-        slot.buyerEmoji = buyer.emoji;
         changed = true;
-        this.showToast(`🏪 ${buyer.name} hat am Hofladen eingekauft!`, 3200);
-      }
-    }
-
-    if (!this.state.wildMushrooms) this.state.wildMushrooms = [];
-    if (this.state.wildMushrooms.length < 3 && nowMs - (this.state.lastWildSpawn || 0) > 65000) {
-      this.state.lastWildSpawn = nowMs;
-      const spot = this._findFreeForestSpot();
-      if (spot) {
-        this.state.wildMushrooms.push({ id: 'wm_' + nowMs, gx: spot.gx, gy: spot.gy });
-        changed = true;
+        this.showToast(`${buyer.name} hat im Hofladen eingekauft.`, 3000);
       }
     }
 
@@ -391,8 +349,8 @@ class WinterhofGame {
       this.updateHUD();
     }
 
-    // Periodic Doorstep Buy Offers from strolling villagers
-    if (nowMs - this._lastVillagerOfferCheck > 22000) {
+    // Periodic calm doorstep buy offers (never on frame 1!)
+    if (nowMs - this._lastVillagerOfferCheck > 32000) {
       this._lastVillagerOfferCheck = nowMs;
       for (const v of this.world.villagers) {
         if (v.offer && (this.state.inventory[v.offer.itemId] || 0) < v.offer.qty) {
@@ -407,18 +365,7 @@ class WinterhofGame {
     }
   }
 
-  _findFreeForestSpot() {
-    for (let tries = 0; tries < 25; tries++) {
-      const gx = 2 + Math.floor(Math.random() * 12);
-      const gy = 2 + Math.floor(Math.random() * 12);
-      if (this.isAreaFree(gx, gy, 1) && !this.state.wildMushrooms.some((w) => w.gx === gx && w.gy === gy)) {
-        return { gx, gy };
-      }
-    }
-    return null;
-  }
-
-  // ---- Economy, Barn Capacity, Daily Chest, Offers, Chapters & Mastery ----
+  // ---- Economy, Barn Capacity, Daily Chest, Offers & Chapters ----
   getBarnUsed() {
     let total = 0;
     for (const q of Object.values(this.state.inventory || {})) {
@@ -437,18 +384,18 @@ class WinterhofGame {
 
   notifyBarnFull() {
     audio.playTap();
-    this.showToast(`Scheune voll (${this.getBarnUsed()}/${this.getBarnCapacity()})! Im Vorrat erweitern oder verkaufen.`, 3400);
+    this.showToast(`Scheune voll (${this.getBarnUsed()}/${this.getBarnCapacity()}). Im Vorrat erweitern oder verkaufen.`, 3200);
   }
 
   upgradeBarn() {
     const cap = this.getBarnCapacity();
     if (cap >= BARN_CONFIG.maxCapacity) {
-      this.showToast('Dein Scheunen-Lager ist bereits maximal ausgebaut!');
+      this.showToast('Scheunen-Lager ist bereits maximal ausgebaut.');
       return false;
     }
     const cost = getBarnUpgradeCost(cap);
     if (this.state.coins < cost) {
-      this.showToast(`Zu wenig Münzen! (${cost} ★ benötigt)`);
+      this.showToast(`Nicht genug Münzen (${cost} benötigt).`);
       return false;
     }
     this.state.coins -= cost;
@@ -456,7 +403,7 @@ class WinterhofGame {
     this.incStat('barnUpgrades', 1);
     this.addXp(25);
     audio.playLevelUp();
-    this.showToast(`Scheune erweitert auf ${this.state.barnCapacity} Plätze!`, 3000);
+    this.showToast(`Scheune erweitert auf ${this.state.barnCapacity} Plätze.`);
     this.saveState();
     this.updateHUD();
     this.renderActiveModal();
@@ -473,12 +420,21 @@ class WinterhofGame {
     }
   }
 
+  removeItem(itemId, qty = 1) {
+    const cur = this.state.inventory[itemId] || 0;
+    if (cur < qty) return false;
+    this.state.inventory[itemId] = cur - qty;
+    if (this.state.inventory[itemId] <= 0) delete this.state.inventory[itemId];
+    return true;
+  }
+
+  incStat(key, delta = 1) {
+    this.state.stats[key] = (this.state.stats[key] || 0) + delta;
+  }
+
   getTodayKey() {
     const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
   isDailyChestReady() {
@@ -487,12 +443,12 @@ class WinterhofGame {
 
   claimDailyChest() {
     if (!this.isDailyChestReady()) {
-      this.showToast('Die heutige Schatztruhe wurde bereits geöffnet!');
+      this.showToast('Die heutige Schatztruhe wurde bereits geöffnet.');
       return null;
     }
     const today = this.getTodayKey();
-    const yesterdayDate = new Date(Date.now() - 86400000);
-    const yesterdayKey = `${yesterdayDate.getFullYear()}-${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDate.getDate()).padStart(2, '0')}`;
+    const yd = new Date(Date.now() - 86400000);
+    const yesterdayKey = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, '0')}-${String(yd.getDate()).padStart(2, '0')}`;
     const streak = this.state.lastDailyChestDate === yesterdayKey ? (this.state.dailyStreak || 0) + 1 : 1;
     this.state.lastDailyChestDate = today;
     this.state.dailyStreak = streak;
@@ -508,13 +464,13 @@ class WinterhofGame {
       rewardItems[pick.id] = (rewardItems[pick.id] || 0) + (pick.category === 'crop' ? 2 : 1);
     }
 
-    const pos = gridToWorld(6.5, 4.5);
-    this.addCoins(coins, pos.x, pos.y - 38);
+    const pos = gridToWorld(DAILY_CHEST_POS.gx, DAILY_CHEST_POS.gy);
+    this.addCoins(coins, pos.x, pos.y - 32);
     for (const [id, q] of Object.entries(rewardItems)) this.addItem(id, q);
     this.incStat('chestsOpened', 1);
     this.addXp(xp);
     audio.playLevelUp();
-    this.world.spawnBurst(pos.x, pos.y - 36, '#FDE047', 24, 'star');
+    this.world.spawnBurst(pos.x, pos.y - 28, '#FDE047', 18, 'star');
     this.saveState();
     this.updateHUD();
     const reward = { streak, coins, xp, items: rewardItems };
@@ -539,18 +495,18 @@ class WinterhofGame {
     if (!v || !v.offer) return false;
     const { itemId, qty, price, xp } = v.offer;
     if ((this.state.inventory[itemId] || 0) < qty) {
-      this.showToast(`Es fehlen ${ITEMS[itemId]?.name || 'Waren'} im Vorrat!`);
+      this.showToast(`Es fehlen ${ITEMS[itemId]?.name || 'Waren'} im Vorrat.`);
       return false;
     }
     this.removeItem(itemId, qty);
     v.offer = null;
-    v.quote = 'Vielen Dank, das duftet herrlich!';
-    v.quoteTimer = 3.2;
+    v.quote = 'Vielen Dank, das duftet wunderbar.';
+    v.quoteTimer = 3.0;
     this.incStat('villagerDeals', 1);
     const p = gridToWorld(v.gx, v.gy);
     audio.playCoin();
-    this.world.spawnBurst(p.x, p.y - 38, '#FF6B8B', 10, 'heart');
-    this.addCoins(price, p.x, p.y - 46);
+    this.world.spawnBurst(p.x, p.y - 32, '#FDE047', 10, 'star');
+    this.addCoins(price, p.x, p.y - 42);
     this.addXp(xp);
     this.closeModal();
     this.saveState();
@@ -562,8 +518,8 @@ class WinterhofGame {
     const v = this.world.villagers.find((x) => x.id === villagerId);
     if (v) {
       v.offer = null;
-      v.quote = 'Kein Problem, bis bald!';
-      v.quoteTimer = 2.6;
+      v.quote = 'Kein Problem, bis bald.';
+      v.quoteTimer = 2.4;
     }
     audio.playTap();
     this.closeModal();
@@ -572,14 +528,11 @@ class WinterhofGame {
   harvestAllReadyFields() {
     const lvl = getLevelInfo(this.state.xp).level;
     if (lvl < 3) {
-      this.showToast('Die Alles-ernten-Sense wird ab Level 3 freigeschaltet!');
+      this.showToast('Die Alles-ernten-Sense wird ab Level 3 freigeschaltet.');
       return 0;
     }
     const readyFields = this.state.fields.filter((f) => this.isFieldReady(f));
-    if (readyFields.length === 0) {
-      this.showToast('Aktuell sind keine Felder erntereif.');
-      return 0;
-    }
+    if (readyFields.length === 0) return 0;
     let count = 0;
     let stoppedByBarn = false;
     for (const f of readyFields) {
@@ -592,23 +545,11 @@ class WinterhofGame {
     this.saveState();
     this.updateHUD();
     if (stoppedByBarn) {
-      this.showToast(`${count} Felder geerntet — Scheune ist jetzt voll (${this.getBarnUsed()}/${this.getBarnCapacity()})!`, 3400);
+      this.showToast(`${count} Felder geerntet – Scheune voll (${this.getBarnUsed()}/${this.getBarnCapacity()}).`, 3200);
     } else if (count > 0) {
-      this.showToast(`Alle ${count} reifen Felder mit der Sense geerntet!`, 2800);
+      this.showToast(`${count} reife Felder mit der Sense geerntet.`, 2500);
     }
     return count;
-  }
-
-  removeItem(itemId, qty = 1) {
-    const cur = this.state.inventory[itemId] || 0;
-    if (cur < qty) return false;
-    this.state.inventory[itemId] = cur - qty;
-    if (this.state.inventory[itemId] <= 0) delete this.state.inventory[itemId];
-    return true;
-  }
-
-  incStat(key, delta = 1) {
-    this.state.stats[key] = (this.state.stats[key] || 0) + delta;
   }
 
   getActiveChapter() {
@@ -625,7 +566,7 @@ class WinterhofGame {
     audio.playLevelUp();
     this.addCoins(ch.coins);
     this.addXp(ch.xp);
-    this.showToast(`📜 ${ch.title} abgeschlossen! +${ch.coins} ★`, 3400);
+    this.showToast(`${ch.title} abgeschlossen (+${ch.coins} Münzen).`, 3000);
     this.saveState();
     this.updateHUD();
     this.renderActiveModal();
@@ -645,7 +586,7 @@ class WinterhofGame {
     audio.playLevelUp();
     this.addCoins(ach.coins);
     this.addXp(ach.xp);
-    this.showToast(`🏆 Erfolg „${ach.title}“ abgeholt! +${ach.coins} ★`, 3000);
+    this.showToast(`Erfolg "${ach.title}" abgeholt (+${ach.coins} Münzen).`, 2800);
     this.saveState();
     this.updateHUD();
     this.renderActiveModal();
@@ -659,7 +600,7 @@ class WinterhofGame {
       if (lvlInfo.coinBonus > 0) this.state.coins += lvlInfo.coinBonus;
       audio.playLevelUp();
       const treePos = gridToWorld(this.state.christmasTree.gx + 1, this.state.christmasTree.gy + 1);
-      this.world.spawnBurst(treePos.x, treePos.y - 110, '#FDE047', 26, 'star');
+      this.world.spawnBurst(treePos.x, treePos.y - 105, '#FDE047', 20, 'star');
       this.openModal('levelup', { lvlInfo });
     }
     this.updateHUD();
@@ -668,7 +609,7 @@ class WinterhofGame {
   addCoins(amount, wx = null, wy = null) {
     this.state.coins += amount;
     if (wx !== null && wy !== null) {
-      this.world.spawnFloater(wx, wy, `+${amount} ★`, null, '#FDE047');
+      this.world.spawnFloater(wx, wy, `+${amount}`, 'coin', '#FEF08A');
       this.world.spawnFlyingHudItem(wx, wy, 'coin', 'coins');
     }
     this.updateHUD();
@@ -703,11 +644,11 @@ class WinterhofGame {
     if (!zone || (this.state.unlockedLands || []).includes(zoneId)) return false;
     const lvl = getLevelInfo(this.state.xp).level;
     if (lvl < zone.unlockLevel) {
-      this.showToast(`🔒 „${zone.name}“ wird ab Level ${zone.unlockLevel} freischaltbar!`);
+      this.showToast(`"${zone.name}" wird ab Level ${zone.unlockLevel} freischaltbar.`);
       return false;
     }
     if (this.state.coins < zone.cost) {
-      this.showToast(`Zu wenig Münzen! (${zone.cost} ★ benötigt)`);
+      this.showToast(`Nicht genug Münzen (${zone.cost} benötigt).`);
       return false;
     }
     this.state.coins -= zone.cost;
@@ -716,8 +657,8 @@ class WinterhofGame {
     this.addXp(45);
     audio.playLevelUp();
     const sp = gridToWorld(zone.signPos.gx + 0.5, zone.signPos.gy + 0.5);
-    this.world.spawnBurst(sp.x, sp.y - 20, '#FDE047', 24, 'star');
-    this.world.spawnFloater(sp.x, sp.y - 45, `🗺️ ${zone.name} frei!`, null, '#A7F3D0');
+    this.world.spawnBurst(sp.x, sp.y - 20, '#FDE047', 18, 'star');
+    this.world.spawnFloater(sp.x, sp.y - 42, `${zone.name} frei`, null, '#A7F3D0');
     this.saveState();
     this.updateHUD();
     return true;
@@ -754,20 +695,13 @@ class WinterhofGame {
 
   // ---- Hit Testing ----
   hitTestWorld(wx, wy) {
-    if (this.world.hitTestSnitch(wx, wy)) return { kind: 'snitch' };
     if (this.world.hitTestDailyChest(wx, wy, this.isDailyChestReady())) return { kind: 'daily_chest' };
 
     const candidates = [];
 
-    // Strolling villagers
     const vil = this.world.hitTestVillager(wx, wy);
     if (vil) {
-      candidates.push({
-        kind: 'villager',
-        entity: vil,
-        depth: vil.gx + vil.gy + 0.5,
-        hit: () => true
-      });
+      candidates.push({ kind: 'villager', entity: vil, depth: vil.gx + vil.gy + 0.5, hit: () => true });
     }
 
     const unlocked = new Set(this.state.unlockedLands || []);
@@ -776,15 +710,7 @@ class WinterhofGame {
       const p = gridToWorld(z.signPos.gx + 0.5, z.signPos.gy + 0.5);
       candidates.push({
         kind: 'land_sign', entity: z, depth: z.signPos.gx + z.signPos.gy + 0.8,
-        hit: () => Math.abs(wx - p.x) < 62 && wy > p.y - 76 && wy < p.y + 18
-      });
-    }
-
-    for (const wm of this.state.wildMushrooms || []) {
-      const p = gridToWorld(wm.gx + 0.5, wm.gy + 0.5);
-      candidates.push({
-        kind: 'wild_mushroom', entity: wm, depth: wm.gx + wm.gy + 0.35,
-        hit: () => Math.abs(wx - p.x) < 46 && wy > p.y - 72 && wy < p.y + 22
+        hit: () => Math.abs(wx - p.x) < 52 && wy > p.y - 68 && wy < p.y + 14
       });
     }
 
@@ -793,7 +719,7 @@ class WinterhofGame {
       const p = gridToWorld(st.gx + 1, st.gy + 1);
       candidates.push({
         kind: 'station', entity: st, depth: st.gx + st.gy + 1.5,
-        hit: () => Math.abs(wx - p.x) < 92 && wy > p.y - 195 && wy < p.y + 32
+        hit: () => Math.abs(wx - p.x) < 88 && wy > p.y - 180 && wy < p.y + 28
       });
     }
 
@@ -801,35 +727,35 @@ class WinterhofGame {
       const p = gridToWorld(this.state.chalet.gx + 1, this.state.chalet.gy + 1);
       candidates.push({
         kind: 'chalet', entity: this.state.chalet, depth: this.state.chalet.gx + this.state.chalet.gy + 1.5,
-        hit: () => Math.abs(wx - p.x) < 98 && wy > p.y - 200 && wy < p.y + 28
+        hit: () => Math.abs(wx - p.x) < 96 && wy > p.y - 196 && wy < p.y + 26
       });
     }
     {
       const p = gridToWorld(this.state.christmasTree.gx + 1, this.state.christmasTree.gy + 1);
       candidates.push({
         kind: 'tree', entity: this.state.christmasTree, depth: this.state.christmasTree.gx + this.state.christmasTree.gy + 1.5,
-        hit: () => Math.abs(wx - p.x) < 82 && wy > p.y - 245 && wy < p.y + 26
+        hit: () => Math.abs(wx - p.x) < 76 && wy > p.y - 235 && wy < p.y + 24
       });
     }
     {
       const p = gridToWorld(this.state.wishlistBoard.gx + 0.5, this.state.wishlistBoard.gy + 0.5);
       candidates.push({
         kind: 'wishlist', entity: this.state.wishlistBoard, depth: this.state.wishlistBoard.gx + this.state.wishlistBoard.gy + 0.4,
-        hit: () => Math.abs(wx - p.x) < 58 && wy > p.y - 135 && wy < p.y + 24
+        hit: () => Math.abs(wx - p.x) < 48 && wy > p.y - 108 && wy < p.y + 20
       });
     }
     {
       const p = gridToWorld(this.state.sleighPos.gx + 0.5, this.state.sleighPos.gy + 0.5);
       candidates.push({
         kind: 'sleigh', entity: this.state.sleighPos, depth: this.state.sleighPos.gx + this.state.sleighPos.gy + 0.6,
-        hit: () => Math.abs(wx - p.x) < 96 && wy > p.y - 130 && wy < p.y + 36
+        hit: () => Math.abs(wx - p.x) < 82 && wy > p.y - 115 && wy < p.y + 32
       });
     }
     {
       const p = gridToWorld(this.state.mailbox.gx + 0.5, this.state.mailbox.gy + 0.5);
       candidates.push({
         kind: 'mailbox', entity: this.state.mailbox, depth: this.state.mailbox.gx + this.state.mailbox.gy + 0.4,
-        hit: () => Math.abs(wx - p.x) < 42 && wy > p.y - 120 && wy < p.y + 20
+        hit: () => Math.abs(wx - p.x) < 32 && wy > p.y - 88 && wy < p.y + 16
       });
     }
 
@@ -838,7 +764,7 @@ class WinterhofGame {
       const p = gridToWorld(an.gx + 0.5 + mot.ox, an.gy + 0.5 + mot.oy);
       candidates.push({
         kind: 'animal', entity: an, depth: an.gx + mot.ox + an.gy + mot.oy + 0.35,
-        hit: () => Math.abs(wx - p.x) < 52 && wy > p.y - 108 && wy < p.y + 22
+        hit: () => Math.abs(wx - p.x) < 40 && wy > p.y - 86 && wy < p.y + 18
       });
     }
 
@@ -846,7 +772,7 @@ class WinterhofGame {
       const p = gridToWorld(d.gx + 0.5, d.gy + 0.5);
       candidates.push({
         kind: 'deco', entity: d, depth: d.gx + d.gy + 0.3,
-        hit: () => Math.abs(wx - p.x) < 44 && wy > p.y - 98 && wy < p.y + 20
+        hit: () => Math.abs(wx - p.x) < 36 && wy > p.y - 82 && wy < p.y + 16
       });
     }
 
@@ -868,7 +794,7 @@ class WinterhofGame {
   }
 
   isFieldReady(f) {
-    if (!f || !f.cropId) return false;
+    if (!f || !f.cropId || !ITEMS[f.cropId]) return false;
     return (Date.now() - f.plantedAt) / 1000 >= ITEMS[f.cropId].growTime;
   }
 
@@ -889,9 +815,9 @@ class WinterhofGame {
     this.addXp(crop.xp);
     audio.playHarvest();
     this.world.triggerBounce(f.id);
-    this.world.spawnBurst(p.x, p.y - 16, crop.color, 10, 'star');
-    this.world.spawnFloater(p.x, p.y - 30, `+2 ${crop.name}`, crop.id, '#FFFDF7');
-    this.world.spawnFlyingHudItem(p.x, p.y - 20, crop.id, 'barn');
+    this.world.spawnBurst(p.x, p.y - 14, crop.color, 8, 'star');
+    this.world.spawnFloater(p.x, p.y - 26, `+2 ${crop.name}`, crop.id, '#FFFDF7');
+    this.world.spawnFlyingHudItem(p.x, p.y - 18, crop.id, 'barn');
     if (skipImmediateSave) this.scheduleSave();
     else this.saveState();
     this.updateHUD();
@@ -904,11 +830,11 @@ class WinterhofGame {
     if (!crop) return false;
     const lvl = getLevelInfo(this.state.xp).level;
     if (crop.unlockLevel > lvl) {
-      this.showToast(`🔒 Ab Level ${crop.unlockLevel} freigeschaltet!`);
+      this.showToast(`Ab Level ${crop.unlockLevel} freigeschaltet.`);
       return false;
     }
     if (this.state.coins < crop.seedCost) {
-      this.showToast(`Zu wenig Münzen! (${crop.seedCost} ★ benötigt)`);
+      this.showToast(`Nicht genug Münzen (${crop.seedCost} benötigt).`);
       return false;
     }
     this.state.coins -= crop.seedCost;
@@ -918,45 +844,10 @@ class WinterhofGame {
     const p = gridToWorld(f.gx + 0.5, f.gy + 0.5);
     audio.playPlant();
     this.world.triggerBounce(f.id);
-    this.world.spawnBurst(p.x, p.y - 6, '#86EFAC', 6, 'star');
+    this.world.spawnBurst(p.x, p.y - 6, '#86EFAC', 5, 'star');
     this.saveState();
     this.updateHUD();
     return true;
-  }
-
-  forageWildMushroom(wm) {
-    const idx = this.state.wildMushrooms.findIndex((w) => w.id === wm.id);
-    if (idx === -1) return;
-    if (!this.hasBarnSpace(2)) {
-      this.notifyBarnFull();
-      return;
-    }
-    this.state.wildMushrooms.splice(idx, 1);
-    const p = gridToWorld(wm.gx + 0.5, wm.gy + 0.5);
-    this.addItem('mushroom', 2);
-    this.incStat('wildMushrooms', 1);
-    this.addXp(10);
-    audio.playCollect();
-    this.world.spawnBurst(p.x, p.y - 24, '#F97316', 14, 'star');
-    this.world.spawnFloater(p.x, p.y - 42, `+2 Herbst-Schwammerl 🍄`, 'mushroom', '#FFFDF7');
-    this.world.spawnFlyingHudItem(p.x, p.y - 26, 'mushroom', 'barn');
-    this.saveState();
-    this.updateHUD();
-  }
-
-  catchGoldenSnitch() {
-    if (!this.world.snitch) return;
-    const { x, y } = this.world.snitch;
-    this.world.snitch = null;
-    this.world.snitchCooldown = 50 + Math.random() * 30;
-    this.incStat('snitches', 1);
-    audio.playLevelUp();
-    this.world.spawnBurst(x, y, '#FEF08A', 26, 'star');
-    this.addCoins(28, x, y - 16);
-    this.addXp(18);
-    this.world.spawnFloater(x, y - 50, `✨ Schnatz gefangen! +18 XP`, null, '#FEF08A');
-    this.saveState();
-    this.updateHUD();
   }
 
   greetVillager(v) {
@@ -966,18 +857,18 @@ class WinterhofGame {
       return;
     }
     const p = gridToWorld(v.gx, v.gy);
-    audio.playPet(1.15);
-    this.world.spawnBurst(p.x, p.y - 36, '#FF6B8B', 7, 'heart');
+    audio.playPet(1.12);
+    this.world.spawnBurst(p.x, p.y - 34, '#FDE047', 6, 'star');
     const now = Date.now();
     if (now - (v.lastTipAt || 0) > 45000) {
       v.lastTipAt = now;
-      v.quote = 'Hier, ein kleines Trinkgeld! ★';
-      v.quoteTimer = 3.2;
-      this.addCoins(5, p.x, p.y - 45);
+      v.quote = 'Ein kleines Trinkgeld für dich.';
+      v.quoteTimer = 3.0;
+      this.addCoins(5, p.x, p.y - 42);
       this.saveState();
     } else {
-      v.quote = 'Hallo auf deinem Winterhof! ❤️';
-      v.quoteTimer = 2.8;
+      v.quote = 'Schönen Wintertag auf dem Hof.';
+      v.quoteTimer = 2.6;
     }
   }
 
@@ -999,9 +890,9 @@ class WinterhofGame {
       this.addItem(prod.id, 1);
       this.addXp(prod.xp);
       audio.playCollect();
-      this.world.spawnBurst(p.x, p.y - 36, '#FDE047', 12, 'star');
-      this.world.spawnFloater(p.x, p.y - 46, `+1 ${prod.name}`, prod.id, '#FFFDF7');
-      this.world.spawnFlyingHudItem(p.x, p.y - 38, prod.id, 'barn');
+      this.world.spawnBurst(p.x, p.y - 30, '#FDE047', 9, 'star');
+      this.world.spawnFloater(p.x, p.y - 40, `+1 ${prod.name}`, prod.id, '#FFFDF7');
+      this.world.spawnFlyingHudItem(p.x, p.y - 32, prod.id, 'barn');
       this.saveState();
       this.updateHUD();
       return;
@@ -1014,29 +905,29 @@ class WinterhofGame {
         an.state = 'producing';
         an.readyAt = Date.now() + def.produceTime * 1000;
         audio.playPet(def.soundPitch);
-        this.world.spawnBurst(p.x, p.y - 34, '#FF6B8B', 8, 'heart');
-        this.world.spawnFloater(p.x, p.y - 48, `${nick} gefüttert! ❤️`, def.feedItem, '#FFD1DC');
+        this.world.spawnBurst(p.x, p.y - 28, '#FCA5A5', 6, 'heart');
+        this.world.spawnFloater(p.x, p.y - 40, `${nick} gefüttert`, def.feedItem, '#FFFDF7');
         this.saveState();
         this.updateHUD();
       } else {
         audio.playTap();
-        this.showToast(`${nick} (${def.name}) möchte 1× ${feed.name}!`);
+        this.showToast(`${nick} benötigt ${def.feedQty}x ${feed.name}.`);
       }
       return;
     }
 
     audio.playPet(def.soundPitch);
-    this.world.spawnBurst(p.x, p.y - 36, '#FF6B8B', 8, 'heart');
+    this.world.spawnBurst(p.x, p.y - 30, '#FCA5A5', 6, 'heart');
     const now = Date.now();
     if (now - (an.lastPet || 0) > 12000) {
       an.lastPet = now;
       this.incStat('pets', 1);
       this.addXp(3);
-      this.world.spawnFloater(p.x, p.y - 52, `${nick} freut sich! ❤️ +3 XP`, null, '#FFD1DC');
+      this.world.spawnFloater(p.x, p.y - 44, `${nick} freut sich (+3 XP)`, null, '#FFFDF7');
       this.saveState();
     } else {
       const left = Math.max(1, Math.ceil((an.readyAt - now) / 1000));
-      this.showToast(`${nick} schnurrt vergnügt ❤️ (fertig in ${formatDuration(left)})`);
+      this.showToast(`${nick} ist zufrieden (fertig in ${formatDuration(left)}).`);
     }
   }
 
@@ -1047,9 +938,9 @@ class WinterhofGame {
     const p = gridToWorld(st.gx + 1, st.gy + 1);
     audio.playUnwrap();
     this.world.triggerBounce(st.id);
-    this.world.spawnBurst(p.x, p.y - 75, '#EF4444', 18, 'star');
-    this.world.spawnBurst(p.x, p.y - 95, '#FDE047', 18, 'star');
-    this.world.spawnFloater(p.x, p.y - 120, `🎉 ${def.name} eröffnet!`, null, '#FEF08A');
+    this.world.spawnBurst(p.x, p.y - 72, '#DC2626', 14, 'star');
+    this.world.spawnBurst(p.x, p.y - 88, '#FDE047', 14, 'star');
+    this.world.spawnFloater(p.x, p.y - 110, `${def.name} eröffnet`, null, '#FEF08A');
     this.addXp(35);
     this.saveState();
     this.updateHUD();
@@ -1077,15 +968,14 @@ class WinterhofGame {
         totalXp += ITEMS[id].xp;
         st.craftedCount = (st.craftedCount || 0) + 1;
         this.incStat('crafted', 1);
-        if (id === 'matcha_latte' || id === 'matcha_tiramisu') this.incStat('matchaMade', 1);
       }
       this.addXp(totalXp);
       audio.playCollect();
-      this.world.spawnBurst(p.x, p.y - 95, '#FDE047', 16, 'star');
+      this.world.spawnBurst(p.x, p.y - 88, '#FDE047', 12, 'star');
       const first = ITEMS[collected[0]];
-      const label = collected.length === 1 ? `+1 ${first.name}` : `+${collected.length} Leckereien!`;
-      this.world.spawnFloater(p.x, p.y - 110, label, first.id, '#FFFDF7');
-      this.world.spawnFlyingHudItem(p.x, p.y - 95, first.id, 'barn');
+      const label = collected.length === 1 ? `+1 ${first.name}` : `+${collected.length} eingesammelt`;
+      this.world.spawnFloater(p.x, p.y - 102, label, first.id, '#FFFDF7');
+      this.world.spawnFlyingHudItem(p.x, p.y - 88, first.id, 'barn');
       this.saveState();
       this.updateHUD();
       return;
@@ -1100,7 +990,7 @@ class WinterhofGame {
     const recipe = ITEMS[itemId];
     if (!st || !recipe || st.wrapped) return;
     if (st.queue.length >= 4) {
-      this.showToast('Alle 4 Plätze sind gerade belegt!');
+      this.showToast('Alle 4 Produktionsplätze sind belegt.');
       return;
     }
     for (const [ingId, qty] of Object.entries(recipe.ingredients)) {
@@ -1125,7 +1015,7 @@ class WinterhofGame {
     audio.playBakeStart();
     const p = gridToWorld(st.gx + 1, st.gy + 1);
     this.world.triggerBounce(st.id);
-    this.world.spawnBurst(p.x, p.y - 90, '#FDBA74', 8, 'star');
+    this.world.spawnBurst(p.x, p.y - 82, '#FDBA74', 7, 'star');
     this.saveState();
     this.updateHUD();
     this.renderActiveModal();
@@ -1143,10 +1033,11 @@ class WinterhofGame {
     this.state.standSlots[slotIdx] = {
       itemId, qty, price,
       sellAt: Date.now() + waitMs,
-      sold: false, buyerName: null, buyerEmoji: null
+      sold: false, buyerName: null
     };
     audio.playBakeStart();
     this.saveState();
+    this.updateHUD();
     this.renderActiveModal();
   }
 
@@ -1158,7 +1049,7 @@ class WinterhofGame {
     audio.playCoin();
     this.addCoins(slot.price);
     this.addXp(8);
-    this.showToast(`🏪 +${slot.price} ★ von ${slot.buyerName} eingesammelt!`);
+    this.showToast(`+${slot.price} Münzen von ${slot.buyerName} erhalten.`);
     this.saveState();
     this.updateHUD();
     this.renderActiveModal();
@@ -1183,7 +1074,7 @@ class WinterhofGame {
 
     const craftedPool = pool.filter((i) => i.category === 'crafted');
     const req = {};
-    const numTypes = Math.random() < 0.55 || pool.length < 3 ? 2 : 3;
+    const numTypes = Math.random() < 0.6 || pool.length < 3 ? 2 : 3;
 
     if (craftedPool.length > 0 && Math.random() < 0.78) {
       const c = craftedPool[Math.floor(Math.random() * craftedPool.length)];
@@ -1227,10 +1118,10 @@ class WinterhofGame {
     this.world.launchSleigh(this.state);
 
     const sp = gridToWorld(this.state.sleighPos.gx + 0.5, this.state.sleighPos.gy + 0.5);
-    this.world.spawnBurst(sp.x, sp.y - 60, '#FDE047', 22, 'star');
-    this.addCoins(ord.coins, sp.x, sp.y - 80);
+    this.world.spawnBurst(sp.x, sp.y - 54, '#FDE047', 16, 'star');
+    this.addCoins(ord.coins, sp.x, sp.y - 72);
     this.addXp(ord.xp);
-    this.world.spawnFloater(sp.x, sp.y - 115, `+${ord.xp} XP ✨`, null, '#A7F3D0');
+    this.world.spawnFloater(sp.x, sp.y - 102, `+${ord.xp} XP`, null, '#A7F3D0');
 
     this.state.orders.splice(idx, 1);
     this.state.orders.push(this.generateOrder());
@@ -1250,15 +1141,17 @@ class WinterhofGame {
 
   receiveGiftParcel(parcel) {
     if (this.state.claimedGifts.includes(parcel.id)) {
-      this.showToast('Dieses Eulenpost-Päckchen hast du schon ausgepackt! 🦉');
+      this.showToast('Dieses Päckchen wurde bereits ausgepackt.');
       return;
     }
     this.closeModal();
     audio.playSleighBells();
-    this.showToast(`🦉 Die Schnee-Eule bringt ein Päckchen von ${parcel.from}!`);
+    this.showToast(`Winterpost von ${parcel.from} ist unterwegs.`);
     this.world.launchGiftParachute(parcel.from, () => {
       this.state.claimedGifts.push(parcel.id);
-      for (const [id, qty] of Object.entries(parcel.items)) this.addItem(id, qty);
+      for (const [id, qty] of Object.entries(parcel.items)) {
+        if (ITEMS[id]) this.addItem(id, qty);
+      }
       this.addXp(18);
       audio.playGiftOpen();
       this.saveState();
@@ -1275,7 +1168,7 @@ class WinterhofGame {
     this.ui.pendingPurchase = purchase;
     this.ui.selectedMoveId = null;
     this.ui.previewTile = null;
-    this.showModeBanner(`Tippe auf freien Platz für: ${purchase.label}`, 'Abbrechen', false);
+    this.showModeBanner(`Freien Platz tippen für: ${purchase.label}`, 'Abbrechen', false);
   }
 
   enterMoveMode() {
@@ -1290,7 +1183,7 @@ class WinterhofGame {
     this.ui.pendingPurchase = null;
     this.ui.previewTile = null;
     document.getElementById('dock-move').classList.add('active');
-    this.showModeBanner('Tippe Feld, Tier, Gebäude oder Deko zum Verschieben an', 'Fertig', false);
+    this.showModeBanner('Feld, Tier, Gebäude oder Deko zum Verschieben antippen', 'Fertig', false);
   }
 
   storeSelectedDeco() {
@@ -1303,7 +1196,7 @@ class WinterhofGame {
     audio.playTap();
     this.ui.selectedMoveId = null;
     this.ui.previewTile = null;
-    this.showModeBanner(`${DECORATIONS[deco.type].name} eingelagert! (Im Shop gratis wieder platzierbar)`, 'Fertig', false);
+    this.showModeBanner(`${DECORATIONS[deco.type].name} eingelagert (im Shop gratis platzierbar)`, 'Fertig', false);
     this.saveState();
   }
 
@@ -1350,7 +1243,7 @@ class WinterhofGame {
         <button class="seed-chip ${active ? 'active' : ''} ${locked ? 'locked' : ''}" data-seed="${id}">
           <img src="${sprites.getIconUrl(id)}" alt="${c.name}" />
           <span class="s-name">${c.name}</span>
-          <span class="s-meta">${locked ? `🔒 Lv.${c.unlockLevel}` : `${c.seedCost}★ · ${formatDuration(c.growTime)}`}</span>
+          <span class="s-meta">${locked ? `Lv.${c.unlockLevel}` : `${c.seedCost} · ${formatDuration(c.growTime)}`}</span>
         </button>`;
     }).join('');
 
@@ -1358,18 +1251,17 @@ class WinterhofGame {
       btn.addEventListener('click', () => {
         const id = btn.dataset.seed;
         if (ITEMS[id].unlockLevel > lvl) {
-          this.showToast(`🔒 ${ITEMS[id].name} wird ab Level ${ITEMS[id].unlockLevel} freigeschaltet!`);
+          this.showToast(`${ITEMS[id].name} wird ab Level ${ITEMS[id].unlockLevel} freigeschaltet.`);
           return;
         }
         audio.playTap();
         this.ui.selectedSeed = id;
         this.renderSeedTray();
-        this.showToast(`🌱 Wische über leere Felder, um ${ITEMS[id].name} zu säen!`, 2400);
       });
     });
   }
 
-  showToast(msg, duration = 2700) {
+  showToast(msg, duration = 2600) {
     const el = document.getElementById('toast-tip');
     el.textContent = msg;
     el.classList.remove('hidden');
@@ -1384,18 +1276,19 @@ class WinterhofGame {
     document.getElementById('hud-xp-fill').style.width = `${Math.round(info.progress * 100)}%`;
     document.getElementById('hud-coins').textContent = this.state.coins;
 
-    document.getElementById('btn-season').textContent = this.state.season === 'autumn' ? '🍂' : '❄️';
-    const lightIcons = { auto: '✨', day: '☀️', dusk: '🌅', night: '🌙' };
-    document.getElementById('btn-light').textContent = lightIcons[this.world.lightingMode] || '✨';
+    const lightEl = document.getElementById('btn-light');
+    if (lightEl) {
+      const iconKey = this.world.lightingMode === 'day' ? 'sun' : this.world.lightingMode === 'dusk' ? 'dusk' : this.world.lightingMode === 'night' ? 'moon' : 'auto';
+      lightEl.innerHTML = sprites.getUiIcon(iconKey);
+    }
 
-    // Story Chapter compact scroll pill
     const ch = this.getActiveChapter();
     const chPill = document.getElementById('chapter-pill');
     if (ch) {
       const done = ch.check(this.state);
       chPill.classList.remove('hidden');
       chPill.classList.toggle('ready', done);
-      document.getElementById('chapter-pill-text').textContent = done ? `Kapitel ${ch.num} fertig! 🎁` : `Kapitel ${ch.num}`;
+      document.getElementById('chapter-pill-text').textContent = done ? `Kapitel ${ch.num} bereit` : `Kapitel ${ch.num}`;
       document.getElementById('chapter-pill-dot').classList.toggle('hidden', !done);
     } else {
       chPill.classList.add('hidden');
@@ -1423,7 +1316,11 @@ class WinterhofGame {
       badgeBarn.classList.add('hidden');
     }
 
-    // Level-3 Harvest-All Scythe button visibility
+    const barnMini = document.getElementById('hud-barn-mini');
+    if (barnMini) {
+      barnMini.textContent = `${this.getBarnUsed()}/${this.getBarnCapacity()}`;
+    }
+
     const scytheBtn = document.getElementById('btn-scythe');
     const scytheCountEl = document.getElementById('scythe-count');
     if (scytheBtn && scytheCountEl) {
@@ -1432,6 +1329,7 @@ class WinterhofGame {
       scytheBtn.classList.toggle('hidden', !showScythe);
       scytheCountEl.textContent = String(readyFieldsCount);
     }
+
     this.ui.dailyChestReady = this.isDailyChestReady();
   }
 
@@ -1453,29 +1351,14 @@ class WinterhofGame {
       this.openModal('barn', {}, 'stand');
     });
 
-    document.getElementById('btn-season').addEventListener('click', () => {
-      audio.playSleighBells();
-      this.state.season = this.state.season === 'winter' ? 'autumn' : 'winter';
-      audio.setSeason(this.state.season);
-      this.applySeasonBodyClass();
-      this.incStat('seasonSwitches', 1);
-      this.saveState();
-      this.updateHUD();
-      this.showToast(
-        this.state.season === 'autumn'
-          ? '🍂 Goldener Halloween-Herbst! Kürbisse, Laub & Schwammerl!'
-          : '❄️ Verschneiter Weihnachtshof! Schneefall & Nordlichter!'
-      );
-    });
-
     document.getElementById('btn-light').addEventListener('click', () => {
       audio.playTap();
-      const cycle = ['auto', 'day', 'dusk', 'night'];
+      const cycle = ['day', 'dusk', 'night', 'auto'];
       const labels = {
-        auto: '✨ Tageszeit: Automatischer Wechsel',
-        day: '☀️ Tageszeit: Sonniger Tag',
-        dusk: '🌅 Tageszeit: Goldene Dämmerung',
-        night: '🌙 Tageszeit: Magischer Lichterabend'
+        auto: 'Tageszeit: Automatisch',
+        day: 'Tageszeit: Wintertag',
+        dusk: 'Tageszeit: Abenddämmerung',
+        night: 'Tageszeit: Sternennacht'
       };
       const next = cycle[(cycle.indexOf(this.world.lightingMode) + 1) % cycle.length];
       this.world.lightingMode = next;
@@ -1492,12 +1375,12 @@ class WinterhofGame {
 
     document.getElementById('btn-zoom-in').addEventListener('click', () => {
       this.world.cam.targetZoom = null;
-      this.world.cam.zoom = Math.min(1.65, this.world.cam.zoom * 1.18);
+      this.world.cam.zoom = Math.min(1.55, this.world.cam.zoom * 1.16);
       this.world.clampCamera();
     });
     document.getElementById('btn-zoom-out').addEventListener('click', () => {
       this.world.cam.targetZoom = null;
-      this.world.cam.zoom = Math.max(0.42, this.world.cam.zoom / 1.18);
+      this.world.cam.zoom = Math.max(0.52, this.world.cam.zoom / 1.16);
       this.world.clampCamera();
     });
     document.getElementById('btn-scythe')?.addEventListener('click', () => {
@@ -1582,11 +1465,10 @@ class WinterhofGame {
 
       if (this.ui.mode === 'normal') {
         const wp = this.world.screenToWorld(e.clientX, e.clientY);
-        if (this.world.hitTestSnitch(wp.x, wp.y)) return;
         const f = this.getFieldAtWorld(wp.x, wp.y);
         if (f && this.isFieldReady(f)) {
           this.dragMode = 'swipe-harvest';
-          this.harvestField(f);
+          this.harvestField(f, true);
           this.swipedFieldIds.add(f.id);
           this.world.addSwipePoint(e.clientX, e.clientY, 'harvest');
         } else if (f && !f.cropId && this.ui.seedTrayOpen && this.ui.selectedSeed) {
@@ -1610,7 +1492,7 @@ class WinterhofGame {
       if (this.pointers.size === 2 && this.pinchStartDist > 0) {
         const pts = [...this.pointers.values()];
         const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-        this.world.cam.zoom = Math.max(0.42, Math.min(1.65, this.pinchStartZoom * (dist / this.pinchStartDist)));
+        this.world.cam.zoom = Math.max(0.52, Math.min(1.55, this.pinchStartZoom * (dist / this.pinchStartDist)));
         this.world.clampCamera();
         return;
       }
@@ -1621,7 +1503,7 @@ class WinterhofGame {
         const f = this.getFieldAtWorld(wp.x, wp.y);
         if (f && !this.swipedFieldIds.has(f.id) && this.isFieldReady(f)) {
           this.swipedFieldIds.add(f.id);
-          this.harvestField(f);
+          this.harvestField(f, true);
         }
         return;
       }
@@ -1649,8 +1531,8 @@ class WinterhofGame {
 
           const now = performance.now();
           const dt = Math.max(8, now - this.lastPanTime) / 1000;
-          this.world.cam.vx = (-dx / dt) * 0.55;
-          this.world.cam.vy = (-dy / dt) * 0.55;
+          this.world.cam.vx = (-dx / dt) * 0.5;
+          this.world.cam.vy = (-dy / dt) * 0.5;
           this.lastPanPos = { x: e.clientX, y: e.clientY };
           this.lastPanTime = now;
         }
@@ -1673,8 +1555,8 @@ class WinterhofGame {
     c.addEventListener('wheel', (e) => {
       e.preventDefault();
       this.world.cam.targetZoom = null;
-      const factor = e.deltaY < 0 ? 1.1 : 0.91;
-      this.world.cam.zoom = Math.max(0.42, Math.min(1.65, this.world.cam.zoom * factor));
+      const factor = e.deltaY < 0 ? 1.09 : 0.92;
+      this.world.cam.zoom = Math.max(0.52, Math.min(1.55, this.world.cam.zoom * factor));
       this.world.clampCamera();
     }, { passive: false });
   }
@@ -1719,13 +1601,13 @@ class WinterhofGame {
       const size = p.size || 1;
       if (!this.isAreaFree(tx, ty, size)) {
         const lockedZone = this.getLockedZoneAt(tx, ty);
-        this.showToast(lockedZone ? `🔒 Schalte zuerst „${lockedZone.name}“ frei!` : 'Hier ist schon etwas im Weg – tippe auf freien Platz!');
+        this.showToast(lockedZone ? `Schalte zuerst "${lockedZone.name}" frei.` : 'Hier ist kein freier Platz.');
         return;
       }
       const fromStorage = p.kind === 'deco' && (this.state.storedDecos[p.type] || 0) > 0;
       const actualCost = fromStorage ? 0 : p.cost;
       if (this.state.coins < actualCost) {
-        this.showToast('Nicht genug Münzen!');
+        this.showToast('Nicht genug Münzen.');
         this.exitSpecialMode();
         return;
       }
@@ -1755,16 +1637,16 @@ class WinterhofGame {
         const st = this.state.stations.find((s) => s.type === p.type);
         if (st) {
           st.built = true;
-          st.wrapped = true; // Hay-Day Red-Ribbon Unwrap Moment!!
+          st.wrapped = true;
           st.gx = tx;
           st.gy = ty;
           this.world.triggerBounce(st.id);
-          this.showToast(`🎀 Tippe auf das rote Geschenkband, um „${STATIONS[p.type].name}“ auszupacken!`, 3600);
+          this.showToast(`Tippe auf die Schleife, um "${STATIONS[p.type].name}" zu eröffnen.`, 3200);
         }
       }
 
       audio.playCollect();
-      this.world.spawnBurst(worldP.x, worldP.y - 24, '#FDE047', 16, 'star');
+      this.world.spawnBurst(worldP.x, worldP.y - 22, '#FDE047', 12, 'star');
       this.saveState();
       this.updateHUD();
       this.exitSpecialMode();
@@ -1781,14 +1663,14 @@ class WinterhofGame {
           const m = this._findMovable(hit.entity.id);
           this.showModeBanner(`Neuen Platz tippen für: ${m.label}`, 'Fertig', m.kind === 'deco');
         } else {
-          this.showToast('Tippe ein Feld, Tier, Gebäude oder Deko an!');
+          this.showToast('Tippe ein Feld, Tier, Gebäude oder Deko an.');
         }
       } else {
         const m = this._findMovable(this.ui.selectedMoveId);
         if (!m) { this.ui.selectedMoveId = null; return; }
         if (!this.isAreaFree(tx, ty, m.size, m.id)) {
           const lz = this.getLockedZoneAt(tx, ty);
-          this.showToast(lz ? `🔒 Grundstück „${lz.name}“ ist noch gesperrt!` : 'Dort ist nicht genug Platz!');
+          this.showToast(lz ? `Grundstück "${lz.name}" ist noch gesperrt.` : 'Dort ist nicht genug Platz.');
           return;
         }
         m.obj.gx = tx;
@@ -1797,7 +1679,7 @@ class WinterhofGame {
         this.world.triggerBounce(m.id);
         this.ui.selectedMoveId = null;
         this.ui.previewTile = null;
-        this.showModeBanner('Verschoben! Nächstes Objekt tippen oder „Fertig“', 'Fertig', false);
+        this.showModeBanner('Verschoben. Nächstes Objekt tippen oder Fertig.', 'Fertig', false);
         this.saveState();
       }
       return;
@@ -1806,9 +1688,7 @@ class WinterhofGame {
     // 3. Normal Play Mode
     const hit = this.hitTestWorld(wp.x, wp.y);
 
-    if (hit.kind === 'snitch') { this.catchGoldenSnitch(); return; }
     if (hit.kind === 'daily_chest') { this.claimDailyChest(); return; }
-    if (hit.kind === 'wild_mushroom') { this.forageWildMushroom(hit.entity); return; }
     if (hit.kind === 'villager') { this.greetVillager(hit.entity); return; }
     if (hit.kind === 'land_sign') { audio.playTap(); this.openModal('shop', {}, 'land'); return; }
 
@@ -1824,7 +1704,7 @@ class WinterhofGame {
         const left = Math.max(1, Math.ceil(crop.growTime - (Date.now() - f.plantedAt) / 1000));
         audio.playTap();
         this.world.triggerBounce(f.id);
-        this.showToast(`🌱 ${crop.name} ist in ${formatDuration(left)} erntereif!`);
+        this.showToast(`${crop.name} ist in ${formatDuration(left)} erntereif.`);
       }
       return;
     }
@@ -1842,33 +1722,17 @@ class WinterhofGame {
       this.world.triggerBounce('mailbox');
       this.openModal('gifts', {}, 'send');
     } else if (hit.kind === 'tree' || hit.kind === 'chalet') {
-      audio.playCollect();
+      audio.playTap();
       this.world.triggerBounce(hit.kind === 'tree' ? 'christmasTree' : 'chalet');
-      const p = gridToWorld(this.state.christmasTree.gx + 1, this.state.christmasTree.gy + 1);
-      this.world.spawnBurst(p.x, p.y - 120, '#FDE047', 14, 'star');
       this.openModal('village', {}, 'overview');
     } else if (hit.kind === 'deco') {
       audio.playTap();
       this.world.triggerBounce(hit.entity.id);
-      const p = gridToWorld(hit.entity.gx + 0.5, hit.entity.gy + 0.5);
-      if (hit.entity.type === 'sorting_hat') {
-        const q = SORTING_HAT_QUOTES[Math.floor(Math.random() * SORTING_HAT_QUOTES.length)];
-        this.incStat('hatTalks', 1);
-        this.saveState();
-        this.world.spawnBurst(p.x, p.y - 46, '#FDE047', 12, 'star');
-        this.showToast(`🎩 ${q}`, 4400);
-      } else if (hit.entity.type === 'ghost') {
-        this.world.spawnBurst(p.x, p.y - 42, '#E0F2FE', 8, 'star');
-        this.showToast('👻 Buh! Dein kleiner Kuschel-Geist winkt dir zu!');
-      } else if (hit.entity.type === 'cauldron') {
-        this.world.spawnBurst(p.x, p.y - 45, '#86EFAC', 10, 'star');
-        this.showToast('⚗️ Es blubbert magisch nach Matcha und Zaubertrank!');
-      }
     }
   }
 
   // ============================================================================
-  // MODALS
+  // MODALS (Clean Commercial Minimalism · Zero Emojis)
   // ============================================================================
   openModal(kind, data = {}, tab = null) {
     this.ui.activeModal = { kind, data, tab };
@@ -1890,8 +1754,7 @@ class WinterhofGame {
     tabsEl.style.display = 'none';
     tabsEl.innerHTML = '';
 
-    if (m.kind === 'welcome') this._renderWelcomeModal(titleEl, bodyEl);
-    else if (m.kind === 'chapters') this._renderChaptersModal(titleEl, bodyEl);
+    if (m.kind === 'chapters') this._renderChaptersModal(titleEl, bodyEl);
     else if (m.kind === 'station') this._renderStationModal(titleEl, bodyEl, m.data.stationId);
     else if (m.kind === 'orders') this._renderOrdersModal(titleEl, tabsEl, bodyEl, m.tab || 'wishlist');
     else if (m.kind === 'barn') this._renderBarnModal(titleEl, tabsEl, bodyEl, m.tab || 'inv');
@@ -1905,41 +1768,22 @@ class WinterhofGame {
     else if (m.kind === 'levelup') this._renderLevelUpModal(titleEl, bodyEl, m.data.lvlInfo);
   }
 
-  _renderWelcomeModal(titleEl, bodyEl) {
-    titleEl.textContent = '🦉 Ein Brief per Schnee-Eule';
-    bodyEl.innerHTML = `
-      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:12px;background:linear-gradient(180deg,#FFFDF2,#F9EED4)">
-        <div style="font-size:48px">🦉💌✨</div>
-        <div style="font-size:18px;font-weight:900;color:#8A1C17">Für meinen Lieblingsmenschen ❤️</div>
-        <div style="font-size:14px;line-height:1.5;color:var(--text-dark);background:#FFFDF9;padding:12px 14px;border-radius:16px;border:2px solid var(--cream-border)">
-          Willkommen auf deinem ganz eigenen <b>Herbst-, Winter- &amp; Zauberhof</b>!<br/><br/>
-          Hier warten frischer <b>Matcha-Latte</b>, himmlisches <b>Matcha-Tiramisu</b>, knusprige <b>Waffeln</b>, goldene <b>Butterplätzchen</b>, Wald-<b>Schwammerl</b>, süße <b>Kürbisse &amp; Geister</b> und ein Hauch <b>Zauberei</b> auf dich.<br/><br/>
-          Oben rechts kannst du jederzeit zwischen <b>❄️ Winter</b> und <b>🍂 Herbst</b> wechseln – und halte Ausschau nach dem <b>Goldenen Schnatz</b>! ✨
-        </div>
-        <button id="btn-welcome-go" class="btn-red" style="padding:12px 28px;font-size:15px">Hof betreten! 🎄🍂</button>
-      </div>`;
-    bodyEl.querySelector('#btn-welcome-go').addEventListener('click', () => {
-      audio.playSleighBells();
-      this.closeModal();
-      this.showToast('✨ Wische über deine reifen Felder zum Ernten!', 4000);
-    });
-  }
-
   _renderChaptersModal(titleEl, bodyEl) {
-    titleEl.textContent = '📜 Hof-Kapitel (Stück für Stück)';
+    titleEl.textContent = 'Hof-Kapitel';
     bodyEl.innerHTML = CHAPTERS.map((ch) => {
       const claimed = this.state.claimedChapters.includes(ch.id);
       const ready = !claimed && ch.check(this.state);
+      const iconKey = claimed ? 'check' : ready ? 'star' : 'scroll';
       return `
-        <div class="cozy-card" style="${ready ? 'border-color:#16A34A;background:#F0FDF4' : ''}">
-          <div class="card-thumb" style="font-size:26px">${claimed ? '✅' : ready ? '🎁' : '📜'}</div>
+        <div class="cozy-card" style="${ready ? 'border-color:var(--pine);background:#F4FFF7' : ''}">
+          <div class="card-thumb" style="color:${claimed ? 'var(--pine)' : 'var(--oak-mid)'}">${sprites.getUiIcon(iconKey)}</div>
           <div class="card-info">
             <div class="card-title">${ch.title}</div>
             <div class="card-sub">${ch.goalText}</div>
-            <div style="font-size:12px;font-weight:900;color:var(--gold-deep);margin-top:3px">Belohnung: ${ch.coins} ★ · +${ch.xp} XP</div>
+            <div style="font-size:11.5px;font-weight:800;color:var(--brass-deep);margin-top:3px">Belohnung: ${ch.coins} Münzen · +${ch.xp} XP</div>
           </div>
           ${claimed
-            ? `<button class="btn-wood" disabled>✓ Erledigt</button>`
+            ? `<button class="btn-wood" disabled>Erledigt</button>`
             : `<button class="btn-green" data-claim-ch="${ch.id}" ${ready ? '' : 'disabled'}>Abholen</button>`
           }
         </div>`;
@@ -1954,12 +1798,12 @@ class WinterhofGame {
     const def = STATIONS[st.type];
     const lvl = getLevelInfo(this.state.xp).level;
     const mastery = getStationMastery(st.craftedCount || 0);
-    titleEl.textContent = `✨ ${def.name}`;
+    titleEl.textContent = def.name;
 
     const masteryHtml = `
-      <div class="cozy-card" style="padding:8px 12px;background:#FFFBEB;border-color:var(--gold-deep);justify-content:space-between">
-        <div style="font-size:12px;font-weight:900;color:#78350F">⭐ Meisterstufe: ${mastery.label}</div>
-        <div style="font-size:11px;font-weight:800;color:var(--text-muted)">${mastery.nextAt ? `${st.craftedCount || 0}/${mastery.nextAt} hergestellt` : 'Maximal!'}</div>
+      <div class="cozy-card" style="padding:8px 12px;background:#FFFBF0;border-color:var(--brass);justify-content:space-between">
+        <div style="font-size:12px;font-weight:800;color:var(--oak-dark)">Meisterstufe: ${mastery.label}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--ink-muted)">${mastery.nextAt ? `${st.craftedCount || 0}/${mastery.nextAt}` : 'Maximal'}</div>
       </div>`;
 
     let queueHtml = '<div class="queue-strip">';
@@ -1990,12 +1834,12 @@ class WinterhofGame {
         <div class="cozy-card ${locked ? 'locked' : ''}">
           <div class="card-thumb"><img src="${sprites.getIconUrl(rid)}" alt="${r.name}" /></div>
           <div class="card-info">
-            <div class="card-title">${r.name} <span style="font-size:11px;color:var(--text-muted)">⏱ ${formatDuration(effTime)}</span></div>
+            <div class="card-title">${r.name} <span style="font-size:11px;color:var(--ink-muted);font-weight:700">${formatDuration(effTime)}</span></div>
             <div class="card-sub">${r.desc}</div>
             <div class="ing-row">${ingHtml}</div>
           </div>
           ${locked
-            ? `<button class="btn-wood" disabled>🔒 Lv.${r.unlockLevel}</button>`
+            ? `<button class="btn-wood" disabled>Lv.${r.unlockLevel}</button>`
             : `<button class="btn-green" data-craft="${rid}" ${canMake ? '' : 'disabled'}>Herstellen</button>`
           }
         </div>`;
@@ -2008,12 +1852,12 @@ class WinterhofGame {
   }
 
   _renderOrdersModal(titleEl, tabsEl, bodyEl, tab) {
-    titleEl.textContent = '📋 Wunschzettel & Erfolge';
+    titleEl.textContent = 'Aufträge & Erfolge';
     tabsEl.style.display = 'flex';
     const claimable = this.getClaimableAchievements().length;
     tabsEl.innerHTML = `
-      <button class="tab-btn ${tab === 'wishlist' ? 'active' : ''}" data-tab="wishlist">🛷 Wunschzettel</button>
-      <button class="tab-btn ${tab === 'achievements' ? 'active' : ''}" data-tab="achievements">🏆 Erfolge${claimable ? ` (${claimable})` : ''}</button>
+      <button class="tab-btn ${tab === 'wishlist' ? 'active' : ''}" data-tab="wishlist">Wunschzettel</button>
+      <button class="tab-btn ${tab === 'achievements' ? 'active' : ''}" data-tab="achievements">Erfolge${claimable ? ` (${claimable})` : ''}</button>
     `;
     tabsEl.querySelectorAll('.tab-btn').forEach((b) =>
       b.addEventListener('click', () => {
@@ -2036,18 +1880,18 @@ class WinterhofGame {
         return `
           <div class="order-card ${canDeliver ? 'ready' : ''}">
             <div class="order-top">
-              <div class="npc-avatar" style="background:${npc.avatarBg}">${npc.emoji}</div>
+              <div class="npc-avatar" style="background:${npc.avatarBg}">${getInitials(npc.name)}</div>
               <div class="card-info">
                 <div class="card-title">${npc.name}</div>
-                <div class="order-quote">„${ord.quote}“</div>
+                <div class="order-quote">"${ord.quote}"</div>
               </div>
             </div>
             <div class="ing-row">${reqHtml}</div>
             <div class="order-foot">
-              <div style="font-weight:900;font-size:13px;color:var(--gold-deep)">Belohnung: ${ord.coins} ★ · +${ord.xp} XP</div>
+              <div style="font-weight:800;font-size:12.5px;color:var(--brass-deep)">${ord.coins} Münzen · +${ord.xp} XP</div>
               <div style="display:flex;gap:6px">
-                <button class="btn-wood" style="padding:7px 10px;font-size:12px" data-skip="${ord.id}" title="Neuen Wunsch holen">↻</button>
-                <button class="btn-green" data-deliver="${ord.id}" ${canDeliver ? '' : 'disabled'}>🛷 Ausliefern</button>
+                <button class="btn-wood" style="padding:7px 10px" data-skip="${ord.id}" title="Neuen Auftrag holen">Neu</button>
+                <button class="btn-green" data-deliver="${ord.id}" ${canDeliver ? '' : 'disabled'}>Ausliefern</button>
               </div>
             </div>
           </div>`;
@@ -2060,15 +1904,15 @@ class WinterhofGame {
         const claimed = this.state.claimedAchievements.includes(a.id);
         const ready = !claimed && cur >= a.goal;
         return `
-          <div class="cozy-card" style="${ready ? 'border-color:#22C55E;background:#F6FFF8' : ''}">
-            <div class="card-thumb" style="font-size:28px">${a.icon}</div>
+          <div class="cozy-card" style="${ready ? 'border-color:var(--pine);background:#F4FFF7' : ''}">
+            <div class="card-thumb">${sprites.getUiIcon(a.icon || 'star')}</div>
             <div class="card-info">
-              <div class="card-title">${a.title} <span style="font-size:11px;color:var(--text-muted)">(${cur}/${a.goal})</span></div>
+              <div class="card-title">${a.title} <span style="font-size:11px;color:var(--ink-muted)">(${cur}/${a.goal})</span></div>
               <div class="card-sub">${a.desc}</div>
-              <div style="font-size:12px;font-weight:800;color:var(--gold-deep);margin-top:3px">Belohnung: ${a.coins} ★ · +${a.xp} XP</div>
+              <div style="font-size:11.5px;font-weight:800;color:var(--brass-deep);margin-top:3px">${a.coins} Münzen · +${a.xp} XP</div>
             </div>
             ${claimed
-              ? `<button class="btn-wood" disabled>✓ Fertig</button>`
+              ? `<button class="btn-wood" disabled>Fertig</button>`
               : `<button class="btn-green" data-claim-ach="${a.id}" ${ready ? '' : 'disabled'}>Abholen</button>`
             }
           </div>`;
@@ -2078,12 +1922,12 @@ class WinterhofGame {
   }
 
   _renderBarnModal(titleEl, tabsEl, bodyEl, tab) {
-    titleEl.textContent = '🎒 Vorrat & Hofladen';
+    titleEl.textContent = 'Vorrat & Hofladen';
     tabsEl.style.display = 'flex';
     const soldCount = this.state.standSlots.filter((s) => s && s.sold).length;
     tabsEl.innerHTML = `
-      <button class="tab-btn ${tab === 'inv' ? 'active' : ''}" data-tab="inv">🎒 Mein Vorrat</button>
-      <button class="tab-btn ${tab === 'stand' ? 'active' : ''}" data-tab="stand">🏪 Hofladen${soldCount ? ` (${soldCount} 💰)` : ''}</button>
+      <button class="tab-btn ${tab === 'inv' ? 'active' : ''}" data-tab="inv">Mein Vorrat</button>
+      <button class="tab-btn ${tab === 'stand' ? 'active' : ''}" data-tab="stand">Hofladen${soldCount ? ` (${soldCount})` : ''}</button>
     `;
     tabsEl.querySelectorAll('.tab-btn').forEach((b) =>
       b.addEventListener('click', () => {
@@ -2093,7 +1937,7 @@ class WinterhofGame {
       })
     );
 
-    const entries = Object.entries(this.state.inventory).filter(([, q]) => q > 0);
+    const entries = Object.entries(this.state.inventory).filter(([id, q]) => q > 0 && ITEMS[id]);
 
     if (tab === 'inv') {
       const used = this.getBarnUsed();
@@ -2107,34 +1951,33 @@ class WinterhofGame {
           <div class="barn-cap-top">
             <div>
               <div class="card-title">Scheunen-Lager: ${used} / ${cap}</div>
-              <div class="card-sub">${isMaxCap ? 'Maximale Kapazität erreicht!' : `Erweitern bringt +${BARN_CONFIG.stepCapacity} Plätze`}</div>
+              <div class="card-sub">${isMaxCap ? 'Maximale Kapazität erreicht.' : `Erweitern bringt +${BARN_CONFIG.stepCapacity} Plätze.`}</div>
             </div>
             ${isMaxCap
               ? `<button class="btn-wood" disabled>Max</button>`
-              : `<button id="btn-upgrade-barn" class="btn-green" ${this.state.coins >= upCost ? '' : 'disabled'}>+${BARN_CONFIG.stepCapacity} (${upCost} ★)</button>`
+              : `<button id="btn-upgrade-barn" class="btn-green" ${this.state.coins >= upCost ? '' : 'disabled'}>+${BARN_CONFIG.stepCapacity} (${upCost})</button>`
             }
           </div>
           <div class="barn-cap-track"><div class="barn-cap-fill ${fillCls}" style="width:${pct}%"></div></div>
         </div>`;
 
       if (entries.length === 0) {
-        bodyEl.innerHTML = `${capHtml}<div class="cozy-card"><div class="card-info"><div class="card-title">Dein Vorrat ist leer</div><div class="card-sub">Ernte Felder, sammle Schwammerl oder backe Leckereien!</div></div></div>`;
+        bodyEl.innerHTML = `${capHtml}<div class="cozy-card"><div class="card-info"><div class="card-title">Dein Vorrat ist leer</div><div class="card-sub">Ernte Felder oder backe Leckereien in deiner Backstube.</div></div></div>`;
         bodyEl.querySelector('#btn-upgrade-barn')?.addEventListener('click', () => this.upgradeBarn());
         return;
       }
       bodyEl.innerHTML = `
         ${capHtml}
-        <div class="card-sub">Tipp: Im <b>Hofladen</b> zahlen Dorfbewohner sogar 25 % mehr Münzen als beim Direktverkauf!</div>
+        <div class="card-sub">Im <b>Hofladen</b> zahlen Dorfbewohner 25 % mehr Münzen als beim Direktverkauf.</div>
         <div class="inv-grid">
           ${entries.map(([id, qty]) => {
             const it = ITEMS[id];
-            if (!it) return '';
             return `
               <div class="inv-tile">
                 <img src="${sprites.getIconUrl(id)}" alt="${it.name}" />
-                <div style="font-weight:900;font-size:13px">${it.name}</div>
-                <div class="inv-qty">${qty}× im Vorrat</div>
-                <button class="btn-gold" style="padding:5px 9px;font-size:11px;margin-top:3px" data-sell="${id}">Direkt: ${it.sellPrice} ★</button>
+                <div style="font-weight:800;font-size:12.5px">${it.name}</div>
+                <div class="inv-qty">${qty}x im Vorrat</div>
+                <button class="btn-gold" style="padding:5px 9px;font-size:11px;margin-top:3px" data-sell="${id}">Verkauf: ${it.sellPrice}</button>
               </div>`;
           }).join('')}
         </div>`;
@@ -2155,25 +1998,24 @@ class WinterhofGame {
         if (!slot) {
           return `
             <div class="inv-tile" style="border-style:dashed">
-              <div style="font-size:26px;opacity:0.45">🪵</div>
-              <div style="font-weight:800;font-size:12px;color:var(--text-muted)">Kiste #${idx + 1} frei</div>
-              <button class="btn-green" style="padding:5px 10px;font-size:11px;margin-top:4px" data-pick-slot="${idx}" ${entries.length ? '' : 'disabled'}>+ Ware auslegen</button>
+              <div style="font-weight:800;font-size:12px;color:var(--ink-muted);margin-top:6px">Kiste #${idx + 1}</div>
+              <div class="card-sub">Frei</div>
+              <button class="btn-green" style="padding:5px 10px;font-size:11px;margin-top:4px" data-pick-slot="${idx}" ${entries.length ? '' : 'disabled'}>Auslegen</button>
             </div>`;
         }
         if (slot.sold) {
           return `
-            <div class="inv-tile" style="border-color:#22C55E;background:#F0FDF4">
-              <div style="font-size:26px">${slot.buyerEmoji || '💰'}</div>
-              <div style="font-weight:900;font-size:12px">Verkauft an ${slot.buyerName}!</div>
-              <button class="btn-gold" style="padding:6px 10px;font-size:12px;margin-top:4px" data-collect-slot="${idx}">+${slot.price} ★ abholen</button>
+            <div class="inv-tile" style="border-color:var(--pine);background:#F4FFF7">
+              <div style="font-weight:800;font-size:12px;margin-top:4px">Verkauft an ${slot.buyerName}</div>
+              <button class="btn-gold" style="padding:6px 10px;font-size:12px;margin-top:6px" data-collect-slot="${idx}">+${slot.price} abholen</button>
             </div>`;
         }
         const left = Math.max(1, Math.ceil((slot.sellAt - Date.now()) / 1000));
         return `
-          <div class="inv-tile" style="background:#FFFBEB;border-color:var(--gold-deep)">
+          <div class="inv-tile" style="background:#FFFBF0;border-color:var(--brass)">
             <img src="${sprites.getIconUrl(slot.itemId)}" alt="" />
-            <div style="font-weight:900;font-size:12px">${slot.qty}× ${ITEMS[slot.itemId].name}</div>
-            <div style="font-size:11px;color:var(--gold-deep);font-weight:800">${slot.price} ★ · ~${left}s</div>
+            <div style="font-weight:800;font-size:12px">${slot.qty}x ${ITEMS[slot.itemId].name}</div>
+            <div style="font-size:11px;color:var(--brass-deep);font-weight:800">${slot.price} · ${left}s</div>
           </div>`;
       }).join('');
 
@@ -2181,21 +2023,21 @@ class WinterhofGame {
       if (this.ui.activeModal.data?.pickingSlot !== undefined) {
         const sIdx = this.ui.activeModal.data.pickingSlot;
         pickerHtml = `
-          <div class="cozy-card" style="flex-direction:column;align-items:stretch;background:#FFFDF0">
-            <div class="card-title">Was möchtest du in Kiste #${sIdx + 1} auslegen?</div>
+          <div class="cozy-card" style="flex-direction:column;align-items:stretch;background:#FFFBF0">
+            <div class="card-title">Ware für Kiste #${sIdx + 1} wählen:</div>
             <div class="ing-row">
               ${entries.map(([id, q]) => {
                 const qty = Math.min(q, 2);
                 const price = Math.round(ITEMS[id].sellPrice * qty * 1.25);
                 return `<button class="ing-pill ok" style="cursor:pointer;padding:6px 10px" data-put-item="${id}" data-put-slot="${sIdx}">
-                  <img src="${sprites.getIconUrl(id)}" alt="" />${qty}× ${ITEMS[id].name} (${price}★)
+                  <img src="${sprites.getIconUrl(id)}" alt="" />${qty}x ${ITEMS[id].name} (${price})
                 </button>`;
               }).join('')}
             </div>
           </div>`;
       }
 
-      bodyEl.innerHTML = `<div class="card-sub">Stelle Leckereien &amp; Ernten in deinen Hofladen – Dorfbewohner kaufen sie für +25 % Bonus-Münzen!</div>${pickerHtml}<div class="inv-grid">${cratesHtml}</div>`;
+      bodyEl.innerHTML = `<div class="card-sub">Stelle Waren in deinen Hofladen – Dorfbewohner kaufen sie für +25 % Bonus-Münzen.</div>${pickerHtml}<div class="inv-grid">${cratesHtml}</div>`;
       bodyEl.querySelectorAll('[data-pick-slot]').forEach((b) => b.addEventListener('click', () => { audio.playTap(); this.ui.activeModal.data = { pickingSlot: Number(b.dataset.pickSlot) }; this.renderActiveModal(); }));
       bodyEl.querySelectorAll('[data-put-item]').forEach((b) => b.addEventListener('click', () => { const sIdx = Number(b.dataset.putSlot); this.ui.activeModal.data = {}; this.listItemOnStand(sIdx, b.dataset.putItem); }));
       bodyEl.querySelectorAll('[data-collect-slot]').forEach((b) => b.addEventListener('click', () => this.collectStandSlot(Number(b.dataset.collectSlot))));
@@ -2203,15 +2045,14 @@ class WinterhofGame {
   }
 
   _renderShopModal(titleEl, tabsEl, bodyEl, tab) {
-    titleEl.textContent = '🛒 Bau- & Deko-Shop';
+    titleEl.textContent = 'Bau- & Deko-Shop';
     const lvl = getLevelInfo(this.state.xp).level;
     tabsEl.style.display = 'flex';
     const tabs = [
-      { id: 'buildings', label: '🏠 Gebäude' },
-      { id: 'animals', label: '🦌 Tiere' },
-      { id: 'autumn_magic', label: '🎃 Herbst & Magie' },
-      { id: 'winter_deco', label: '⛄ Winter' },
-      { id: 'land', label: '🗺️ Land' }
+      { id: 'buildings', label: 'Gebäude' },
+      { id: 'animals', label: 'Tiere' },
+      { id: 'deco', label: 'Deko' },
+      { id: 'land', label: 'Land' }
     ];
     tabsEl.innerHTML = tabs.map((t) =>
       `<button class="tab-btn ${t.id === tab ? 'active' : ''}" data-tab="${t.id}">${t.label}</button>`
@@ -2225,16 +2066,16 @@ class WinterhofGame {
     );
 
     if (tab === 'buildings') {
-      const fieldCost = 25 + Math.max(0, this.state.fields.length - 6) * 18;
+      const fieldCost = 25 + Math.max(0, this.state.fields.length - 4) * 18;
       const canMoreFields = this.state.fields.length < 20;
       let html = `
         <div class="cozy-card">
-          <div class="card-thumb"><img src="${sprites.getIconUrl('snow_field_plot')}" alt="Feld" /></div>
+          <div class="card-thumb"><img src="${sprites.getIconUrl('snow_field_plot')}" alt="Ackerfeld" /></div>
           <div class="card-info">
-            <div class="card-title">Neues Ackerfeld <span style="font-size:11px;color:var(--text-muted)">(${this.state.fields.length}/20)</span></div>
-            <div class="card-sub">Für Goldweizen, Schwammerl, Kürbisse, Matcha, Beeren &amp; mehr.</div>
+            <div class="card-title">Neues Ackerfeld <span style="font-size:11px;color:var(--ink-muted)">(${this.state.fields.length}/20)</span></div>
+            <div class="card-sub">Für Goldweizen, Winterbeeren, Matcha, Kakao, Zimt und Zuckerstangen.</div>
           </div>
-          <button class="btn-green" id="buy-field" ${canMoreFields && this.state.coins >= fieldCost ? '' : 'disabled'}>${canMoreFields ? `${fieldCost} ★` : 'Max'}</button>
+          <button class="btn-green" id="buy-field" ${canMoreFields && this.state.coins >= fieldCost ? '' : 'disabled'}>${canMoreFields ? `${fieldCost}` : 'Max'}</button>
         </div>`;
 
       for (const st of this.state.stations) {
@@ -2248,10 +2089,10 @@ class WinterhofGame {
               <div class="card-sub">${def.desc}</div>
             </div>
             ${st.built
-              ? `<button class="btn-wood" disabled>✓ Gebaut</button>`
+              ? `<button class="btn-wood" disabled>Gebaut</button>`
               : locked
-                ? `<button class="btn-wood" disabled>🔒 Lv.${def.unlockLevel}</button>`
-                : `<button class="btn-green" data-buy-st="${st.type}" ${this.state.coins >= def.cost ? '' : 'disabled'}>${def.cost} ★</button>`
+                ? `<button class="btn-wood" disabled>Lv.${def.unlockLevel}</button>`
+                : `<button class="btn-green" data-buy-st="${st.type}" ${this.state.coins >= def.cost ? '' : 'disabled'}>${def.cost}</button>`
             }
           </div>`;
       }
@@ -2272,14 +2113,14 @@ class WinterhofGame {
           <div class="cozy-card ${locked ? 'locked' : ''}">
             <div class="card-thumb"><img src="${sprites.getIconUrl(an.sprite)}" alt="${an.name}" /></div>
             <div class="card-info">
-              <div class="card-title">${an.name} <span style="font-size:11px;color:var(--text-muted)">(${count}/${an.maxCount})</span></div>
+              <div class="card-title">${an.name} <span style="font-size:11px;color:var(--ink-muted)">(${count}/${an.maxCount})</span></div>
               <div class="card-sub">${an.desc}</div>
             </div>
             ${locked
-              ? `<button class="btn-wood" disabled>🔒 Lv.${an.unlockLevel}</button>`
+              ? `<button class="btn-wood" disabled>Lv.${an.unlockLevel}</button>`
               : full
                 ? `<button class="btn-wood" disabled>Max</button>`
-                : `<button class="btn-green" data-buy-an="${an.id}" ${this.state.coins >= an.cost ? '' : 'disabled'}>${an.cost} ★</button>`
+                : `<button class="btn-green" data-buy-an="${an.id}" ${this.state.coins >= an.cost ? '' : 'disabled'}>${an.cost}</button>`
             }
           </div>`;
       }).join('');
@@ -2289,25 +2130,22 @@ class WinterhofGame {
           this.enterPlaceMode({ kind: 'animal', type: def.id, label: def.name, cost: def.cost, size: 1 });
         })
       );
-    } else if (tab === 'autumn_magic' || tab === 'winter_deco') {
-      const decos = Object.values(DECORATIONS).filter((d) =>
-        tab === 'autumn_magic' ? d.theme !== 'Winter' : d.theme === 'Winter'
-      );
-      bodyEl.innerHTML = decos.map((d) => {
+    } else if (tab === 'deco') {
+      bodyEl.innerHTML = Object.values(DECORATIONS).map((d) => {
         const stored = this.state.storedDecos[d.id] || 0;
         const locked = d.unlockLevel > lvl && stored === 0;
         return `
           <div class="cozy-card ${locked ? 'locked' : ''}">
             <div class="card-thumb"><img src="${sprites.getIconUrl(d.sprite)}" alt="${d.name}" /></div>
             <div class="card-info">
-              <div class="card-title">${d.name} <span style="font-size:11px;color:var(--festive-green)">${stored > 0 ? `📦 ${stored}× im Lager` : `+${d.xp} XP`}</span></div>
+              <div class="card-title">${d.name} <span style="font-size:11px;color:var(--pine)">${stored > 0 ? `${stored}x im Lager` : `+${d.xp} XP`}</span></div>
               <div class="card-sub">${d.desc}</div>
             </div>
             ${locked
-              ? `<button class="btn-wood" disabled>🔒 Lv.${d.unlockLevel}</button>`
+              ? `<button class="btn-wood" disabled>Lv.${d.unlockLevel}</button>`
               : stored > 0
                 ? `<button class="btn-gold" data-buy-deco="${d.id}">Gratis</button>`
-                : `<button class="btn-green" data-buy-deco="${d.id}" ${this.state.coins >= d.cost ? '' : 'disabled'}>${d.cost} ★</button>`
+                : `<button class="btn-green" data-buy-deco="${d.id}" ${this.state.coins >= d.cost ? '' : 'disabled'}>${d.cost}</button>`
             }
           </div>`;
       }).join('');
@@ -2324,16 +2162,16 @@ class WinterhofGame {
         const locked = z.unlockLevel > lvl;
         return `
           <div class="cozy-card ${locked && !isOpen ? 'locked' : ''}">
-            <div class="card-thumb" style="font-size:28px">🗺️</div>
+            <div class="card-thumb">${sprites.getUiIcon('land')}</div>
             <div class="card-info">
               <div class="card-title">${z.name}</div>
               <div class="card-sub">${z.desc}</div>
             </div>
             ${isOpen
-              ? `<button class="btn-wood" disabled>✓ Frei</button>`
+              ? `<button class="btn-wood" disabled>Frei</button>`
               : locked
-                ? `<button class="btn-wood" disabled>🔒 Lv.${z.unlockLevel}</button>`
-                : `<button class="btn-green" data-buy-land="${z.id}" ${this.state.coins >= z.cost ? '' : 'disabled'}>${z.cost} ★</button>`
+                ? `<button class="btn-wood" disabled>Lv.${z.unlockLevel}</button>`
+                : `<button class="btn-green" data-buy-land="${z.id}" ${this.state.coins >= z.cost ? '' : 'disabled'}>${z.cost}</button>`
             }
           </div>`;
       }).join('');
@@ -2344,11 +2182,11 @@ class WinterhofGame {
   }
 
   _renderGiftsModal(titleEl, tabsEl, bodyEl, tab) {
-    titleEl.textContent = '🦉 Eulenpost – Päckchen schicken';
+    titleEl.textContent = 'Winterpost';
     tabsEl.style.display = 'flex';
     tabsEl.innerHTML = `
-      <button class="tab-btn ${tab === 'send' ? 'active' : ''}" data-tab="send">🎁 Päckchen verschicken</button>
-      <button class="tab-btn ${tab === 'open' ? 'active' : ''}" data-tab="open">📬 Päckchen öffnen</button>
+      <button class="tab-btn ${tab === 'send' ? 'active' : ''}" data-tab="send">Päckchen senden</button>
+      <button class="tab-btn ${tab === 'open' ? 'active' : ''}" data-tab="open">Päckchen öffnen</button>
     `;
     tabsEl.querySelectorAll('.tab-btn').forEach((b) =>
       b.addEventListener('click', () => { audio.playTap(); this.ui.activeModal.tab = b.dataset.tab; this.renderActiveModal(); })
@@ -2357,54 +2195,54 @@ class WinterhofGame {
     if (tab === 'send') {
       const draft = this.ui.giftDraft;
       const totalSelected = Object.values(draft.items).reduce((a, b) => a + b, 0);
-      const invEntries = Object.entries(this.state.inventory).filter(([, q]) => q > 0);
+      const invEntries = Object.entries(this.state.inventory).filter(([id, q]) => q > 0 && ITEMS[id]);
       let html = `
-        <div class="card-sub">Die Schnee-Eule trägt bis zu 3 Leckereien mit deiner persönlichen Nachricht direkt per WhatsApp-Link oder Code ins Dorf deiner Freundin / deines Freundes!</div>
+        <div class="card-sub">Packe bis zu 3 Waren mit einer persönlichen Nachricht als Link oder Code.</div>
         <div>
-          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Dein Name:</label>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Absender:</label>
           <input id="gift-from" class="cozy-input" value="${this._esc(this.state.playerName)}" maxlength="24" />
         </div>
         <div>
-          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Liebe Nachricht:</label>
-          <textarea id="gift-note" class="cozy-textarea" maxlength="120" placeholder="Hab dir frischen Matcha-Latte &amp; Waffeln geschickt! 🍵🧇❤️">${this._esc(draft.note)}</textarea>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Nachricht:</label>
+          <textarea id="gift-note" class="cozy-textarea" maxlength="120" placeholder="Kleine Stärkung aus dem Winterhof.">${this._esc(draft.note)}</textarea>
         </div>
-        <div style="font-size:13px;font-weight:900">Ausgewählt (${totalSelected}/3):</div>
+        <div style="font-size:12.5px;font-weight:800">Ausgewählt (${totalSelected}/3):</div>
         <div class="inv-grid">
-          ${invEntries.length === 0 ? '<div class="card-sub">Ernte oder backe erst etwas!</div>' : invEntries.map(([id, qty]) => {
+          ${invEntries.length === 0 ? '<div class="card-sub">Ernte oder backe erst etwas.</div>' : invEntries.map(([id, qty]) => {
             const sel = draft.items[id] || 0;
             return `
-              <div class="inv-tile" style="${sel > 0 ? 'border-color:var(--festive-red);background:#FFF5F5' : ''}">
+              <div class="inv-tile" style="${sel > 0 ? 'border-color:var(--crimson);background:#FFF5F5' : ''}">
                 <img src="${sprites.getIconUrl(id)}" alt="" />
                 <div style="font-weight:800;font-size:12px">${ITEMS[id].name}</div>
-                <div style="font-size:11px;color:var(--text-muted)">Vorrat: ${qty}</div>
+                <div style="font-size:11px;color:var(--ink-muted)">Vorrat: ${qty}</div>
                 <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
-                  <button class="btn-wood" style="padding:3px 9px" data-gdec="${id}" ${sel <= 0 ? 'disabled' : ''}>−</button>
+                  <button class="btn-wood" style="padding:3px 9px" data-gdec="${id}" ${sel <= 0 ? 'disabled' : ''}>-</button>
                   <span style="font-weight:900;min-width:16px">${sel}</span>
                   <button class="btn-green" style="padding:3px 9px" data-ginc="${id}" ${sel >= qty || totalSelected >= 3 ? 'disabled' : ''}>+</button>
                 </div>
               </div>`;
           }).join('')}
         </div>
-        <button id="btn-pack-gift" class="btn-red" style="width:100%;padding:12px;font-size:15px" ${totalSelected === 0 ? 'disabled' : ''}>🦉 Eulenpost abschicken &amp; Code erstellen</button>`;
+        <button id="btn-pack-gift" class="btn-red" style="width:100%;padding:11px;font-size:14px" ${totalSelected === 0 ? 'disabled' : ''}>Päckchen packen &amp; Code erstellen</button>`;
 
       if (draft.generatedCode) {
         const shareUrl = buildGiftShareUrl(draft.generatedCode);
         html += `
-          <div class="cozy-card" style="flex-direction:column;align-items:stretch;background:#FFFBEB;border-color:var(--gold-deep)">
-            <div class="card-title">✨ Deine Eulenpost ist abflugbereit!</div>
+          <div class="cozy-card" style="flex-direction:column;align-items:stretch;background:#FFFBF0;border-color:var(--brass)">
+            <div class="card-title">Dein Päckchen ist versandbereit</div>
             <div class="code-box">${this._esc(draft.generatedCode)}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              ${navigator.share ? `<button id="btn-share-native" class="btn-green" style="flex:1">📤 Per WhatsApp teilen</button>` : ''}
-              <button id="btn-copy-link" class="btn-gold" style="flex:1">🔗 Link kopieren</button>
-              <button id="btn-copy-code" class="btn-wood" style="flex:1">📋 Code kopieren</button>
+              ${navigator.share ? `<button id="btn-share-native" class="btn-green" style="flex:1">Teilen</button>` : ''}
+              <button id="btn-copy-link" class="btn-gold" style="flex:1">Link kopieren</button>
+              <button id="btn-copy-code" class="btn-wood" style="flex:1">Code kopieren</button>
             </div>
           </div>`;
         setTimeout(() => {
           document.getElementById('btn-share-native')?.addEventListener('click', () => {
-            navigator.share({ title: '🦉 Eulenpost für deinen Zauberhof!', text: `${this.state.playerName} schickt dir ein Päckchen: „${draft.note || 'Liebe Grüße!'}“\nCode: ${draft.generatedCode}`, url: shareUrl }).catch(() => {});
+            navigator.share({ title: 'Winterhof Post', text: `${this.state.playerName} schickt dir ein Päckchen: "${draft.note || 'Viele Grüße!'}"\nCode: ${draft.generatedCode}`, url: shareUrl }).catch(() => {});
           });
-          document.getElementById('btn-copy-link')?.addEventListener('click', () => { navigator.clipboard?.writeText(shareUrl).then(() => this.showToast('🔗 Eulenpost-Link kopiert!')); });
-          document.getElementById('btn-copy-code')?.addEventListener('click', () => { navigator.clipboard?.writeText(draft.generatedCode).then(() => this.showToast('📋 Päckchen-Code kopiert!')); });
+          document.getElementById('btn-copy-link')?.addEventListener('click', () => { navigator.clipboard?.writeText(shareUrl).then(() => this.showToast('Link kopiert.')); });
+          document.getElementById('btn-copy-code')?.addEventListener('click', () => { navigator.clipboard?.writeText(draft.generatedCode).then(() => this.showToast('Code kopiert.')); });
         }, 0);
       }
 
@@ -2416,80 +2254,79 @@ class WinterhofGame {
       bodyEl.querySelector('#btn-pack-gift')?.addEventListener('click', () => {
         for (const [id, q] of Object.entries(draft.items)) if ((this.state.inventory[id] || 0) < q) return;
         for (const [id, q] of Object.entries(draft.items)) this.removeItem(id, q);
-        const code = encodeGiftParcel({ from: this.state.playerName || 'Weihnachtsfreund', note: draft.note || 'Ein liebes Päckchen für dich! 🦉❤️', items: draft.items });
+        const code = encodeGiftParcel({ from: this.state.playerName || 'Winterhof-Gast', note: draft.note || 'Ein kleines Päckchen für dich.', items: draft.items });
         draft.items = {}; draft.generatedCode = code;
-        audio.playGiftOpen(); this.addXp(12); this.saveState(); this.renderActiveModal();
+        audio.playGiftOpen(); this.addXp(12); this.saveState(); this.updateHUD(); this.renderActiveModal();
       });
     } else {
       bodyEl.innerHTML = `
-        <div class="card-sub">Hast du einen Eulenpost-Code (<code>WH-...</code>) oder Link bekommen? Füge ihn hier ein!</div>
-        <textarea id="gift-redeem-input" class="cozy-textarea" placeholder="WH-... oder ganzen Link hier einfügen"></textarea>
-        <button id="btn-redeem-gift" class="btn-green" style="width:100%;padding:12px;font-size:15px">🦉 Schnee-Eule landen lassen!</button>`;
+        <div class="card-sub">Füge hier einen erhaltenen Päckchen-Code (<code>WH-...</code>) oder Link ein.</div>
+        <textarea id="gift-redeem-input" class="cozy-textarea" placeholder="WH-... oder Link einfügen"></textarea>
+        <button id="btn-redeem-gift" class="btn-green" style="width:100%;padding:11px;font-size:14px">Päckchen empfangen</button>`;
       bodyEl.querySelector('#btn-redeem-gift').addEventListener('click', () => {
         const parcel = decodeGiftParcel(bodyEl.querySelector('#gift-redeem-input').value);
-        if (!parcel) { this.showToast('Der Code scheint leider nicht gültig zu sein.'); return; }
+        if (!parcel) { this.showToast('Der Code ist leider nicht gültig.'); return; }
         this.receiveGiftParcel(parcel);
       });
     }
   }
 
   _renderGiftOpenedModal(titleEl, bodyEl, parcel) {
-    titleEl.textContent = '🦉 Eulenpost gelandet!';
-    const itemsHtml = Object.entries(parcel.items).map(([id, qty]) => `
-      <span class="ing-pill ok" style="font-size:14px;padding:5px 12px">
-        <img src="${sprites.getIconUrl(id)}" style="width:24px;height:24px" alt="" />+${qty} ${ITEMS[id].name}
-      </span>`).join('');
+    titleEl.textContent = 'Winterpost angekommen';
+    const itemsHtml = Object.entries(parcel.items)
+      .filter(([id]) => ITEMS[id])
+      .map(([id, qty]) => `
+        <span class="ing-pill ok" style="font-size:13px;padding:5px 11px">
+          <img src="${sprites.getIconUrl(id)}" style="width:22px;height:22px" alt="" />+${qty} ${ITEMS[id].name}
+        </span>`).join('');
     bodyEl.innerHTML = `
-      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:10px;background:#FFFDF0">
-        <div style="font-size:44px">🦉💌🎁</div>
-        <div style="font-size:17px;font-weight:900">Von ${this._esc(parcel.from)}</div>
-        <div style="font-size:15px;font-style:italic;color:var(--text-dark);background:#FFF;padding:10px 14px;border-radius:14px;border:2px solid var(--cream-border);width:100%">„${this._esc(parcel.note)}“</div>
+      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:10px;background:#FFFBF0">
+        <div style="width:52px;height:52px">${sprites.getUiIcon('mail')}</div>
+        <div style="font-size:16px;font-weight:800">Von ${this._esc(parcel.from)}</div>
+        <div style="font-size:14px;font-style:italic;color:var(--ink);background:#FFF;padding:10px 14px;border-radius:12px;border:1.5px solid var(--parchment-border);width:100%">"${this._esc(parcel.note)}"</div>
         <div class="ing-row" style="justify-content:center">${itemsHtml}</div>
-        <button id="btn-gift-yay" class="btn-green" style="margin-top:6px;padding:11px 26px;font-size:15px">Danke! In den Vorrat ✨</button>
+        <button id="btn-gift-yay" class="btn-green" style="margin-top:6px;padding:10px 24px">In den Vorrat</button>
       </div>`;
     bodyEl.querySelector('#btn-gift-yay').addEventListener('click', () => this.closeModal());
   }
 
   _renderDailyChestModal(titleEl, bodyEl, reward) {
-    titleEl.textContent = 'Tägliche Schatztruhe geöffnet!';
+    titleEl.textContent = 'Tägliche Schatztruhe';
     const itemsHtml = Object.entries(reward.items).map(([id, qty]) => `
       <span class="ing-pill ok" style="font-size:13px;padding:5px 11px">
         <img src="${sprites.getIconUrl(id)}" style="width:22px;height:22px" alt="" />+${qty} ${ITEMS[id].name}
       </span>`).join('');
     bodyEl.innerHTML = `
-      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:10px;background:#FFFDF0">
-        <img src="${sprites.getIconUrl('treasure_chest')}" alt="Schatztruhe" style="width:82px;height:78px;object-fit:contain" />
-        <div style="font-size:17px;font-weight:900;color:#8A1C17">Serie: Tag ${reward.streak} in Folge!</div>
-        <div style="font-size:15px;font-weight:900;color:var(--gold-deep)">+${reward.coins} ★ Münzen · +${reward.xp} XP</div>
+      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:10px;background:#FFFBF0">
+        <img src="${sprites.getIconUrl('treasure_chest')}" alt="Schatztruhe" style="width:76px;height:72px;object-fit:contain" />
+        <div style="font-size:16px;font-weight:800;color:var(--oak-dark)">Serie: Tag ${reward.streak}</div>
+        <div style="font-size:14.5px;font-weight:800;color:var(--brass-deep)">+${reward.coins} Münzen · +${reward.xp} XP</div>
         <div class="ing-row" style="justify-content:center">${itemsHtml}</div>
-        <button id="btn-chest-ok" class="btn-green" style="margin-top:6px;padding:11px 26px;font-size:15px">Wunderbar!</button>
+        <button id="btn-chest-ok" class="btn-green" style="margin-top:6px;padding:10px 24px">Einsammeln</button>
       </div>`;
     bodyEl.querySelector('#btn-chest-ok').addEventListener('click', () => this.closeModal());
   }
 
   _renderVillagerOfferModal(titleEl, bodyEl, villagerId) {
     const v = this.world.villagers.find((x) => x.id === villagerId);
-    if (!v || !v.offer) {
-      this.closeModal();
-      return;
-    }
+    if (!v || !v.offer) { this.closeModal(); return; }
     const it = ITEMS[v.offer.itemId];
     const have = this.state.inventory[v.offer.itemId] || 0;
     const canSell = have >= v.offer.qty;
-    titleEl.textContent = `Haustür-Angebot: ${v.name}`;
+    titleEl.textContent = `Angebot: ${v.name}`;
     bodyEl.innerHTML = `
-      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:12px;background:#FFFDF0">
-        <div class="npc-avatar" style="background:${v.coat};width:56px;height:56px;font-size:30px">${v.emoji}</div>
-        <div style="font-size:15px;font-weight:800;color:var(--text-dark)">„Hallo! Ich würde dir sehr gern <b>${v.offer.qty}× ${it.name}</b> abkaufen!“</div>
+      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:12px;background:#FFFBF0">
+        <div class="npc-avatar" style="background:${v.coat};width:52px;height:52px;font-size:18px">${getInitials(v.name)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--ink)">"Hallo! Ich würde dir gern <b>${v.offer.qty}x ${it.name}</b> abkaufen."</div>
         <div class="ing-row" style="justify-content:center">
-          <span class="ing-pill ${canSell ? 'ok' : 'missing'}" style="font-size:14px;padding:6px 12px">
-            <img src="${sprites.getIconUrl(it.id)}" style="width:24px;height:24px" alt="" />${have}/${v.offer.qty} ${it.name}
+          <span class="ing-pill ${canSell ? 'ok' : 'missing'}" style="font-size:13.5px;padding:5px 12px">
+            <img src="${sprites.getIconUrl(it.id)}" style="width:22px;height:22px" alt="" />${have}/${v.offer.qty} ${it.name}
           </span>
         </div>
-        <div style="font-size:16px;font-weight:900;color:var(--gold-deep)">Angebot: +${v.offer.price} ★ · +${v.offer.xp} XP</div>
+        <div style="font-size:15px;font-weight:800;color:var(--brass-deep)">Angebot: +${v.offer.price} Münzen · +${v.offer.xp} XP</div>
         <div style="display:flex;gap:10px;width:100%">
-          <button id="btn-offer-decline" class="btn-wood" style="flex:1">Nein danke</button>
-          <button id="btn-offer-accept" class="btn-green" style="flex:1" ${canSell ? '' : 'disabled'}>Verkaufen (+${v.offer.price} ★)</button>
+          <button id="btn-offer-decline" class="btn-wood" style="flex:1">Ablehnen</button>
+          <button id="btn-offer-accept" class="btn-green" style="flex:1" ${canSell ? '' : 'disabled'}>Verkaufen (+${v.offer.price})</button>
         </div>
       </div>`;
     bodyEl.querySelector('#btn-offer-accept').addEventListener('click', () => this.acceptVillagerOffer(villagerId));
@@ -2498,12 +2335,12 @@ class WinterhofGame {
 
   _renderVillageModal(titleEl, tabsEl, bodyEl, tab) {
     const info = getLevelInfo(this.state.xp);
-    titleEl.textContent = `🏡 ${this.state.villageName}`;
+    titleEl.textContent = this.state.villageName;
     tabsEl.style.display = 'flex';
     tabsEl.innerHTML = `
-      <button class="tab-btn ${tab === 'overview' ? 'active' : ''}" data-tab="overview">🏡 Übersicht</button>
+      <button class="tab-btn ${tab === 'overview' ? 'active' : ''}" data-tab="overview">Übersicht</button>
       <button class="tab-btn ${tab === 'album' ? 'active' : ''}" data-tab="album">Sammelbuch</button>
-      <button class="tab-btn ${tab === 'animals' ? 'active' : ''}" data-tab="animals">🐾 Tiere</button>
+      <button class="tab-btn ${tab === 'animals' ? 'active' : ''}" data-tab="animals">Tiere</button>
     `;
     tabsEl.querySelectorAll('.tab-btn').forEach((b) =>
       b.addEventListener('click', () => { audio.playTap(); this.ui.activeModal.tab = b.dataset.tab; this.renderActiveModal(); })
@@ -2512,32 +2349,23 @@ class WinterhofGame {
     if (tab === 'overview') {
       const chestReady = this.isDailyChestReady();
       bodyEl.innerHTML = `
-        <div class="cozy-card" style="flex-direction:column;align-items:stretch;gap:6px">
-          <div class="card-title">Level ${info.level} · Dorfbaum-Stufe ${info.treeStage}/3 ⭐</div>
-          <div class="card-sub">${info.next ? `Noch ${info.next.xpNeeded - this.state.xp} XP bis Level ${info.next.level}: ${info.next.unlockText}` : 'Dein Dorfbaum leuchtet in voller Pracht!'}</div>
+        <div class="cozy-card" style="flex-direction:column;align-items:stretch;gap:5px">
+          <div class="card-title">Level ${info.level} · Weihnachtsbaum-Stufe ${info.treeStage}/3</div>
+          <div class="card-sub">${info.next ? `Noch ${info.next.xpNeeded - this.state.xp} XP bis Level ${info.next.level}: ${info.next.unlockText}` : 'Dein Weihnachtsbaum erstrahlt in voller Pracht.'}</div>
         </div>
         ${chestReady ? `
-          <div class="cozy-card" style="border-color:var(--gold-deep);background:#FFFBEB;justify-content:space-between">
+          <div class="cozy-card" style="border-color:var(--brass);background:#FFFBF0;justify-content:space-between">
             <div class="card-info">
-              <div class="card-title">Tägliche Schatztruhe wartet!</div>
-              <div class="card-sub">Aktuelle Serie: ${this.state.dailyStreak || 0} Tage · Gratis Münzen &amp; Zutaten!</div>
+              <div class="card-title">Tägliche Schatztruhe am Teichsteg</div>
+              <div class="card-sub">Serie: ${this.state.dailyStreak || 0} Tage · Münzen &amp; Vorräte</div>
             </div>
             <button id="btn-claim-chest-modal" class="btn-gold">Öffnen</button>
           </div>` : ''}
         <div>
-          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Name deines Hofes:</label>
+          <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Hofname:</label>
           <div style="display:flex;gap:8px">
             <input id="inp-village-name" class="cozy-input" maxlength="24" value="${this._esc(this.state.villageName)}" />
             <button id="btn-save-vname" class="btn-green">Speichern</button>
-          </div>
-        </div>
-        <div class="cozy-card" style="flex-direction:column;align-items:stretch;gap:6px">
-          <div class="card-title">✨ Geheimtipps auf dem Winterhof</div>
-          <div class="card-sub">
-            • <b>Mühle &amp; Molkerei:</b> Mahle Goldweizen zu Mehl und rühre Wintermilch zu Butter &amp; Mascarpone!<br/>
-            • <b>Herbst &amp; Winter:</b> Oben rechts wechseln – sogar die Hausdächer schmücken sich mit Herbstlaub!<br/>
-            • <b>Dorfbewohner:</b> Tippe Oma Hilde, Rudi oder Leo an – sie bringen Haustür-Kaufangebote &amp; Trinkgeld!<br/>
-            • <b>Alles-ernten-Sense:</b> Ab Level 3 erscheint rechts ein Sense-Button zum Blitz-Ernten aller Felder!
           </div>
         </div>`;
       bodyEl.querySelector('#btn-claim-chest-modal')?.addEventListener('click', () => this.claimDailyChest());
@@ -2546,7 +2374,7 @@ class WinterhofGame {
         if (val) {
           this.state.villageName = val.slice(0, 24);
           this.saveState(); this.updateHUD();
-          this.showToast(`Hof heißt jetzt „${this.state.villageName}“! ✨`);
+          this.showToast(`Hofname gespeichert: "${this.state.villageName}".`);
           this.closeModal();
         }
       });
@@ -2568,25 +2396,25 @@ class WinterhofGame {
             return `
               <div class="album-tile ${found ? '' : 'undiscovered'}" title="${this._esc(it.desc)}">
                 ${found ? `<img src="${sprites.getIconUrl(it.id)}" alt="${it.name}" />` : `<div class="album-q">?</div>`}
-                <div style="font-weight:900;font-size:11.5px;line-height:1.15">${found ? it.name : 'Unentdeckt'}</div>
-                <div style="font-size:10px;color:var(--text-muted)">${found ? `${it.sellPrice}★ · ${sourceLabel}` : `Ab Lv.${it.unlockLevel}`}</div>
+                <div style="font-weight:800;font-size:11.5px;line-height:1.15">${found ? it.name : 'Unentdeckt'}</div>
+                <div style="font-size:10px;color:var(--ink-muted)">${found ? `${it.sellPrice} · ${sourceLabel}` : `Ab Lv.${it.unlockLevel}`}</div>
               </div>`;
           }).join('')}
         </div>`;
 
       const crops = allItems.filter((i) => i.category === 'crop');
-      const basics = allItems.filter((i) => i.category === 'animal' || i.station === 'mill_dairy');
-      const treats = allItems.filter((i) => i.category === 'crafted' && i.station !== 'mill_dairy');
+      const animalProds = allItems.filter((i) => i.category === 'animal');
+      const treats = allItems.filter((i) => i.category === 'crafted');
 
       const secretsHtml = `
-        <div class="album-section-title">Magische Geheimnisse (${discSecretsCount}/${ALBUM_SECRETS.length})</div>
+        <div class="album-section-title">Meilensteine (${discSecretsCount}/${ALBUM_SECRETS.length})</div>
         ${ALBUM_SECRETS.map((sc) => {
           const ok = sc.check(this.state);
           return `
-            <div class="cozy-card" style="${ok ? 'border-color:#22C55E;background:#F6FFF8' : 'opacity:0.72'}">
-              <div class="card-thumb" style="font-weight:900;font-size:16px;color:${ok ? '#15803D' : 'var(--text-muted)'}">${ok ? 'OK' : '?'}</div>
+            <div class="cozy-card" style="${ok ? 'border-color:var(--pine);background:#F4FFF7' : 'opacity:0.7'}">
+              <div class="card-thumb" style="font-weight:900;font-size:14px;color:${ok ? 'var(--pine)' : 'var(--ink-muted)'}">${ok ? sprites.getUiIcon('check') : '?'}</div>
               <div class="card-info">
-                <div class="card-title">${ok ? sc.title : 'Geheimnis noch verborgen'}</div>
+                <div class="card-title">${ok ? sc.title : 'Noch verborgen'}</div>
                 <div class="card-sub">${sc.desc}</div>
               </div>
             </div>`;
@@ -2596,13 +2424,13 @@ class WinterhofGame {
         <div class="barn-cap-card">
           <div class="barn-cap-top">
             <div class="card-title">Rezept- &amp; Sammelbuch</div>
-            <div style="font-weight:900;font-size:13px;color:var(--gold-deep)">${foundAll} / ${totalAll} (${pct}%)</div>
+            <div style="font-weight:800;font-size:12.5px;color:var(--brass-deep)">${foundAll} / ${totalAll} (${pct}%)</div>
           </div>
           <div class="barn-cap-track"><div class="barn-cap-fill" style="width:${pct}%"></div></div>
         </div>
-        ${renderGroup('Pflanzen', crops)}
-        ${renderGroup('Tiere, Mühle & Molkerei', basics)}
-        ${renderGroup('Backstube, Teehaus, Patisserie & Werkstatt', treats)}
+        ${renderGroup('Winterpflanzen', crops)}
+        ${renderGroup('Tierprodukte', animalProds)}
+        ${renderGroup('Backstube, Café, Patisserie & Werkstatt', treats)}
         ${secretsHtml}`;
     } else {
       bodyEl.innerHTML = this.state.animals.map((an) => {
@@ -2611,7 +2439,7 @@ class WinterhofGame {
           <div class="cozy-card">
             <div class="card-thumb"><img src="${sprites.getIconUrl(def.sprite)}" alt="" /></div>
             <div class="card-info">
-              <div style="font-size:11px;font-weight:800;color:var(--text-muted)">${def.name}</div>
+              <div style="font-size:11px;font-weight:700;color:var(--ink-muted)">${def.name}</div>
               <input class="cozy-input" style="padding:6px 10px;margin-top:3px" maxlength="18" value="${this._esc(an.nick || def.defaultNick)}" data-an-nick="${an.id}" />
             </div>
             <button class="btn-green" data-save-nick="${an.id}">OK</button>
@@ -2625,7 +2453,7 @@ class WinterhofGame {
           if (an && inp && inp.value.trim()) {
             an.nick = inp.value.trim().slice(0, 18);
             audio.playPet(1.1); this.saveState();
-            this.showToast(`🐾 Dein Tier heißt jetzt „${an.nick}“!`);
+            this.showToast(`Name gespeichert: "${an.nick}".`);
           }
         })
       );
@@ -2633,32 +2461,28 @@ class WinterhofGame {
   }
 
   _renderSettingsModal(titleEl, bodyEl) {
-    titleEl.textContent = '⚙️ Ton & Spielstand';
+    titleEl.textContent = 'Einstellungen';
     bodyEl.innerHTML = `
       <div class="cozy-card" style="justify-content:space-between">
         <div>
-          <div class="card-title">🔔 Soundeffekte</div>
-          <div class="card-sub">Ernte-Klänge, Schlittenglöckchen &amp; Ofen-Klingeln</div>
+          <div class="card-title">Soundeffekte</div>
+          <div class="card-sub">Ernte-Klänge, Glöckchen und Ofen-Signale</div>
         </div>
         <button id="tog-sfx" class="${this.state.settings.sfx ? 'btn-green' : 'btn-wood'}">${this.state.settings.sfx ? 'An' : 'Aus'}</button>
       </div>
       <div class="cozy-card" style="justify-content:space-between">
         <div>
-          <div class="card-title">🎵 Saison-Spieluhr (Musik)</div>
-          <div class="card-sub">Winter-Walzer &amp; magische Herbst-Celesta im Hintergrund</div>
+          <div class="card-title">Winter-Spieluhr</div>
+          <div class="card-sub">Sanfte Hintergrundmelodie</div>
         </div>
         <button id="tog-music" class="${this.state.settings.music ? 'btn-green' : 'btn-wood'}">${this.state.settings.music ? 'An' : 'Aus'}</button>
       </div>
       <div class="cozy-card" style="flex-direction:column;align-items:stretch;gap:8px">
-        <div class="card-title">💌 Begrüßungsbrief nochmal lesen</div>
-        <button id="btn-reread-letter" class="btn-gold">🦉 Brief öffnen</button>
-      </div>
-      <div class="cozy-card" style="flex-direction:column;align-items:stretch;gap:8px">
-        <div class="card-title">💾 Spielstand sichern / übertragen</div>
-        <div class="card-sub">Kopiere deinen Spielstand-Code für ein Backup oder ein neues Handy:</div>
+        <div class="card-title">Spielstand sichern</div>
+        <div class="card-sub">Backup-Code kopieren oder auf einem anderen Gerät laden:</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="btn-export-save" class="btn-green" style="flex:1">📋 Backup kopieren</button>
-          <button id="btn-import-save" class="btn-wood" style="flex:1">📥 Backup laden</button>
+          <button id="btn-export-save" class="btn-green" style="flex:1">Backup kopieren</button>
+          <button id="btn-import-save" class="btn-wood" style="flex:1">Backup laden</button>
         </div>
         <button id="btn-reset-save" class="btn-red" style="margin-top:4px">Neuen Hof starten</button>
       </div>`;
@@ -2674,26 +2498,25 @@ class WinterhofGame {
       audio.setMusic(this.state.settings.music);
       this.saveState(); this.renderActiveModal();
     });
-    bodyEl.querySelector('#btn-reread-letter').addEventListener('click', () => { audio.playTap(); this.openModal('welcome'); });
     bodyEl.querySelector('#btn-export-save').addEventListener('click', () => {
       const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(this.state))));
-      navigator.clipboard?.writeText(b64).then(() => this.showToast('📋 Spielstand-Backup in Zwischenablage kopiert!'));
+      navigator.clipboard?.writeText(b64).then(() => this.showToast('Spielstand-Backup kopiert.'));
     });
     bodyEl.querySelector('#btn-import-save').addEventListener('click', () => {
-      const raw = prompt('Füge hier deinen gesicherten Backup-Code ein:');
+      const raw = prompt('Backup-Code einfügen:');
       if (!raw) return;
       try {
         const parsed = JSON.parse(decodeURIComponent(escape(atob(raw.trim()))));
         if (parsed && parsed.fields && parsed.stations) {
           localStorage.setItem(SAVE_KEY, JSON.stringify(parsed));
           location.reload();
-        } else this.showToast('Ungültiger Backup-Code!');
+        } else this.showToast('Ungültiger Backup-Code.');
       } catch {
         this.showToast('Backup-Code konnte nicht gelesen werden.');
       }
     });
     bodyEl.querySelector('#btn-reset-save').addEventListener('click', () => {
-      if (confirm('Wirklich einen komplett neuen Hof starten? Dein aktueller Fortschritt geht verloren.')) {
+      if (confirm('Wirklich einen neuen Winterhof starten?')) {
         localStorage.removeItem(SAVE_KEY);
         location.reload();
       }
@@ -2701,14 +2524,14 @@ class WinterhofGame {
   }
 
   _renderLevelUpModal(titleEl, bodyEl, lvlInfo) {
-    titleEl.textContent = `🎉 Level ${lvlInfo.level} erreicht!`;
+    titleEl.textContent = `Level ${lvlInfo.level} erreicht`;
     bodyEl.innerHTML = `
-      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:10px;background:#FFFDF0">
-        <div style="font-size:48px">🌟🎄🍂✨</div>
-        <div style="font-size:18px;font-weight:900">Dein Winterhof wächst!</div>
-        <div style="font-size:14px;font-weight:700;color:var(--text-dark)">${lvlInfo.unlockText}</div>
-        ${lvlInfo.coinBonus > 0 ? `<div style="font-size:16px;font-weight:900;color:var(--gold-deep)">Geschenk: +${lvlInfo.coinBonus} Münzen ★</div>` : ''}
-        <button id="btn-lvl-ok" class="btn-green" style="padding:11px 28px;font-size:15px">Weiter spielen! 🛷</button>
+      <div class="cozy-card" style="flex-direction:column;text-align:center;padding:18px;gap:10px;background:#FFFBF0">
+        <div style="width:52px;height:52px">${sprites.getUiIcon('star')}</div>
+        <div style="font-size:17px;font-weight:900">Dein Winterhof wächst</div>
+        <div style="font-size:13.5px;font-weight:600;color:var(--ink)">${lvlInfo.unlockText}</div>
+        ${lvlInfo.coinBonus > 0 ? `<div style="font-size:15px;font-weight:800;color:var(--brass-deep)">Bonus: +${lvlInfo.coinBonus} Münzen</div>` : ''}
+        <button id="btn-lvl-ok" class="btn-green" style="padding:10px 26px;font-size:14px">Weiter</button>
       </div>`;
     bodyEl.querySelector('#btn-lvl-ok').addEventListener('click', () => this.closeModal());
   }

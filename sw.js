@@ -1,4 +1,4 @@
-const CACHE_NAME = 'winterhof-v4';
+const CACHE_NAME = 'winterhof-v5-aaa';
 const ASSETS = [
   './',
   './index.html',
@@ -19,29 +19,19 @@ const ASSETS = [
   './assets/sprites/patisserie_house.webp',
   './assets/sprites/gift_workshop.webp',
   './assets/sprites/christmas_tree.webp',
-  './assets/sprites/autumn_tree_landmark.webp',
   './assets/sprites/reindeer_sleigh.webp',
   './assets/sprites/wishlist_board.webp',
   './assets/sprites/gift_mailbox.webp',
   './assets/sprites/animal_chicken.webp',
   './assets/sprites/animal_sheep.webp',
   './assets/sprites/animal_reindeer.webp',
-  './assets/sprites/animal_owl.webp',
   './assets/sprites/snow_field_plot.webp',
   './assets/sprites/crop_wheat.webp',
   './assets/sprites/crop_berries.webp',
-  './assets/sprites/crop_pumpkin.webp',
   './assets/sprites/crop_matcha.webp',
-  './assets/sprites/crop_mushroom.webp',
   './assets/sprites/deco_pine.webp',
-  './assets/sprites/deco_autumn_tree.webp',
   './assets/sprites/deco_snowman.webp',
-  './assets/sprites/deco_lantern.webp',
-  './assets/sprites/deco_pumpkin.webp',
-  './assets/sprites/deco_ghost.webp',
-  './assets/sprites/deco_spider.webp',
-  './assets/sprites/deco_sorting_hat.webp',
-  './assets/sprites/deco_cauldron.webp'
+  './assets/sprites/deco_lantern.webp'
 ];
 
 self.addEventListener('install', (e) => {

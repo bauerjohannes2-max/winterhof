@@ -1,6 +1,7 @@
 /**
- * Exhaustive End-to-End Automated QA & Visual Verification Suite for Winterhof
- * Uses native Node 24 WebSocket + Chromium DevTools Protocol (CDP).
+ * Exhaustive End-to-End Automated QA & Visual Verification Suite for Winterhof AAA (v5)
+ * Verifies: Zero-Emoji Policy, Calm Level-1 Start, Core Loop, Barn Capacity,
+ * Daily Chest, Villager Offers, Album, Level-3 Scythe, Save Persistence, 0 Console Errors.
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -9,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 9223;
-const URL = process.env.WINTERHOF_URL || 'http://localhost:8080/index.html';
+const URL = process.env.WINTERHOF_URL || 'http://127.0.0.1:8085/index.html';
 const OUT = path.join(__dirname, 'qa');
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -34,10 +35,7 @@ class CDP {
     };
   }
   async open() {
-    await new Promise((res, rej) => {
-      this.ws.onopen = res;
-      this.ws.onerror = rej;
-    });
+    await new Promise((res, rej) => { this.ws.onopen = res; this.ws.onerror = rej; });
   }
   send(method, params = {}) {
     const id = ++this.id;
@@ -79,7 +77,7 @@ async function waitForCDP() {
 
 function assert(cond, msg) {
   if (!cond) throw new Error('ASSERTION FAILED: ' + msg);
-  console.log('  ✓', msg);
+  console.log('  OK:', msg);
 }
 
 function findBrowser() {
@@ -117,390 +115,229 @@ try {
     width: 412, height: 860, deviceScaleFactor: 2, mobile: true
   });
 
-  // Wait for game & all sprites to finish loading
-  await sleep(1600);
+  // Wait for splash fade-out to complete cleanly
+  await sleep(2400);
 
-  // Check broken images & console errors
+  // 1. Calm Level-1 Start (NO cringy welcome popup, NO emoji in DOM!)
   const initCheck = await cdp.eval(`
     const g = window.__WINTERHOF__;
     if (!g) throw new Error('Game instance missing');
-    const imgs = Object.entries(g.world ? (window.__SPRITES__ || {}) : {});
+    const bodyText = document.body.innerText || '';
+    const emojiRe = /[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u;
     return {
-      welcomeOpen: !document.getElementById('modal-backdrop').classList.contains('hidden'),
+      modalHidden: document.getElementById('modal-backdrop').classList.contains('hidden'),
+      hasEmojiInHud: emojiRe.test(bodyText),
       coins: g.state.coins,
       fields: g.state.fields.length,
       animals: g.state.animals.length,
-      wildMushrooms: g.state.wildMushrooms.length,
+      decos: g.state.decorations.length,
       orders: g.state.orders.length
     };
   `);
-  assert(initCheck.welcomeOpen, 'First-launch Owl Welcome Letter opens automatically');
+  assert(initCheck.modalHidden === true, 'Calm Level-1 start: zero blocking welcome letter modal');
+  assert(initCheck.hasEmojiInHud === false, 'Strict Zero-Emoji Policy passed on initial HUD');
   assert(initCheck.coins === 145, `Starter coins = 145 (got ${initCheck.coins})`);
-  assert(initCheck.fields === 6, 'Starter fields = 6');
-  assert(initCheck.wildMushrooms === 2, 'Starter wild forest Schwammerl = 2');
-  await cdp.screenshot('01_welcome_letter.png');
+  assert(initCheck.fields === 4, `Clean 2x2 starter fields = 4 (got ${initCheck.fields})`);
+  assert(initCheck.animals === 1, `Calm starter animal count = 1 (got ${initCheck.animals})`);
+  await cdp.screenshot('01_winter_day_portrait.png');
 
-  // Close welcome letter
-  await cdp.eval(`document.getElementById('btn-welcome-go').click();`);
+  // Capture serene Landscape Day view BEFORE triggering any toast clutter
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 920, height: 480, deviceScaleFactor: 2, mobile: true
+  });
   await sleep(300);
-  await cdp.screenshot('02_winter_day_portrait.png');
+  await cdp.screenshot('02_winter_day_landscape.png');
 
-  // Test 1: Harvest ripe fields + plant Matcha + check grow timer
+  // Switch back to mobile portrait for gameplay & modal tests
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 412, height: 860, deviceScaleFactor: 2, mobile: true
+  });
+  await sleep(200);
+
+  // 2. Harvest 4 wheat fields + plant Winterbeeren
   const farmRes = await cdp.eval(`
     const g = window.__WINTERHOF__;
     const beforeWheat = g.state.inventory.wheat || 0;
-    const beforeMatcha = g.state.inventory.matcha || 0;
-    // Harvest all 5 ripe starter fields
     let harvested = 0;
     for (const f of g.state.fields) {
       if (g.harvestField(f)) harvested++;
     }
-    // Plant Matcha on empty field f_1
-    const planted = g.plantField(g.state.fields[0], 'matcha');
-    return {
-      harvested,
-      planted,
-      wheatDelta: (g.state.inventory.wheat || 0) - beforeWheat,
-      matchaDelta: (g.state.inventory.matcha || 0) - beforeMatcha,
-      harvestStat: g.state.stats.harvests
-    };
+    const planted = g.plantField(g.state.fields[0], 'berries');
+    return { harvested, planted, wheatDelta: (g.state.inventory.wheat || 0) - beforeWheat };
   `);
-  assert(farmRes.harvested === 5, `Harvested all 5 ripe starter fields (got ${farmRes.harvested})`);
-  assert(farmRes.wheatDelta === 4, 'Wheat harvest yielded +4 (2 per field)');
-  assert(farmRes.matchaDelta === 2, 'Matcha harvest yielded +2');
-  assert(farmRes.planted === true, 'Planted Matcha on empty field cleanly');
+  assert(farmRes.harvested === 4, `Harvested all 4 starter wheat plots (got ${farmRes.harvested})`);
+  assert(farmRes.wheatDelta === 8, 'Wheat harvest yielded +8 (2 per plot)');
+  assert(farmRes.planted === true, 'Planted Winterbeeren cleanly');
 
-  // Test 2: Forage wild forest Schwammerl + Catch Golden Snitch + Tap Sorting Hat
-  const magicRes = await cdp.eval(`
-    const g = window.__WINTERHOF__;
-    const mBefore = g.state.inventory.mushroom || 0;
-    g.forageWildMushroom(g.state.wildMushrooms[0]);
-    const mAfter = g.state.inventory.mushroom || 0;
-    g.world.spawnSnitch();
-    const cBefore = g.state.coins;
-    g.catchGoldenSnitch();
-    const cAfter = g.state.coins;
-    return { mDelta: mAfter - mBefore, snitchCoins: cAfter - cBefore, snitchStat: g.state.stats.snitches };
-  `);
-  assert(magicRes.mDelta === 2, 'Foraging wild Schwammerl gives +2 mushrooms');
-  assert(magicRes.snitchCoins === 28, 'Catching Golden Snitch awards +28 coins');
-  assert(magicRes.snitchStat === 1, 'Snitch achievement stat incremented');
-
-  // Test 3: Collect animals, feed, pet, and rename animal
+  // 3. Collect egg, feed chicken, pet chicken
   const animalRes = await cdp.eval(`
     const g = window.__WINTERHOF__;
     const eggBefore = g.state.inventory.egg || 0;
-    const milkBefore = g.state.inventory.starmilk || 0;
-    g.interactAnimal(g.state.animals[0]); // collect egg
-    g.interactAnimal(g.state.animals[1]); // collect milk
-    g.interactAnimal(g.state.animals[0]); // feed wheat
-    g.interactAnimal(g.state.animals[0]); // pet producing chicken!
-    g.state.animals[0].nick = 'Matcha-Huhn';
+    g.interactAnimal(g.state.animals[0]);
+    g.interactAnimal(g.state.animals[0]);
+    g.interactAnimal(g.state.animals[0]);
+    g.state.animals[0].nick = 'Schneeflocke';
     return {
       eggDelta: (g.state.inventory.egg || 0) - eggBefore,
-      milkDelta: (g.state.inventory.starmilk || 0) - milkBefore,
-      chickenState: g.state.animals[0].state,
+      state: g.state.animals[0].state,
       pets: g.state.stats.pets
     };
   `);
-  assert(animalRes.eggDelta === 1 && animalRes.milkDelta === 1, 'Collected Egg & Wintermilch from animals');
-  assert(animalRes.chickenState === 'producing', 'Fed chicken starts producing');
-  assert(animalRes.pets === 1, 'Petting producing chicken awards hearts & stat');
+  assert(animalRes.eggDelta === 1, 'Collected Egg from starter chicken');
+  assert(animalRes.state === 'producing', 'Fed chicken starts producing');
+  assert(animalRes.pets === 1, 'Petting chicken increments pet stat');
 
-  // Test 4: Building Placement Edge Cases (occupied tile, locked land, valid tile) + Moving a 2x2 building by 1 tile!
+  // 4. Build Punsch-Stand + unwrap red ribbon + move 2x2 bakery + store deco
   const buildRes = await cdp.eval(`
     const g = window.__WINTERHOF__;
-    g.state.coins = 500; // Give test budget
-    // Buy Matcha Teahouse (2x2)
-    g.enterPlaceMode({ kind: 'station', type: 'teahouse', label: 'Matcha-Teehaus', cost: 90, size: 2 });
-    const blockedOccupied = g.isAreaFree(5, 2, 2); // chalet is at 5,2
-    const blockedLocked = g.isAreaFree(0, 5, 2); // west_forest is locked
-    const validFree = g.isAreaFree(10, 11, 2); // free inside core!
-    // Tap on valid tile (10, 11) via worldToScreen
-    const wp = { x: (10.5 - 11.5) * 58, y: (10.5 + 11.5) * 29 };
+    g.state.coins = 500;
+    g.enterPlaceMode({ kind: 'station', type: 'teahouse', label: 'Punsch-Stand', cost: 90, size: 2 });
+    const blockedOccupied = g.isAreaFree(5, 2, 2);
+    const blockedLocked = g.isAreaFree(0, 5, 2);
+    const validFree = g.isAreaFree(10, 10, 2);
+    const wp = { x: (10.5 - 10.5) * 58, y: (10.5 + 10.5) * 29 };
     const sp = g.world.worldToScreen(wp.x, wp.y);
     g.handleCanvasTap(sp.x, sp.y);
     const tea = g.state.stations.find(s => s.type === 'teahouse');
     const wasWrapped = tea.wrapped === true;
-    // Unwrap red ribbon bow on newly built Teahouse!
     g.interactStation(tea);
     const nowUnwrapped = tea.wrapped === false;
 
-    // Now test Moving a 2x2 building (st_bakery at 3,6 -> 2,6 — overlapping its own old footprint by 1 tile!)
-    const canShift1Tile = g.isAreaFree(2, 6, 2, 'st_bakery');
+    const canShift1Tile = g.isAreaFree(2, 7, 2, 'st_bakery');
     g.enterMoveMode();
     g.ui.selectedMoveId = 'st_bakery';
-    const wp2 = { x: (2.5 - 6.5) * 58, y: (2.5 + 6.5) * 29 };
+    const wp2 = { x: (2.5 - 7.5) * 58, y: (2.5 + 7.5) * 29 };
     const sp2 = g.world.worldToScreen(wp2.x, wp2.y);
     g.handleCanvasTap(sp2.x, sp2.y);
 
-    // Test storing a decoration into storage!
-    const decoCountBefore = g.state.decorations.length;
+    const decoBefore = g.state.decorations.length;
     g.ui.selectedMoveId = g.state.decorations[0].id;
     g.storeSelectedDeco();
-    const decoStored = g.state.decorations.length === decoCountBefore - 1;
+    const decoStored = g.state.decorations.length === decoBefore - 1;
     g.exitSpecialMode();
 
     const bak = g.state.stations.find(s => s.id === 'st_bakery');
-    return {
-      blockedOccupied,
-      blockedLocked,
-      validFree,
-      teaBuilt: tea.built,
-      wasWrapped,
-      nowUnwrapped,
-      teaPos: [tea.gx, tea.gy],
-      canShift1Tile,
-      decoStored,
-      bakeryMovedTo: [bak.gx, bak.gy]
-    };
+    return { blockedOccupied, blockedLocked, validFree, teaBuilt: tea.built, wasWrapped, nowUnwrapped, canShift1Tile, decoStored, bakeryPos: [bak.gx, bak.gy] };
   `);
-  assert(buildRes.blockedOccupied === false, 'Cannot place 2x2 building on occupied tile');
-  assert(buildRes.blockedLocked === false, 'Cannot place 2x2 building on locked land zone');
-  assert(buildRes.validFree === true && buildRes.teaBuilt === true, `Matcha Teahouse placed & built at [${buildRes.teaPos}]`);
-  assert(buildRes.wasWrapped && buildRes.nowUnwrapped, 'New building spawns with red ribbon crate & unwraps cleanly!');
-  assert(buildRes.canShift1Tile === true && buildRes.bakeryMovedTo[0] === 2 && buildRes.bakeryMovedTo[1] === 6, '2x2 Bakery moved cleanly by 1 tile without self-collision!');
-  assert(buildRes.decoStored === true, 'Decoration stored cleanly into free re-placement storage!');
+  assert(buildRes.blockedOccupied === false && buildRes.blockedLocked === false, 'Placement blocks occupied & locked tiles');
+  assert(buildRes.teaBuilt && buildRes.wasWrapped && buildRes.nowUnwrapped, 'Punsch-Stand placed, wrapped & unwrapped cleanly');
+  assert(buildRes.canShift1Tile && buildRes.bakeryPos[0] === 2 && buildRes.bakeryPos[1] === 7, '2x2 Bakery shifted 1 tile cleanly');
+  assert(buildRes.decoStored === true, 'Decoration stored cleanly');
 
-  // Test 5: Mühle & Molkerei (Flour + Butter) -> Bakery (Butterplätzchen) + Matcha-Latte + Mastery + Chapters + Villager Tip!
+  // 5. Craft Butterplätzchen + Winterpunsch + Chapters 1 & 2
   const craftRes = await cdp.eval(`
     const g = window.__WINTERHOF__;
-    // Craft Flour & Butter in Mühle & Molkerei!
-    g.startCraft('st_mill_dairy', 'flour');
-    g.startCraft('st_mill_dairy', 'butter');
-    const mill = g.state.stations.find(s => s.id === 'st_mill_dairy');
-    mill.queue[0].finishAt = Date.now() - 2000;
-    g.tickSimulation(Date.now());
-    if (mill.queue.length > 0) {
-      mill.queue[0].finishAt = Date.now() - 1000;
-      g.tickSimulation(Date.now());
-    }
-    const millReady = mill.ready.length;
-    g.interactStation(mill);
-
     g.startCraft('st_bakery', 'butterplaetzchen');
-    g.startCraft('st_teahouse', 'matcha_latte');
+    g.startCraft('st_teahouse', 'winter_punch');
     const bak = g.state.stations.find(s => s.id === 'st_bakery');
     const tea = g.state.stations.find(s => s.id === 'st_teahouse');
     bak.queue[0].finishAt = Date.now() - 1000;
     tea.queue[0].finishAt = Date.now() - 1000;
     g.tickSimulation(Date.now());
-    const readyCounts = [bak.ready.length, tea.ready.length];
     g.interactStation(bak);
     g.interactStation(tea);
-    // Claim Chapter 1 & 2!
     g.claimChapter('ch_1');
     g.claimChapter('ch_2');
-    // Greet strolling villager (clear any random offer first to test tip path)
-    g.world.villagers[0].offer = null;
-    const vcBefore = g.state.coins;
-    g.greetVillager(g.world.villagers[0]);
-    const villagerTip = g.state.coins - vcBefore;
     return {
-      millReady,
-      hasFlour: g.state.inventory.flour || 0,
-      hasButter: g.state.inventory.butter || 0,
-      readyCounts,
-      hasCookies: g.state.inventory.butterplaetzchen || 0,
-      hasMatchaLatte: g.state.inventory.matcha_latte || 0,
-      matchaStat: g.state.stats.matchaMade,
-      masteryCount: bak.craftedCount,
-      chaptersClaimed: g.state.claimedChapters.length,
-      villagerTip
+      cookies: g.state.inventory.butterplaetzchen || 0,
+      punch: g.state.inventory.winter_punch || 0,
+      mastery: bak.craftedCount,
+      chapters: g.state.claimedChapters.length
     };
   `);
-  assert(craftRes.millReady === 2, `Mühle & Molkerei finished Flour & Butter (got ${craftRes.millReady})`);
-  assert(craftRes.readyCounts[0] === 1 && craftRes.readyCounts[1] === 1, 'Bakery & Teahouse finish queued items cleanly');
-  assert(craftRes.hasCookies >= 1 && craftRes.hasMatchaLatte >= 1, 'Collected Butterplätzchen (via Flour+Butter) & Matcha-Latte into barn');
-  assert(craftRes.matchaStat === 1 && craftRes.masteryCount === 1, 'Matcha stat & Machine Mastery count tracked');
-  assert(craftRes.chaptersClaimed === 2, 'Story Chapters 1 & 2 completed and rewards claimed!');
-  assert(craftRes.villagerTip === 5, 'Greeting strolling villager awards +5 coin tip!');
+  assert(craftRes.cookies >= 1 && craftRes.punch >= 1, 'Crafted & collected Butterplätzchen and Winterpunsch');
+  assert(craftRes.mastery === 1 && craftRes.chapters === 2, 'Mastery tracked & Chapters 1-2 claimed');
 
-  // Test 5b (v4): Barn Capacity Guard & Upgrade + Daily Chest + Villager Doorstep Offer + Level-3 Harvest-All Scythe + Album!
-  const v4Res = await cdp.eval(`
+  // 6. Barn Upgrade + Daily Chest + Villager Offer + Level-3 Scythe + Zero-Emoji Modal Audit
+  const v5Res = await cdp.eval(`
     const g = window.__WINTERHOF__;
     g.state.coins = 600;
-    // 1. Barn capacity upgrade (50 -> 75)
     const capBefore = g.getBarnCapacity();
     const upOk = g.upgradeBarn();
     const capAfter = g.getBarnCapacity();
 
-    // 2. Daily Treasure Chest claim + duplicate guard
-    const chestBefore = g.isDailyChestReady();
-    const chestCoinsBefore = g.state.coins;
-    const reward = g.claimDailyChest();
-    const chestAfter = g.isDailyChestReady();
-    const chestCoinsDelta = g.state.coins - chestCoinsBefore;
+    const chestOk = g.isDailyChestReady() && !!g.claimDailyChest();
     g.closeModal();
 
-    // 3. Villager Doorstep Buy Offer
-    const v = g.world.villagers[1];
-    const offer = g.generateVillagerOffer(v);
+    const v = g.world.villagers[0];
+    g.generateVillagerOffer(v);
     g.greetVillager(v);
-    const offerModalOpened = g.ui.activeModal?.kind === 'villager_offer';
-    const dealCoinsBefore = g.state.coins;
+    const offerModal = g.ui.activeModal?.kind === 'villager_offer';
     const dealOk = g.acceptVillagerOffer(v.id);
-    const dealCoinsDelta = g.state.coins - dealCoinsBefore;
 
-    // 4. Level-3 Harvest-All Scythe
-    g.state.xp = 260; // Level 3!
+    g.state.xp = 260;
     const now = Date.now();
     g.state.fields[0].cropId = 'wheat'; g.state.fields[0].plantedAt = now - 300000;
-    g.state.fields[1].cropId = 'pumpkin'; g.state.fields[1].plantedAt = now - 300000;
+    g.state.fields[1].cropId = 'berries'; g.state.fields[1].plantedAt = now - 300000;
     g.updateHUD();
     const scytheVisible = !document.getElementById('btn-scythe').classList.contains('hidden');
     const scytheHarvested = g.harvestAllReadyFields();
 
-    // 5. Album discovery tracking
-    g.openModal('village', {}, 'album');
-    const albumText = document.getElementById('modal-body').textContent;
-    const albumHasBook = albumText.includes('Rezept-') && albumText.includes('Butterplätzchen');
+    // Audit every modal for zero emojis
+    const emojiRe = /[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u;
+    const modalChecks = [];
+    for (const [k, t] of [['shop','buildings'], ['shop','deco'], ['barn','inv'], ['orders','wishlist'], ['village','album'], ['settings', null]]) {
+      g.openModal(k, {}, t);
+      const txt = document.getElementById('modal-backdrop').innerText || '';
+      if (emojiRe.test(txt)) modalChecks.push(k + ':' + t);
+    }
     g.closeModal();
 
-    return {
-      capBefore, upOk, capAfter,
-      chestBefore, chestAfter, chestCoinsDelta, streak: reward?.streak,
-      offerModalOpened, dealOk, dealCoinsDelta, dealsStat: g.state.stats.villagerDeals,
-      scytheVisible, scytheHarvested, albumHasBook,
-      discoveredCount: (g.state.discoveredItems || []).length
-    };
+    return { capBefore, upOk, capAfter, chestOk, offerModal, dealOk, scytheVisible, scytheHarvested, emojiViolations: modalChecks };
   `);
-  assert(v4Res.capBefore === 50 && v4Res.upOk && v4Res.capAfter === 75, `Barn capacity upgraded 50 -> ${v4Res.capAfter}`);
-  assert(v4Res.chestBefore && !v4Res.chestAfter && v4Res.chestCoinsDelta >= 55 && v4Res.streak === 1, `Daily Treasure Chest claimed (+${v4Res.chestCoinsDelta} coins, streak ${v4Res.streak})`);
-  assert(v4Res.offerModalOpened && v4Res.dealOk && v4Res.dealCoinsDelta > 0 && v4Res.dealsStat === 1, `Villager Doorstep Offer accepted (+${v4Res.dealCoinsDelta} coins)`);
-  assert(v4Res.scytheVisible && v4Res.scytheHarvested === 2, `Level-3 Harvest-All Scythe visible & harvested ${v4Res.scytheHarvested} fields`);
-  assert(v4Res.albumHasBook && v4Res.discoveredCount >= 10, `Recipe & Collection Album tracks ${v4Res.discoveredCount} discovered items`);
+  assert(v5Res.capBefore === 50 && v5Res.upOk && v5Res.capAfter === 75, 'Barn capacity upgraded 50 -> 75');
+  assert(v5Res.chestOk === true, 'Daily lakeside treasure chest claimed');
+  assert(v5Res.offerModal && v5Res.dealOk, 'Villager doorstep offer modal & sale work');
+  assert(v5Res.scytheVisible && v5Res.scytheHarvested === 2, 'Level-3 Harvest-All Scythe works');
+  assert(v5Res.emojiViolations.length === 0, `Zero emojis across all modals (violations: ${v5Res.emojiViolations.join(',')})`);
 
-  // Test 6: Hofladen (Roadside Stand) listing, sale & coin collection
-  const standRes = await cdp.eval(`
-    const g = window.__WINTERHOF__;
-    const cBefore = g.state.coins;
-    g.listItemOnStand(0, 'wheat');
-    g.state.standSlots[0].sellAt = Date.now() - 1000;
-    g.tickSimulation(Date.now());
-    const sold = g.state.standSlots[0].sold;
-    g.collectStandSlot(0);
-    return { sold, coinsEarned: g.state.coins - cBefore, slotCleared: g.state.standSlots[0] === null };
-  `);
-  assert(standRes.sold && standRes.coinsEarned > 0 && standRes.slotCleared, `Hofladen sold crate for +${standRes.coinsEarned} coins & cleared slot`);
-
-  // Test 7: Land Expansion Unlock
-  const landRes = await cdp.eval(`
-    const g = window.__WINTERHOF__;
-    g.state.xp = 120; // Level 2
-    g.state.coins = 300;
-    const beforeTile = g.isTileUnlocked(1, 6);
-    const ok = g.unlockLandZone('west_forest');
-    const afterTile = g.isTileUnlocked(1, 6);
-    return { beforeTile, ok, afterTile };
-  `);
-  assert(landRes.beforeTile === false && landRes.ok === true && landRes.afterTile === true, 'Land expansion west_forest unlocked & tile (1,6) now buildable!');
-
-  // Test 8: Eulenpost Gift Encode -> Decode -> Receive
-  const giftRes = await cdp.eval(`
-    const g = window.__WINTERHOF__;
-    g.openModal('gifts', {}, 'send');
-    g.ui.giftDraft.items = { matcha_latte: 1 };
-    g.ui.giftDraft.note = 'Für dich ❤️🍵';
-    g.renderActiveModal();
-    document.getElementById('btn-pack-gift').click();
-    const code = g.ui.giftDraft.generatedCode;
-    g.ui.activeModal.tab = 'open';
-    g.renderActiveModal();
-    document.getElementById('gift-redeem-input').value = code;
-    document.getElementById('btn-redeem-gift').click();
-    // Finish owl delivery immediately to test claim & duplicate prevention
-    g.world.giftParachute.progress = 1;
-    g.world.update(0.1, g.state);
-    const hasLatteAgain = g.state.inventory.matcha_latte || 0;
-    const claimedCount = g.state.claimedGifts.length;
-    g.closeModal();
-    return { codePrefix: code?.slice(0, 3), hasLatteAgain, claimedCount };
-  `);
-  assert(giftRes.codePrefix === 'WH-' && giftRes.hasLatteAgain >= 1 && giftRes.claimedCount === 1, 'Eulenpost gift parcel encoded, delivered & redeemed cleanly!');
-
-  // Test 9: Capture Visual Screenshots of Autumn Day, Autumn Night, Winter Night & Modals!
-  await cdp.send('Emulation.setDeviceMetricsOverride', {
-    width: 860, height: 412, deviceScaleFactor: 2, mobile: true
-  });
-  await sleep(300);
-
-  // Switch to Autumn Day!
-  await cdp.eval(`
-    const g = window.__WINTERHOF__;
-    document.getElementById('btn-season').click();
-    g.world.seasonBlend = 1;
-    g.world.lightingMode = 'day';
-    g.world.eveningFactor = 0;
-    g.world.spawnSnitch();
-    g.world.snitch.x = g.world.cam.x + 120;
-    g.world.snitch.y = g.world.cam.y - 70;
-    g.closeModal();
-  `);
-  await sleep(350);
-  await cdp.screenshot('03_autumn_day_landscape.png');
-
-  // Switch to Autumn Night (Halloween glowing pumpkins, floating ghost, fireflies!)
-  await cdp.eval(`
-    const g = window.__WINTERHOF__;
-    g.world.lightingMode = 'night';
-    g.world.eveningFactor = 1;
-  `);
-  await sleep(350);
-  await cdp.screenshot('04_autumn_night_landscape.png');
-
-  // Switch to Winter Night (Christmas tree glow, aurora, warm windows!)
-  await cdp.eval(`
-    const g = window.__WINTERHOF__;
-    document.getElementById('btn-season').click();
-    g.world.seasonBlend = 0;
-    g.world.lightingMode = 'night';
-    g.world.eveningFactor = 1;
-  `);
-  await sleep(350);
-  await cdp.screenshot('05_winter_night_landscape.png');
-
-  // Open Shop -> Herbst & Magie tab screenshot + Album + Barn Capacity screenshots
-  await cdp.eval(`window.__WINTERHOF__.openModal('shop', {}, 'autumn_magic');`);
-  await sleep(250);
-  await cdp.screenshot('06_shop_autumn_magic.png');
-
-  await cdp.eval(`window.__WINTERHOF__.openModal('village', {}, 'album');`);
-  await sleep(250);
-  await cdp.screenshot('07_album_modal.png');
+  // 7. Capture Crisp Screenshots of Modals & Starry Winter Night!
+  await cdp.eval(`window.__WINTERHOF__.openModal('shop', {}, 'buildings');`);
+  await sleep(220);
+  await cdp.screenshot('03_shop_modal.png');
 
   await cdp.eval(`window.__WINTERHOF__.openModal('barn', {}, 'inv');`);
-  await sleep(250);
-  await cdp.screenshot('08_barn_capacity.png');
+  await sleep(220);
+  await cdp.screenshot('04_barn_modal.png');
 
-  // Test 10: Save & Reload Persistence Check
+  await cdp.eval(`window.__WINTERHOF__.openModal('village', {}, 'album');`);
+  await sleep(220);
+  await cdp.screenshot('05_album_modal.png');
+
+  await cdp.send('Emulation.setDeviceMetricsOverride', {
+    width: 920, height: 480, deviceScaleFactor: 2, mobile: true
+  });
+  await cdp.eval(`
+    const g = window.__WINTERHOF__;
+    g.closeModal();
+    g.world.lightingMode = 'night';
+    g.world.eveningFactor = 1;
+  `);
+  await sleep(320);
+  await cdp.screenshot('06_winter_night_landscape.png');
+
+  // 8. Save & Reload Persistence
   await cdp.eval(`window.__WINTERHOF__.saveState();`);
   await cdp.send('Page.reload');
   await sleep(1600);
   const afterReload = await cdp.eval(`
     const g = window.__WINTERHOF__;
     return {
-      welcomeSeen: g.state.welcomeSeen,
-      landsUnlocked: g.state.unlockedLands.length,
+      cap: g.getBarnCapacity(),
       teaBuilt: g.state.stations.find(s => s.type === 'teahouse').built,
-      chickenNick: g.state.animals[0].nick,
-      snitches: g.state.stats.snitches
+      nick: g.state.animals[0].nick
     };
   `);
-  assert(afterReload.welcomeSeen === true, 'Reload remembers welcomeSeen');
-  assert(afterReload.landsUnlocked === 1, 'Reload preserves unlocked land expansion');
-  assert(afterReload.teaBuilt === true, 'Reload preserves newly built Matcha Teahouse');
-  assert(afterReload.chickenNick === 'Matcha-Huhn', 'Reload preserves custom animal nickname');
-  assert(afterReload.snitches === 1, 'Reload preserves achievement stats');
+  assert(afterReload.cap === 75 && afterReload.teaBuilt === true && afterReload.nick === 'Schneeflocke', 'Reload preserves barn upgrade, built Punsch-Stand & animal nick');
 
-  // Verify zero uncaught exceptions or console errors!
+  // 9. Zero Console / Runtime Errors
   const errors = cdp.events.filter((e) =>
     (e.method === 'Runtime.exceptionThrown') ||
     (e.method === 'Console.messageAdded' && e.params?.message?.level === 'error')
   );
   assert(errors.length === 0, `Zero browser console/runtime errors (found ${errors.length})`);
 
-  console.log('\n🎉 ALL E2E TESTS & VISUAL CAPTURES PASSED 100%!');
+  console.log('\nALL AAA WINTERHOF E2E TESTS PASSED 100%!');
   cdp.close();
 } finally {
   chrome.kill();

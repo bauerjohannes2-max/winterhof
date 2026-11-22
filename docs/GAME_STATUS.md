@@ -18,3 +18,12 @@ Definitive chronological release & verification log (append-only).
 - **Saison-Dach-Varianten:** Smoothly cross-faded autumn foliage, mini-pumpkins, and warm roof glaze across all 6 buildings when switching to Autumn.
 - **Engine Hardening:** Clamped `dt <= 0.033s`, finite camera bounds guards, debounced `scheduleSave()` on rapid actions, `pagehide` flush.
 - **Verification:** Automated Chromium CDP E2E suite (`scripts/e2e_test.mjs`) executed with v4 assertions and screenshot inspection.
+
+## v5 (2026-11-22) — AAA Alpine Christmas Reboot (Hay-Day Benchmark Polish)
+- **100% Pure Alpine Christmas Theme:** Removed all non-Christmas mashup themes (Autumn, Halloween, Harry Potter) for single-vision artistic cohesion using 19 true 3D Supercell WebP assets.
+- **Strict Zero-Emoji Policy:** Removed every Unicode emoji across HTML, CSS, JS, Canvas, modals, toasts, and data; replaced with bespoke vector SVG iconography and illustrated miniature winter villagers on canvas.
+- **Hay-Day Corner-Anchored HUD:** Replaced clunky bottom white-box dock bar with sculpted circular brass-and-oak floating corner medallions (90% unobstructed viewport) + 5-point gold Level Star crest.
+- **Calm Level-1 Start:** Removed welcome letter popup; clean composed starter estate (Chalet, Christmas Tree, Bakery, 2x2 wheat plots, 1 chicken in fenced pen, road-aligned Wishlist Board & Sleigh, 2 symmetric lanterns).
+- **Infinite Alpine Valley World:** Eliminated floating diamond void; added continuous snow hills, horizon-to-horizon grid-aligned cobblestone village road, split-rail timber estate boundary fences, winding frozen mountain brook & snow-banked alpine pond with timber jetty, and snow-dusted perimeter boulders.
+- **Proportional Scale & Grounded Motion:** Re-scaled animals (Chicken 48px, Sheep 64px, Reindeer 78px), props (Mailbox 52px, Lantern 56px), and buildings (Chalet 242px, Stations 206px); eliminated idle building wobble/jelly bouncing.
+- **Verification:** Full Chromium E2E suite passed (including automated zero-emoji DOM/modal audit and 0 console errors) with visual screenshot review.

@@ -1,30 +1,23 @@
-# Winterhof & Zauberherbst — GAME_SYSTEMS.md
+# Winterhof — GAME_SYSTEMS.md (v5 AAA Alpine Christmas)
 
-Live specification synchronized with v4 code (`src/gameData.js`, `src/main.js`, `src/world.js`, `src/sprites.js`).
+Live technical specification synchronized with v5 code (`src/gameData.js`, `src/main.js`, `src/world.js`, `src/sprites.js`).
 
 ## 1. Core Loop & Hardening
 - **Frame Loop (`src/main.js`):** `dt = Math.min(0.033, Math.max(0, (now - lastFrame) / 1000))`.
 - **Camera Guards (`src/world.js`):** `clampCamera()` verifies `Number.isFinite` on `x, y, zoom, vx, vy`.
-- **Persistence:** `SAVE_KEY = 'winterhof_save_v2'` (version `4`). Debounced `scheduleSave(1500ms)` during rapid harvest sweeps; synchronous `saveState()` on rewards, unlocks, upgrades, and `pagehide`. Full backward-compatible migration injects `st_mill_dairy`, `barnCapacity`, and `discoveredItems`.
+- **Persistence:** `SAVE_KEY = 'winterhof_save_v5'`, debounced `scheduleSave(1500ms)` during swipe-harvesting, synchronous `saveState()` on rewards/upgrades/`pagehide`.
+- **Zero-Emoji Policy:** Enforced across HTML, CSS, JS, Canvas, and verified via automated regex assertion in `scripts/e2e_test.mjs`.
 
-## 2. Production Chains & Stations (`src/gameData.js`)
-| Station | Footprint | Unlock | Products |
-| :--- | :---: | :---: | :--- |
-| `mill_dairy` (Mühle & Molkerei) | 2x2 | Lv.1 (pre-built `2,2`) | `flour` (2 wheat, 45s), `butter` (1 starmilk, 60s), `mascarpone` (2 starmilk + 1 egg, 120s) |
-| `bakery` (Backstube & Waffel-Ofen) | 2x2 | Lv.1 (pre-built `3,6`) | `butterplaetzchen`, `waffles`, `lebkuchen`, `stollen` |
-| `teahouse` (Matcha- & Zauber-Teehaus) | 2x2 | Lv.1 (90★) | `matcha_latte`, `herbal_tea`, `butterbeer`, `hot_cocoa`, `pumpkin_latte` |
-| `patisserie` (Tiramisu- & Schwammerl-Küche) | 2x2 | Lv.2 (160★) | `mushroom_quiche`, `chocofrog`, `tiramisu`, `matcha_tiramisu` |
-| `gift_workshop` (Wichtel- & Zauberwerkstatt) | 2x2 | Lv.4 (240★) | `wool_scarf`, `cookie_tin`, `mega_gift` |
+## 2. World Architecture (`src/world.js`)
+- **Infinite Alpine Snow Valley:** Continuous snow terrain (`-14..30`) + layered hills, dense snow-pine border forest, winding frozen mountain brook & pond with timber jetty, split-rail timber estate boundary fences with evergreen corner shrubs.
+- **Grid-Aligned Roads:** Horizon-to-horizon main cobblestone village road along `gy = 5.5` with clean entrance aprons to Chalet `(6.0, 4.15..5.5)` and Backstube `(4.0, 5.5..6.95)`.
+- **Proportional Scale (`TILE_W = 116`):** Chalet `242px`, Stations `206px` (`punch_stand` `184px`), Sleigh `170px`, Board `88px`, Snowman `64px`, Lantern `56px`, Mailbox `52px`, Reindeer `78px`, Sheep `64px`, Chicken `48px`, Illustrated Villagers `~44px`.
+- **Grounded Motion:** Zero idle building wobble/scaling; micro-tap feedback `4.5%` over `0.2s`; gentle crop sway `0.014 rad`.
 
-## 3. Barn Capacity (`BARN_CONFIG`)
-- Base: `50` slots; Step: `+25`; Max: `300`.
-- Cost formula: `80 + tier * 65` coins (`tier = floor((cap - 50) / 25)`).
-- Guarded actions: `harvestField` (+2), `forageWildMushroom` (+2), `interactAnimal` (+1), `interactStation` (+ready.length).
-- Overflow-safe actions: `claimDailyChest`, `receiveGiftParcel` (rewards never lost).
-
-## 4. Living Village & Daily Systems
-- **Doorstep Villager Offers:** Checked every `22s`; one strolling villager offers `round(sellPrice * qty * 1.22) + 4` coins + XP for an in-stock item.
-- **Daily Treasure Chest:** Spawns at plaza `(6.5, 4.5)` once per local calendar date (`YYYY-MM-DD`). Streak increments on consecutive days. Coins = `45 + min(streak, 7) * 10`, XP = `20 + min(streak, 7) * 4`, plus 2 unlocked item bundles.
-- **Harvest-All Scythe:** Visible at `level >= 3` when `readyFieldsCount > 0`; harvests ripe plots until complete or barn full.
-- **Recipe & Collection Album:** Tracks `discoveredItems` (31 items) + `ALBUM_SECRETS` (6 secrets) inside Village → `Sammelbuch`.
-- **Seasonal Roofs:** `_drawAutumnRoofTrim()` cross-fades golden foliage, mini-pumpkins, and amber roof glaze on Chalet + all 5 stations using `seasonBlend`.
+## 3. Progression & Stations (`src/gameData.js`)
+- **Calm Starter Estate (Lv.1):** Chalet, Christmas Tree, Backstube, 4 wheat plots (`2x2`), 1 Schneehuhn (`Flöckchen`), Wishlist Board, Reindeer Sleigh, Mailbox, 2 road lanterns, 1 snowman.
+- **4 True-3D Production Stations:** `bakery` (Lv.1), `teahouse` / Punsch- & Café-Stand (Lv.1, 90), `patisserie` (Lv.2, 165), `gift_workshop` (Lv.3, 240).
+- **6 Crops:** `wheat`, `berries`, `matcha`, `cocoa`, `cinnamon`, `candycane`.
+- **3 Animals:** `chicken`, `reindeer`, `sheep`.
+- **Barn Capacity (`BARN_CONFIG`):** `50 -> 300` in `+25` steps (`80 + tier * 65`).
+- **Living Systems:** Doorstep villager offers (`1.22x` price + XP), Lakeside Daily Treasure Chest (`(11.4, 12.6)` with streak), Level-3 Harvest-All Scythe, Illustrated `Sammelbuch` (23 items + 4 milestones), 4 Story Chapters, 8 Achievements, Winterpost (`WH-...`).

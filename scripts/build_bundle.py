@@ -90,7 +90,7 @@ def build_pwa_zip() -> Path:
 
 
 def build_source_zip() -> Path:
-    zip_path = DIST / "winterhof-v4-source.zip"
+    zip_path = DIST / "winterhof-v5-source.zip"
     skip_dirs = {".git", "dist", "qa", "__pycache__", "node_modules"}
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for root, dirs, files in os.walk(ROOT):

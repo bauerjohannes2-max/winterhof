@@ -1,8 +1,10 @@
 // ============================================================================
-// WINTERHOF & ZAUBERHERBST — 60 FPS Hay-Day-Benchmark Living World Engine
+// WINTERHOF — AAA Alpine Christmas Isometric World Engine
+// Infinite Snow Valley · Grid-Aligned Cobblestone Roads · Realistic Proportions
+// Grounded Motion Discipline · Zero Emojis
 // ============================================================================
 
-import { GRID_SIZE, LAND_ZONES, ITEMS, ANIMALS, STATIONS, DECORATIONS, getLevelInfo, getStationMastery } from './gameData.js';
+import { GRID_SIZE, LAND_ZONES, ITEMS, ANIMALS, STATIONS, DECORATIONS, NPCS, getLevelInfo, getStationMastery } from './gameData.js';
 import { sprites } from './sprites.js';
 
 export const TILE_W = 116;
@@ -24,23 +26,26 @@ export function worldToGrid(wx, wy) {
 }
 
 const VILLAGER_QUOTES = [
-  'Mmmh, riecht nach Matcha! 🍵',
-  'So gemütlich hier! ✨',
-  'Frische Waffeln? Lecker! 🧇',
-  'Was für tolle Schwammerl! 🍄',
-  'Wundervoller Hof! ❤️',
-  'Ein Butterbier wär jetzt fein!'
+  'Es duftet nach frischem Gebäck.',
+  'Wunderbarer Wintertag im Tal.',
+  'Ein warmer Punsch wäre fein.',
+  'So ordentlich und friedlich hier.',
+  'Die Laternen leuchten wunderschön.'
 ];
 
+// Clean waypoints strictly along the main cobblestone village road (gy = 5.5)
 const ROAD_WAYPOINTS = [
-  { gx: 4.5, gy: 4.5 },
-  { gx: 7.5, gy: 4.5 },
-  { gx: 10.8, gy: 4.5 },
-  { gx: 7.5, gy: 7.2 },
-  { gx: 4.8, gy: 7.2 },
-  { gx: 11.2, gy: 7.2 },
-  { gx: 7.5, gy: 9.2 }
+  { gx: 2.2, gy: 5.5 },
+  { gx: 5.5, gy: 5.5 },
+  { gx: 7.5, gy: 5.5 },
+  { gx: 10.5, gy: 5.5 },
+  { gx: 13.5, gy: 5.5 },
+  { gx: 6.0, gy: 4.5 },
+  { gx: 4.0, gy: 6.5 }
 ];
+
+// Chest sits calmly by the lakeside jetty instead of cluttering the front yard
+export const DAILY_CHEST_POS = { gx: 11.4, gy: 12.6 };
 
 export class WinterWorld {
   constructor(canvas) {
@@ -50,92 +55,136 @@ export class WinterWorld {
     this.width = 0;
     this.height = 0;
 
-    const center = gridToWorld(7.6, 6.2);
+    // Centered on the composed farmstead heart (Chalet, Tree, Road, Fields, Bakery)
+    const center = gridToWorld(7.2, 6.2);
     this.cam = {
-      x: center.x + 8,
-      y: center.y - 26,
-      zoom: 0.84,
+      x: center.x,
+      y: center.y - 10,
+      zoom: 0.88,
       targetZoom: null,
       vx: 0,
       vy: 0
     };
 
-    // Atmosphere & Season
+    // Atmosphere (Pure Alpine Winter: Day / Golden Dusk / Cozy Starlight Night)
     this.lightingMode = 'auto';
-    this.autoClock = 0.1;
+    this.autoClock = 0.08;
     this.eveningFactor = 0;
-    this.seasonBlend = 0; // 0 = winter, 1 = autumn
 
-    // Ambient particles & visual juice
+    // Ambient particles & visual effects
     this.flakes = [];
-    this.fireflies = [];
     this.nightStars = [];
     this.smoke = [];
     this.sparkles = [];
     this.floaters = [];
-    this.flyingHudItems = []; // Bezier arcs directly to HUD!
+    this.flyingHudItems = [];
     this.swipeTrail = [];
 
     // Living entities
-    this.animalMotion = new Map(); // id -> { ox, oy, tx, ty, wait, flip, hopPhase }
+    this.animalMotion = new Map();
     this.villagers = this._initVillagers();
 
-    // Animated hero events
+    // Animated events
     this.sleighAnim = null;
     this.giftParachute = null;
-    this.snitch = null;
-    this.snitchCooldown = 14;
     this.bounceMap = new Map();
 
-    // Scenic valley forest & terrain
+    // Scenic valley environment (fills entire horizon seamlessly!)
+    this.valleyHills = this._generateValleyHills();
+    this.valleyBoulders = this._generateValleyBoulders();
     this.borderTrees = this._generateBorderForest();
-    this.groundDrifts = this._generateGroundDrifts();
+    this.roadPavers = this._generateRoadPavers();
 
     this._initWeather();
     this.resize();
   }
 
   _initVillagers() {
-    const specs = [
-      { id: 'v_hilde', name: 'Oma Hilde', emoji: '👵', coat: '#C1121F', hat: '#FFFDF7', wp: 0 },
-      { id: 'v_rudi', name: 'Wildhüter Rudi', emoji: '🧔', coat: '#6B3F1D', hat: '#3E220D', wp: 2 },
-      { id: 'v_leo', name: 'Zauberlehrling Leo', emoji: '🧙', coat: '#3B2552', hat: '#FACC15', wp: 4 }
-    ];
-    return specs.map((sp, i) => {
-      const start = ROAD_WAYPOINTS[sp.wp];
-      const next = ROAD_WAYPOINTS[(sp.wp + 1) % ROAD_WAYPOINTS.length];
+    const picked = NPCS.slice(0, 3);
+    const startWps = [0, 3, 5];
+    return picked.map((npc, i) => {
+      const start = ROAD_WAYPOINTS[startWps[i]];
+      const next = ROAD_WAYPOINTS[(startWps[i] + 1) % ROAD_WAYPOINTS.length];
       return {
-        ...sp,
+        id: 'v_' + npc.id,
+        npcId: npc.id,
+        name: npc.name,
+        coat: npc.coat,
+        scarf: npc.scarf,
+        hat: npc.hat,
+        hair: npc.hair,
+        skin: npc.skin,
         gx: start.gx,
         gy: start.gy,
         tx: next.gx,
         ty: next.gy,
-        pause: i * 1.6,
+        facing: 1,
+        pause: 2.0 + i * 2.2,
         quote: '',
         quoteTimer: 0,
-        lastTipAt: 0
+        lastTipAt: 0,
+        offer: null
       };
     });
+  }
+
+  _generateValleyHills() {
+    const hills = [];
+    let seed = 2026;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    for (let i = 0; i < 65; i++) {
+      const gx = -10 + rand() * 36;
+      const gy = -10 + rand() * 36;
+      const p = gridToWorld(gx, gy);
+      hills.push({
+        x: p.x,
+        y: p.y,
+        rx: 95 + rand() * 190,
+        ry: 42 + rand() * 82,
+        shade: rand() < 0.5 ? 'light' : 'cool',
+        alpha: 0.14 + rand() * 0.18
+      });
+    }
+    return hills;
+  }
+
+  _generateValleyBoulders() {
+    const boulders = [];
+    let seed = 8811;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    for (let i = 0; i < 32; i++) {
+      const gx = -4 + rand() * 24;
+      const gy = -4 + rand() * 24;
+      if (gx >= 1 && gx <= 15 && gy >= 1 && gy <= 15) continue;
+      if (Math.abs(gy - 5.5) < 1.35) continue; // keep main valley road clear
+      boulders.push({ gx, gy, r: 10 + rand() * 13 });
+    }
+    return boulders;
   }
 
   _generateBorderForest() {
     const trees = [];
     let seed = 1337;
-    const rand = () => {
-      seed = (seed * 16807) % 2147483647;
-      return (seed - 1) / 2147483646;
-    };
-    for (let gx = -3; gx <= GRID_SIZE + 2; gx++) {
-      for (let gy = -3; gy <= GRID_SIZE + 2; gy++) {
+    const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    for (let gx = -8; gx <= GRID_SIZE + 7; gx++) {
+      for (let gy = -8; gy <= GRID_SIZE + 7; gy++) {
+        // Leave inner farmstead completely open
         if (gx >= 0 && gx < GRID_SIZE && gy >= 0 && gy < GRID_SIZE) continue;
-        if (gx >= 11 && gx <= 17 && gy >= 14 && gy <= 18) continue;
-        if (rand() < 0.64) {
+        // Leave wide corridor for main valley road (gy = 5.5)
+        if (Math.abs(gy - 5.5) < 1.4) continue;
+        // Leave alpine lake & brook clearing open
+        if (gx >= 9 && gx <= 21 && gy >= 13 && gy <= 19) continue;
+        const distOut = Math.max(
+          gx < 0 ? -gx : gx >= GRID_SIZE ? gx - GRID_SIZE + 1 : 0,
+          gy < 0 ? -gy : gy >= GRID_SIZE ? gy - GRID_SIZE + 1 : 0
+        );
+        const density = distOut <= 2 ? 0.78 : distOut <= 5 ? 0.62 : 0.44;
+        if (rand() < density) {
           trees.push({
-            gx: gx + (rand() - 0.5) * 0.65,
-            gy: gy + (rand() - 0.5) * 0.65,
-            scale: 0.78 + rand() * 0.44,
-            phase: rand() * Math.PI * 2,
-            autumnVariant: rand() < 0.65
+            gx: gx + (rand() - 0.5) * 0.55,
+            gy: gy + (rand() - 0.5) * 0.55,
+            scale: 0.86 + rand() * 0.42,
+            phase: rand() * Math.PI * 2
           });
         }
       }
@@ -143,53 +192,42 @@ export class WinterWorld {
     return trees;
   }
 
-  _generateGroundDrifts() {
-    const drifts = [];
-    let seed = 4242;
-    const rand = () => {
-      seed = (seed * 16807) % 2147483647;
-      return (seed - 1) / 2147483646;
-    };
-    for (let i = 0; i < 30; i++) {
-      const p = gridToWorld(rand() * GRID_SIZE, rand() * GRID_SIZE);
-      drifts.push({
-        x: p.x, y: p.y,
-        rx: 42 + rand() * 76,
-        ry: 18 + rand() * 32,
-        alpha: 0.14 + rand() * 0.2
-      });
+  _generateRoadPavers() {
+    const pavers = [];
+    // Main horizon-to-horizon village road pavers strictly aligned along gy = 5.5
+    for (let gx = -10; gx <= 26; gx += 0.58) {
+      pavers.push({ gx, gy: 5.5, off: (Math.round(gx * 2) % 2 === 0 ? -1 : 1) * 6, tone: Math.round(gx * 3) % 3 });
     }
-    return drifts;
+    // Chalet front stone path (gy = 4.2..5.2 at gx = 6.0)
+    for (let gy = 4.3; gy <= 5.2; gy += 0.45) {
+      pavers.push({ gx: 6.0, gy, off: 0, tone: 0 });
+    }
+    // Bakery entrance stone apron (gy = 5.8..6.8 at gx = 4.0)
+    for (let gy = 5.85; gy <= 6.8; gy += 0.45) {
+      pavers.push({ gx: 4.0, gy, off: 0, tone: 1 });
+    }
+    return pavers;
   }
 
   _initWeather() {
     this.flakes = [];
-    const leafColors = ['#F97316', '#EA580C', '#FACC15', '#DC2626', '#D97706'];
-    for (let i = 0; i < 68; i++) {
+    for (let i = 0; i < 48; i++) {
       this.flakes.push({
-        x: Math.random() * 1400, y: Math.random() * 900,
-        r: 1.6 + Math.random() * 3.1,
-        vy: 18 + Math.random() * 30,
-        vx: -10 + Math.random() * 18,
+        x: Math.random() * 1400,
+        y: Math.random() * 900,
+        r: 1.3 + Math.random() * 2.2,
+        vy: 14 + Math.random() * 22,
+        vx: -6 + Math.random() * 12,
         phase: Math.random() * Math.PI * 2,
-        rot: Math.random() * Math.PI * 2,
-        leafColor: leafColors[i % leafColors.length],
-        alpha: 0.45 + Math.random() * 0.5
-      });
-    }
-    this.fireflies = [];
-    for (let i = 0; i < 22; i++) {
-      this.fireflies.push({
-        x: Math.random() * 1400, y: Math.random() * 900,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.8 + Math.random() * 1.2
+        alpha: 0.35 + Math.random() * 0.45
       });
     }
     this.nightStars = [];
-    for (let i = 0; i < 36; i++) {
+    for (let i = 0; i < 34; i++) {
       this.nightStars.push({
-        rx: Math.random(), ry: Math.random() * 0.34,
-        r: 1 + Math.random() * 1.8,
+        rx: Math.random(),
+        ry: Math.random() * 0.3,
+        r: 0.9 + Math.random() * 1.6,
         phase: Math.random() * Math.PI * 2
       });
     }
@@ -208,10 +246,9 @@ export class WinterWorld {
       this._initializedZoom = true;
       const isPortrait = this.height > this.width;
       const comfort = isPortrait
-        ? (this.width < 430 ? 0.58 : 0.72)
-        : (this.height < 460 ? 0.62 : 0.84);
-      // Start slightly zoomed out for a cinematic Hay-Day zoom-in reveal!
-      this.cam.zoom = comfort * 0.84;
+        ? (this.width < 430 ? 0.68 : 0.78)
+        : (this.height < 460 ? 0.7 : 0.9);
+      this.cam.zoom = comfort * 0.92;
       this.cam.targetZoom = comfort;
     }
   }
@@ -234,36 +271,38 @@ export class WinterWorld {
     const c = gridToWorld(GRID_SIZE * 0.5, GRID_SIZE * 0.5);
     if (!Number.isFinite(this.cam.x)) this.cam.x = c.x;
     if (!Number.isFinite(this.cam.y)) this.cam.y = c.y;
-    if (!Number.isFinite(this.cam.zoom)) this.cam.zoom = 0.84;
+    if (!Number.isFinite(this.cam.zoom)) this.cam.zoom = 0.88;
     if (!Number.isFinite(this.cam.vx)) this.cam.vx = 0;
     if (!Number.isFinite(this.cam.vy)) this.cam.vy = 0;
-    this.cam.x = Math.max(c.x - 720, Math.min(c.x + 720, this.cam.x));
-    this.cam.y = Math.max(c.y - 460, Math.min(c.y + 460, this.cam.y));
-    this.cam.zoom = Math.max(0.42, Math.min(1.65, this.cam.zoom));
+    this.cam.x = Math.max(c.x - 560, Math.min(c.x + 560, this.cam.x));
+    this.cam.y = Math.max(c.y - 380, Math.min(c.y + 380, this.cam.y));
+    this.cam.zoom = Math.max(0.52, Math.min(1.55, this.cam.zoom));
   }
 
   triggerBounce(entityId) {
     this.bounceMap.set(entityId, performance.now());
   }
 
-  spawnBurst(wx, wy, color = '#FDE047', count = 12, shape = 'star') {
+  spawnBurst(wx, wy, color = '#FDE047', count = 10, shape = 'star') {
     for (let i = 0; i < count; i++) {
-      const a = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
-      const sp = 35 + Math.random() * 92;
+      const a = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.35;
+      const sp = 28 + Math.random() * 68;
       this.sparkles.push({
-        x: wx, y: wy,
+        x: wx,
+        y: wy,
         vx: Math.cos(a) * sp,
-        vy: Math.sin(a) * sp - 48,
-        size: 4 + Math.random() * 5,
-        color, shape,
+        vy: Math.sin(a) * sp - 36,
+        size: 3.5 + Math.random() * 3.8,
+        color,
+        shape,
         life: 0,
-        maxLife: 0.68 + Math.random() * 0.4
+        maxLife: 0.55 + Math.random() * 0.32
       });
     }
   }
 
   spawnFloater(wx, wy, text, iconId = null, color = '#FFFFFF') {
-    this.floaters.push({ x: wx, y: wy, text, iconId, color, life: 0, maxLife: 1.45 });
+    this.floaters.push({ x: wx, y: wy, text, iconId, color, life: 0, maxLife: 1.3 });
   }
 
   spawnFlyingHudItem(wx, wy, iconId, target = 'barn', onLand = null) {
@@ -274,19 +313,22 @@ export class WinterWorld {
     const tx = rect.left + rect.width * 0.5;
     const ty = rect.top + rect.height * 0.5;
     this.flyingHudItems.push({
-      sx: start.x, sy: start.y,
-      cx: (start.x + tx) * 0.5 + (Math.random() - 0.5) * 90,
-      cy: Math.min(start.y, ty) - 80,
-      tx, ty,
-      iconId, elId,
+      sx: start.x,
+      sy: start.y,
+      cx: (start.x + tx) * 0.5 + (Math.random() - 0.5) * 70,
+      cy: Math.min(start.y, ty) - 65,
+      tx,
+      ty,
+      iconId,
+      elId,
       t: 0,
-      duration: 0.62 + Math.random() * 0.16,
+      duration: 0.58 + Math.random() * 0.14,
       onLand
     });
   }
 
   addSwipePoint(sx, sy, mode = 'harvest') {
-    this.swipeTrail.push({ x: sx, y: sy, mode, life: 0, maxLife: 0.32 });
+    this.swipeTrail.push({ x: sx, y: sy, mode, life: 0, maxLife: 0.28 });
   }
 
   launchSleigh(state) {
@@ -298,113 +340,90 @@ export class WinterWorld {
     this.giftParachute = { progress: 0, from, onDone };
   }
 
-  spawnSnitch() {
-    const c = gridToWorld(7.5, 6.5);
-    this.snitch = {
-      x: c.x - 360,
-      y: c.y - 120 + (Math.random() - 0.5) * 140,
-      baseY: c.y - 110,
-      vx: 72,
-      phase: 0,
-      life: 0,
-      maxLife: 14
-    };
-  }
-
-  hitTestSnitch(wx, wy) {
-    if (!this.snitch) return false;
-    return Math.hypot(wx - this.snitch.x, wy - this.snitch.y) < 48;
-  }
-
   hitTestVillager(wx, wy) {
     for (const v of this.villagers) {
       const p = gridToWorld(v.gx, v.gy);
-      const topPad = v.offer ? 88 : 54;
-      if (Math.abs(wx - p.x) < 34 && wy > p.y - topPad && wy < p.y + 14) return v;
+      const topPad = v.offer ? 78 : 48;
+      if (Math.abs(wx - p.x) < 28 && wy > p.y - topPad && wy < p.y + 12) return v;
     }
     return null;
   }
 
   hitTestDailyChest(wx, wy, chestReady) {
     if (!chestReady) return false;
-    const p = gridToWorld(6.5, 4.5);
-    return Math.abs(wx - p.x) < 42 && wy > p.y - 84 && wy < p.y + 20;
+    const p = gridToWorld(DAILY_CHEST_POS.gx, DAILY_CHEST_POS.gy);
+    return Math.abs(wx - p.x) < 38 && wy > p.y - 72 && wy < p.y + 18;
   }
 
   getAnimalMotion(an) {
     let m = this.animalMotion.get(an.id);
     if (!m) {
-      m = { ox: 0, oy: 0, tx: 0, ty: 0, wait: 1 + Math.random() * 2.5, flip: false, hop: 0 };
+      m = { ox: 0, oy: 0, tx: 0, ty: 0, wait: 1.5 + Math.random() * 2.5, flip: false, walkPhase: 0 };
       this.animalMotion.set(an.id, m);
     }
     return m;
   }
 
   update(dt, state) {
-    // Cinematic smooth intro zoom-in
+    // Smooth intro camera settle
     if (this.cam.targetZoom !== null) {
-      this.cam.zoom += (this.cam.targetZoom - this.cam.zoom) * Math.min(1, dt * 3.8);
-      if (Math.abs(this.cam.zoom - this.cam.targetZoom) < 0.004) {
+      this.cam.zoom += (this.cam.targetZoom - this.cam.zoom) * Math.min(1, dt * 3.2);
+      if (Math.abs(this.cam.zoom - this.cam.targetZoom) < 0.003) {
         this.cam.zoom = this.cam.targetZoom;
         this.cam.targetZoom = null;
       }
     }
 
-    // Camera momentum
+    // Smooth camera inertia
     if (Math.abs(this.cam.vx) > 0.5 || Math.abs(this.cam.vy) > 0.5) {
       this.cam.x += this.cam.vx * dt;
       this.cam.y += this.cam.vy * dt;
-      const damp = Math.pow(0.04, dt);
+      const damp = Math.pow(0.035, dt);
       this.cam.vx *= damp;
       this.cam.vy *= damp;
       this.clampCamera();
     }
 
-    // Smooth season cross-fade
-    const targetSeason = state.season === 'autumn' ? 1 : 0;
-    this.seasonBlend += (targetSeason - this.seasonBlend) * Math.min(1, dt * 3.8);
-
     // Lighting progression
     if (this.lightingMode === 'auto') {
-      this.autoClock = (this.autoClock + dt / 240) % 1;
+      this.autoClock = (this.autoClock + dt / 280) % 1;
       const wave = 0.5 - 0.5 * Math.cos(this.autoClock * Math.PI * 2);
-      this.eveningFactor += (wave - this.eveningFactor) * Math.min(1, dt * 2.5);
+      this.eveningFactor += (wave - this.eveningFactor) * Math.min(1, dt * 2.2);
     } else {
       const target = this.lightingMode === 'day' ? 0 : this.lightingMode === 'dusk' ? 0.52 : 1;
-      this.eveningFactor += (target - this.eveningFactor) * Math.min(1, dt * 3.5);
+      this.eveningFactor += (target - this.eveningFactor) * Math.min(1, dt * 3.2);
     }
 
-    // Autonomous Animal Wandering & Hopping (slows & sleeps peacefully at night!)
+    // Calm natural animal movement inside their fenced pens
     const sleeping = this.eveningFactor > 0.72;
     for (const an of state.animals) {
       const m = this.getAnimalMotion(an);
-      if (an.type === 'owl' || (sleeping && an.state !== 'ready')) {
-        // Owls perch & bob gently; sleeping animals settle softly
-        m.hop = 0;
+      if (sleeping && an.state !== 'ready') {
+        m.walkPhase = 0;
         continue;
       }
       const dx = m.tx - m.ox;
       const dy = m.ty - m.oy;
       const dist = Math.hypot(dx, dy);
-      if (dist > 0.03) {
-        const speed = an.type === 'chicken' ? 0.24 : 0.3;
+      if (dist > 0.025) {
+        const speed = an.type === 'chicken' ? 0.16 : 0.2;
         const step = Math.min(dist, speed * dt);
         m.ox += (dx / dist) * step;
         m.oy += (dy / dist) * step;
         m.flip = (dx - dy) < 0;
-        m.hop += dt * 11;
+        m.walkPhase += dt * 7;
       } else {
-        m.hop = 0;
+        m.walkPhase = 0;
         m.wait -= dt;
         if (m.wait <= 0) {
-          m.tx = (Math.random() - 0.5) * 0.52;
-          m.ty = (Math.random() - 0.5) * 0.52;
-          m.wait = 2.0 + Math.random() * 3.2;
+          m.tx = (Math.random() - 0.5) * 0.34;
+          m.ty = (Math.random() - 0.5) * 0.34;
+          m.wait = 2.6 + Math.random() * 3.8;
         }
       }
     }
 
-    // Strolling NPC Villagers along village walkways
+    // Calm strolling villagers strictly along cobblestone roads
     for (const v of this.villagers) {
       if (v.quoteTimer > 0) v.quoteTimer -= dt;
       if (v.pause > 0) {
@@ -414,119 +433,68 @@ export class WinterWorld {
       const dx = v.tx - v.gx;
       const dy = v.ty - v.gy;
       const dist = Math.hypot(dx, dy);
-      if (dist > 0.08) {
-        const step = Math.min(dist, 0.55 * dt);
+      if (dist > 0.06) {
+        const step = Math.min(dist, 0.42 * dt);
         v.gx += (dx / dist) * step;
         v.gy += (dy / dist) * step;
+        v.facing = (dx - dy) >= 0 ? 1 : -1;
       } else {
         const pick = ROAD_WAYPOINTS[Math.floor(Math.random() * ROAD_WAYPOINTS.length)];
         v.tx = pick.gx;
         v.ty = pick.gy;
-        v.pause = 2.5 + Math.random() * 4.5;
-        if (Math.random() < 0.45) {
+        v.pause = 3.2 + Math.random() * 4.5;
+        if (!v.offer && Math.random() < 0.32) {
           v.quote = VILLAGER_QUOTES[Math.floor(Math.random() * VILLAGER_QUOTES.length)];
-          v.quoteTimer = 3.4;
+          v.quoteTimer = 3.0;
         }
       }
     }
 
-    // Weather particles
+    // Soft winter snowfall
     for (const sf of this.flakes) {
-      sf.phase += dt * 1.5;
-      sf.rot += dt * (1.2 + this.seasonBlend * 1.4);
-      sf.y += sf.vy * (1 + this.seasonBlend * 0.25) * dt;
-      sf.x += (sf.vx + Math.sin(sf.phase) * (14 + this.seasonBlend * 16)) * dt;
-      if (sf.y > this.height + 14) { sf.y = -14; sf.x = Math.random() * this.width; }
-      if (sf.x < -14) sf.x = this.width + 14;
-      if (sf.x > this.width + 14) sf.x = -14;
+      sf.phase += dt * 1.2;
+      sf.y += sf.vy * dt;
+      sf.x += (sf.vx + Math.sin(sf.phase) * 9) * dt;
+      if (sf.y > this.height + 12) { sf.y = -12; sf.x = Math.random() * this.width; }
+      if (sf.x < -12) sf.x = this.width + 12;
+      if (sf.x > this.width + 12) sf.x = -12;
     }
 
-    // Golden Snitch
-    if (this.snitch) {
-      this.snitch.life += dt;
-      this.snitch.phase += dt * 4.2;
-      this.snitch.x += (this.snitch.vx + Math.sin(this.snitch.phase * 0.7) * 38) * dt;
-      this.snitch.y = this.snitch.baseY + Math.sin(this.snitch.phase) * 52 + Math.cos(this.snitch.phase * 1.7) * 20;
-      if (Math.random() < dt * 18) {
-        this.sparkles.push({
-          x: this.snitch.x + (Math.random() - 0.5) * 14,
-          y: this.snitch.y + (Math.random() - 0.5) * 10,
-          vx: -18 + Math.random() * 14, vy: 10 + Math.random() * 18,
-          size: 3 + Math.random() * 3.5, color: '#FEF08A', shape: 'star', life: 0, maxLife: 0.55
-        });
-      }
-      if (this.snitch.life >= this.snitch.maxLife) {
-        this.snitch = null;
-        this.snitchCooldown = 42 + Math.random() * 26;
-      }
-    } else {
-      this.snitchCooldown -= dt;
-      if (this.snitchCooldown <= 0) this.spawnSnitch();
-    }
-
-    // Chimney smoke & active building production steam/sparks
-    if (Math.random() < dt * 4.5) {
+    // Subtle cozy chimney smoke curls
+    if (Math.random() < dt * 3.4) {
       const pChalet = gridToWorld(state.chalet.gx + 0.5, state.chalet.gy + 0.5);
-      this._emitSmoke(pChalet.x + 28, pChalet.y - 118);
+      this._emitSmoke(pChalet.x + 26, pChalet.y - 116);
     }
     for (const st of state.stations) {
       if (!st.built || st.wrapped) continue;
       const busy = st.queue.length > 0;
-      if (Math.random() < dt * (busy ? 7.2 : 1.5)) {
+      if (Math.random() < dt * (busy ? 5.2 : 1.1)) {
         const def = STATIONS[st.type];
         const p = gridToWorld(st.gx + 0.5, st.gy + 0.5);
-        let col = '#EBF5FF';
-        if (busy) {
-          const activeId = st.queue[0]?.itemId;
-          col = activeId?.includes('matcha') ? '#BBF7D0'
-            : activeId === 'butterbeer' ? '#FDE68A'
-            : '#FFF7E6';
-        }
-        this._emitSmoke(p.x + def.chimneyOffset.x * 165, p.y + def.chimneyOffset.y * 155, col);
-      }
-      // Subtle festive production sparkles while working
-      if (busy && Math.random() < dt * 3.5) {
-        const p = gridToWorld(st.gx + 1, st.gy + 1);
-        const col = st.type === 'teahouse' ? '#86EFAC'
-          : st.type === 'gift_workshop' ? '#F87171'
-          : '#FEF08A';
-        this.sparkles.push({
-          x: p.x + (Math.random() - 0.5) * 65,
-          y: p.y - 75 - Math.random() * 35,
-          vx: (Math.random() - 0.5) * 24,
-          vy: -28 - Math.random() * 24,
-          size: 3.5 + Math.random() * 2.5,
-          color: col, shape: 'star', life: 0, maxLife: 0.75
-        });
-      }
-    }
-    for (const d of state.decorations) {
-      if (d.type === 'cauldron' && Math.random() < dt * 3.8) {
-        const p = gridToWorld(d.gx + 0.5, d.gy + 0.5);
-        this._emitSmoke(p.x, p.y - 54, '#86EFAC');
+        const col = busy ? '#FFF7E8' : '#EBF5FF';
+        this._emitSmoke(p.x + def.chimneyOffset.x * 145, p.y + def.chimneyOffset.y * 140, col);
       }
     }
 
     for (let i = this.smoke.length - 1; i >= 0; i--) {
       const s = this.smoke[i];
-      s.life += dt; s.x += s.vx * dt; s.y += s.vy * dt; s.r += dt * 9.5;
+      s.life += dt; s.x += s.vx * dt; s.y += s.vy * dt; s.r += dt * 7.5;
       if (s.life >= s.maxLife) this.smoke.splice(i, 1);
     }
     for (let i = this.sparkles.length - 1; i >= 0; i--) {
       const sp = this.sparkles[i];
-      sp.life += dt; sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.vy += 140 * dt;
+      sp.life += dt; sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.vy += 120 * dt;
       if (sp.life >= sp.maxLife) this.sparkles.splice(i, 1);
     }
     for (let i = this.floaters.length - 1; i >= 0; i--) {
       const fl = this.floaters[i];
-      fl.life += dt; fl.y -= 36 * dt;
+      fl.life += dt; fl.y -= 30 * dt;
       if (fl.life >= fl.maxLife) this.floaters.splice(i, 1);
     }
     for (let i = this.swipeTrail.length - 1; i >= 0; i--) {
       this.swipeTrail[i].life += dt;
       if (this.swipeTrail[i].life >= this.swipeTrail[i].maxLife) this.swipeTrail.splice(i, 1);
     }
-    // Flying HUD items
     for (let i = this.flyingHudItems.length - 1; i >= 0; i--) {
       const fh = this.flyingHudItems[i];
       fh.t += dt / fh.duration;
@@ -545,21 +513,24 @@ export class WinterWorld {
     // Flying Sleigh
     if (this.sleighAnim && this.sleighAnim.active) {
       this.sleighAnim.progress += dt * 0.28;
-      if (Math.random() < dt * 26) {
+      if (Math.random() < dt * 20) {
         const pos = this._getSleighFlyingPos();
         this.sparkles.push({
-          x: pos.x - 45 + (Math.random() - 0.5) * 24,
-          y: pos.y + 10 + (Math.random() - 0.5) * 18,
-          vx: -30 + Math.random() * 20, vy: 15 + Math.random() * 20,
-          size: 3.5 + Math.random() * 4.5,
+          x: pos.x - 40 + (Math.random() - 0.5) * 20,
+          y: pos.y + 8 + (Math.random() - 0.5) * 14,
+          vx: -24 + Math.random() * 16,
+          vy: 12 + Math.random() * 16,
+          size: 3 + Math.random() * 3.5,
           color: Math.random() < 0.5 ? '#FEF08A' : '#FFFFFF',
-          shape: 'star', life: 0, maxLife: 0.75
+          shape: 'star',
+          life: 0,
+          maxLife: 0.65
         });
       }
       if (this.sleighAnim.progress >= 1) this.sleighAnim = null;
     }
 
-    // Owl Gift delivery
+    // Winter Post Delivery
     if (this.giftParachute) {
       this.giftParachute.progress += dt * 0.42;
       if (this.giftParachute.progress >= 1) {
@@ -572,9 +543,14 @@ export class WinterWorld {
 
   _emitSmoke(x, y, color = '#FFFFFF') {
     this.smoke.push({
-      x: x + (Math.random() - 0.5) * 6, y,
-      vx: 10 + Math.random() * 14, vy: -26 - Math.random() * 14,
-      r: 5 + Math.random() * 4, color, life: 0, maxLife: 1.7 + Math.random() * 0.7
+      x: x + (Math.random() - 0.5) * 4,
+      y,
+      vx: 8 + Math.random() * 10,
+      vy: -22 - Math.random() * 10,
+      r: 4 + Math.random() * 3,
+      color,
+      life: 0,
+      maxLife: 1.6 + Math.random() * 0.6
     });
   }
 
@@ -583,20 +559,21 @@ export class WinterWorld {
     const t = a.progress;
     const arc = Math.sin(t * Math.PI);
     return {
-      x: a.startX + Math.sin(t * Math.PI * 2) * 340 + arc * 180,
-      y: a.startY - arc * 290 - Math.sin(t * Math.PI * 2) * 40,
-      scale: 1 + arc * 0.25,
-      tilt: Math.cos(t * Math.PI) * -0.18
+      x: a.startX + Math.sin(t * Math.PI * 2) * 320 + arc * 160,
+      y: a.startY - arc * 260 - Math.sin(t * Math.PI * 2) * 32,
+      scale: 1 + arc * 0.2,
+      tilt: Math.cos(t * Math.PI) * -0.14
     };
   }
 
+  // Subtle, crisp tap feedback (NO jelly bouncing!)
   _getBounceScale(id, now) {
     const t0 = this.bounceMap.get(id);
     if (!t0) return { sx: 1, sy: 1 };
     const elapsed = (now - t0) / 1000;
-    if (elapsed > 0.36) { this.bounceMap.delete(id); return { sx: 1, sy: 1 }; }
-    const wave = Math.sin(elapsed * Math.PI * 5.5) * Math.exp(-elapsed * 7.5);
-    return { sx: 1 + wave * 0.14, sy: 1 - wave * 0.14 };
+    if (elapsed > 0.2) { this.bounceMap.delete(id); return { sx: 1, sy: 1 }; }
+    const wave = Math.sin(elapsed * Math.PI * 5) * Math.exp(-elapsed * 12);
+    return { sx: 1 + wave * 0.045, sy: 1 - wave * 0.045 };
   }
 
   _mix(a, b, t) {
@@ -608,13 +585,12 @@ export class WinterWorld {
     const now = performance.now();
     const sec = now * 0.001;
     const ev = this.eveningFactor;
-    const aut = this.seasonBlend;
 
     ctx.save();
     ctx.scale(this.dpr, this.dpr);
 
-    // 1. Sky / Valley Backdrop + Night Stars + Aurora
-    this._drawBackdrop(ctx, ev, aut, sec);
+    // 1. Infinite Alpine Snow Ground Backdrop (Zero floating edges!)
+    this._drawBackdrop(ctx, ev, sec);
 
     // 2. Camera Transform
     ctx.save();
@@ -622,11 +598,11 @@ export class WinterWorld {
     ctx.scale(this.cam.zoom, this.cam.zoom);
     ctx.translate(-this.cam.x, -this.cam.y);
 
-    // 3. Terrain, Walkways, Pond + Wooden Dock + Swimming Ducks
-    this._drawTerrain(ctx, state, uiState, sec, ev, aut);
+    // 3. Layered Alpine Valley Terrain, Roads, Frozen Brook, Fences
+    this._drawTerrain(ctx, state, uiState, sec, ev);
 
-    // 4. Depth-Sorted 2.5D Render List
-    const drawList = this._buildDrawList(state, uiState, now, sec, aut, ev);
+    // 4. Depth-Sorted 2.5D World Entities
+    const drawList = this._buildDrawList(state, uiState, now, sec, ev);
     drawList.sort((a, b) => a.depth - b.depth);
 
     const glowSpots = [];
@@ -637,11 +613,11 @@ export class WinterWorld {
       this._drawGhostPreview(ctx, state, uiState);
     }
 
-    // 6. Chimney Smoke & Magic Steam
+    // 6. Chimney Smoke
     for (const s of this.smoke) {
       const p = s.life / s.maxLife;
       ctx.fillStyle = s.color;
-      ctx.globalAlpha = (1 - p) * 0.44;
+      ctx.globalAlpha = (1 - p) * 0.36;
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
@@ -655,299 +631,211 @@ export class WinterWorld {
         ctx.translate(pos.x, pos.y);
         ctx.rotate(pos.tilt);
         ctx.scale(pos.scale, pos.scale);
-        ctx.drawImage(spr, -105, -95, 210, 186);
+        ctx.drawImage(spr, -88, -78, 176, 156);
         ctx.restore();
       }
     }
 
-    // 8. Flying Golden Snitch
-    if (this.snitch) {
-      const spr = sprites.get('golden_snitch');
-      const flap = 1 + Math.sin(sec * 28) * 0.12;
-      ctx.save();
-      ctx.translate(this.snitch.x, this.snitch.y);
-      const sg = ctx.createRadialGradient(0, 0, 4, 0, 0, 42);
-      sg.addColorStop(0, 'rgba(254, 240, 138, 0.78)');
-      sg.addColorStop(1, 'rgba(254, 240, 138, 0)');
-      ctx.fillStyle = sg;
-      ctx.beginPath(); ctx.arc(0, 0, 42, 0, Math.PI * 2); ctx.fill();
-      ctx.scale(flap, 1 / flap);
-      if (spr) ctx.drawImage(spr, -44, -28, 88, 56);
-      ctx.restore();
-    }
-
-    // 9. Warm Evening Lights
+    // 8. Warm Evening Lantern & Window Glows
     if (ev > 0.08) this._drawWarmLights(ctx, glowSpots, ev, sec);
 
-    // 10. Sparkles & Hearts
+    // 9. Sparkles & Hearts
     for (const sp of this.sparkles) {
       const alpha = 1 - sp.life / sp.maxLife;
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.translate(sp.x, sp.y);
       ctx.fillStyle = sp.color;
-      if (sp.shape === 'heart') this._drawHeart(ctx, 0, 0, sp.size * 1.4);
+      if (sp.shape === 'heart') this._drawHeart(ctx, 0, 0, sp.size * 1.3);
       else this._drawStar(ctx, 0, 0, sp.size);
       ctx.restore();
     }
 
-    // 11. Floating Text Popups
+    // 10. Crisp Floating Feedback Popups
     for (const fl of this.floaters) {
       const p = fl.life / fl.maxLife;
       const alpha = p < 0.72 ? 1 : (1 - p) / 0.28;
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.font = '800 17px ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
+      ctx.font = '800 14px Inter, "Segoe UI", system-ui, sans-serif';
       const iconImg = fl.iconId ? sprites.getIconImg(fl.iconId) : null;
       const tw = ctx.measureText(fl.text).width;
-      const pillW = tw + 24 + (iconImg ? 26 : 0);
-      const pillH = 30;
-      ctx.fillStyle = 'rgba(42, 24, 14, 0.85)';
-      this._roundRect(ctx, fl.x - pillW * 0.5, fl.y - pillH * 0.5, pillW, pillH, 15);
+      const pillW = tw + 22 + (iconImg ? 22 : 0);
+      const pillH = 26;
+      ctx.fillStyle = 'rgba(34, 18, 9, 0.86)';
+      this._roundRect(ctx, fl.x - pillW * 0.5, fl.y - pillH * 0.5, pillW, pillH, 13);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 224, 130, 0.82)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(228, 182, 98, 0.85)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      let tx = fl.x - pillW * 0.5 + 12;
-      if (iconImg) { ctx.drawImage(iconImg, tx - 2, fl.y - 12, 24, 24); tx += 26; }
+      let tx = fl.x - pillW * 0.5 + 11;
+      if (iconImg) { ctx.drawImage(iconImg, tx - 2, fl.y - 10, 20, 20); tx += 22; }
       ctx.fillStyle = fl.color;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      ctx.fillText(fl.text, tx, fl.y + 1);
+      ctx.fillText(fl.text, tx, fl.y + 0.5);
       ctx.restore();
     }
 
     ctx.restore(); // end camera transform
 
-    // 12. Screen-Space Evening Mood Glaze
-    if (ev > 0.05) this._drawEveningOverlay(ctx, ev, aut);
+    // 11. Screen-Space Evening Mood Tint
+    if (ev > 0.05) this._drawEveningOverlay(ctx, ev);
 
-    // 13. Weather Particles (Snow / Autumn Leaves / Fireflies)
+    // 12. Gentle Snowfall
     ctx.save();
     for (const sf of this.flakes) {
-      ctx.globalAlpha = sf.alpha * (0.75 + ev * 0.25);
-      if (aut > 0.5) {
-        ctx.save();
-        ctx.translate(sf.x, sf.y);
-        ctx.rotate(sf.rot);
-        ctx.fillStyle = sf.leafColor;
-        ctx.beginPath(); ctx.ellipse(0, 0, sf.r * 2.1, sf.r * 1.15, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-      } else {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath(); ctx.arc(sf.x, sf.y, sf.r, 0, Math.PI * 2); ctx.fill();
-      }
-    }
-    if (aut > 0.35 && ev > 0.25) {
-      for (const ff of this.fireflies) {
-        const fx = (ff.x + Math.sin(sec * ff.speed + ff.phase) * 45 + this.width) % this.width;
-        const fy = (ff.y + Math.cos(sec * ff.speed * 0.8 + ff.phase) * 35 + this.height) % this.height;
-        ctx.globalAlpha = (0.35 + 0.65 * Math.sin(sec * 3.2 + ff.phase)) * aut * ev;
-        ctx.fillStyle = '#FEF08A';
-        ctx.beginPath(); ctx.arc(fx, fy, 3.2, 0, Math.PI * 2); ctx.fill();
-      }
+      ctx.globalAlpha = sf.alpha * (0.7 + ev * 0.3);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(sf.x, sf.y, sf.r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
 
-    // 14. Flying HUD Item & Coin Bezier Arcs!
+    // 13. Flying HUD Item & Coin Arcs
     for (const fh of this.flyingHudItems) {
       const u = 1 - fh.t;
       const x = u * u * fh.sx + 2 * u * fh.t * fh.cx + fh.t * fh.t * fh.tx;
       const y = u * u * fh.sy + 2 * u * fh.t * fh.cy + fh.t * fh.t * fh.ty;
-      const scale = 1.15 - fh.t * 0.45;
+      const scale = 1.05 - fh.t * 0.35;
       const img = sprites.getIconImg(fh.iconId);
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(scale, scale);
-      ctx.fillStyle = 'rgba(255, 250, 220, 0.85)';
-      ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
-      if (img) ctx.drawImage(img, -14, -14, 28, 28);
+      ctx.fillStyle = 'rgba(255, 251, 235, 0.92)';
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      if (img) ctx.drawImage(img, -12, -12, 24, 24);
       ctx.restore();
     }
 
-    // 15. Owl Gift Delivery
+    // 14. Winter Post Delivery
     if (this.giftParachute) this._drawParachuteGift(ctx, this.giftParachute.progress);
 
-    // 16. Magic Swipe Trail
+    // 15. Clean Swipe Trail
     if (this.swipeTrail.length > 1) this._drawSwipeTrail(ctx);
 
     ctx.restore();
   }
 
-  _drawBackdrop(ctx, ev, aut, sec) {
+  _drawBackdrop(ctx, ev, sec) {
+    // Seamless snow-valley base color matching the outer alpine terrain (zero floating edge!)
     const grad = ctx.createLinearGradient(0, 0, 0, this.height);
-    const dayTopR = this._mix(188, 224, aut), dayTopG = this._mix(226, 206, aut), dayTopB = this._mix(250, 152, aut);
-    const dayBotR = this._mix(225, 240, aut), dayBotG = this._mix(242, 221, aut), dayBotB = this._mix(254, 174, aut);
-    const nTopR = this._mix(18, 32, aut), nTopG = this._mix(34, 24, aut), nTopB = this._mix(78, 64, aut);
-    const nBotR = this._mix(32, 52, aut), nBotG = this._mix(58, 40, aut), nBotB = this._mix(108, 86, aut);
-    grad.addColorStop(0, `rgb(${this._mix(dayTopR, nTopR, ev)},${this._mix(dayTopG, nTopG, ev)},${this._mix(dayTopB, nTopB, ev)})`);
-    grad.addColorStop(1, `rgb(${this._mix(dayBotR, nBotR, ev)},${this._mix(dayBotG, nBotG, ev)},${this._mix(dayBotB, nBotB, ev)})`);
+    grad.addColorStop(0, `rgb(${this._mix(208, 22, ev)},${this._mix(226, 40, ev)},${this._mix(242, 78, ev)})`);
+    grad.addColorStop(0.5, `rgb(${this._mix(222, 28, ev)},${this._mix(236, 48, ev)},${this._mix(248, 88, ev)})`);
+    grad.addColorStop(1, `rgb(${this._mix(210, 20, ev)},${this._mix(227, 36, ev)},${this._mix(241, 70, ev)})`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Twinkling Night Stars
-    if (ev > 0.4) {
-      const sa = (ev - 0.4) / 0.6;
-      ctx.save();
-      for (const st of this.nightStars) {
-        ctx.globalAlpha = sa * (0.35 + 0.65 * Math.sin(sec * 2.5 + st.phase));
-        ctx.fillStyle = '#FFFDF5';
-        ctx.beginPath(); ctx.arc(st.rx * this.width, st.ry * this.height, st.r, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    // Northern Lights in Winter Night
-    if (ev > 0.45 && aut < 0.7) {
-      const aAlpha = ((ev - 0.45) / 0.55) * (1 - aut) * 0.28;
+    // Subtle Aurora Borealis at night across the very top edge
+    if (ev > 0.5) {
+      const aAlpha = ((ev - 0.5) / 0.5) * 0.22;
       ctx.save();
       ctx.globalAlpha = aAlpha;
-      const aur = ctx.createLinearGradient(0, 0, this.width, this.height * 0.32);
+      const aur = ctx.createLinearGradient(0, 0, this.width, this.height * 0.25);
       aur.addColorStop(0, 'rgba(52, 211, 153, 0)');
-      aur.addColorStop(0.32, 'rgba(52, 211, 153, 0.78)');
-      aur.addColorStop(0.65, 'rgba(56, 189, 248, 0.68)');
+      aur.addColorStop(0.35, 'rgba(52, 211, 153, 0.72)');
+      aur.addColorStop(0.7, 'rgba(56, 189, 248, 0.58)');
       aur.addColorStop(1, 'rgba(167, 139, 250, 0)');
       ctx.fillStyle = aur;
       ctx.beginPath();
       ctx.moveTo(0, 0);
       for (let x = 0; x <= this.width; x += 60) {
-        const y = this.height * 0.16 + Math.sin(x * 0.006 + sec * 0.6) * 28 + Math.cos(x * 0.011 - sec * 0.4) * 14;
+        const y = this.height * 0.12 + Math.sin(x * 0.006 + sec * 0.45) * 18;
         ctx.lineTo(x, y);
       }
-      ctx.lineTo(this.width, 0); ctx.closePath(); ctx.fill();
+      ctx.lineTo(this.width, 0);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     }
   }
 
-  _drawTerrain(ctx, state, uiState, sec, ev, aut) {
-    const pTop = gridToWorld(-1.6, -1.6);
-    const pRight = gridToWorld(GRID_SIZE + 1.6, -1.6);
-    const pBot = gridToWorld(GRID_SIZE + 1.6, GRID_SIZE + 1.6);
-    const pLeft = gridToWorld(-1.6, GRID_SIZE + 1.6);
+  _drawTerrain(ctx, state, uiState, sec, ev) {
+    // 1. Vast Continuous Alpine Snowfield (extends far beyond camera clamp -> NEVER floats!)
+    const pTop = gridToWorld(-14, -14);
+    const pRight = gridToWorld(GRID_SIZE + 14, -14);
+    const pBot = gridToWorld(GRID_SIZE + 14, GRID_SIZE + 14);
+    const pLeft = gridToWorld(-14, GRID_SIZE + 14);
 
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(pTop.x, pTop.y); ctx.lineTo(pRight.x, pRight.y); ctx.lineTo(pBot.x, pBot.y); ctx.lineTo(pLeft.x, pLeft.y);
     ctx.closePath();
-
-    const g1 = `rgb(${this._mix(245, 198, aut)},${this._mix(250, 216, aut)},${this._mix(255, 128, aut)})`;
-    const g2 = `rgb(${this._mix(235, 178, aut)},${this._mix(245, 200, aut)},${this._mix(255, 108, aut)})`;
-    const g3 = `rgb(${this._mix(220, 158, aut)},${this._mix(236, 182, aut)},${this._mix(249, 92, aut)})`;
-    const meadowGrad = ctx.createLinearGradient(pTop.x, pTop.y, pBot.x, pBot.y);
-    meadowGrad.addColorStop(0, g1); meadowGrad.addColorStop(0.5, g2); meadowGrad.addColorStop(1, g3);
-    ctx.fillStyle = meadowGrad;
+    const valleyGrad = ctx.createLinearGradient(pTop.x, pTop.y, pBot.x, pBot.y);
+    valleyGrad.addColorStop(0, '#EBF4FC');
+    valleyGrad.addColorStop(0.45, '#E1EEF9');
+    valleyGrad.addColorStop(1, '#CEE1F2');
+    ctx.fillStyle = valleyGrad;
     ctx.fill();
 
-    const driftCol = aut > 0.5 ? '245, 224, 152' : '255, 255, 255';
-    for (const d of this.groundDrifts) {
-      ctx.fillStyle = `rgba(${driftCol}, ${d.alpha})`;
-      ctx.beginPath(); ctx.ellipse(d.x, d.y, d.rx, d.ry, 0, 0, Math.PI * 2); ctx.fill();
+    // 2. Organic Snow Contours & Sunlit Alpine Drifts
+    for (const h of this.valleyHills) {
+      ctx.fillStyle = h.shade === 'light'
+        ? `rgba(255, 255, 255, ${h.alpha})`
+        : `rgba(164, 198, 228, ${h.alpha * 0.85})`;
+      ctx.beginPath();
+      ctx.ellipse(h.x, h.y, h.rx, h.ry, -0.08, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // Locked land zones
+    // 3. Sunlit Active Farmstead Clearing (slightly warmer crisp snow in the heart of the village)
+    const farmCenter = gridToWorld(7.5, 6.8);
+    const farmGlow = ctx.createRadialGradient(farmCenter.x, farmCenter.y, 40, farmCenter.x, farmCenter.y, 580);
+    farmGlow.addColorStop(0, 'rgba(255, 253, 248, 0.72)');
+    farmGlow.addColorStop(0.65, 'rgba(246, 251, 255, 0.36)');
+    farmGlow.addColorStop(1, 'rgba(246, 251, 255, 0)');
+    ctx.fillStyle = farmGlow;
+    ctx.beginPath();
+    ctx.ellipse(farmCenter.x, farmCenter.y, 620, 320, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. Winding Frozen Alpine Brook & Snow-Banked Pond (organic river curving across the lower valley!)
+    this._drawAlpineBrookAndPond(ctx, sec);
+
+    // 5. Locked Expansion Zones (clean subtle snow-meadow tint & crisp timber stake outline)
     const unlocked = new Set(state.unlockedLands || []);
     for (const zone of LAND_ZONES) {
       if (unlocked.has(zone.id)) continue;
       const b = zone.bounds;
-      const zt = gridToWorld(b.x0, b.y0), zr = gridToWorld(b.x1 + 1, b.y0), zb = gridToWorld(b.x1 + 1, b.y1 + 1), zl = gridToWorld(b.x0, b.y1 + 1);
-      ctx.beginPath(); ctx.moveTo(zt.x, zt.y); ctx.lineTo(zr.x, zr.y); ctx.lineTo(zb.x, zb.y); ctx.lineTo(zl.x, zl.y); ctx.closePath();
-      ctx.fillStyle = aut > 0.5 ? 'rgba(92, 64, 32, 0.16)' : 'rgba(110, 155, 205, 0.16)';
-      ctx.fill();
-      ctx.strokeStyle = aut > 0.5 ? 'rgba(166, 98, 36, 0.42)' : 'rgba(120, 165, 215, 0.48)';
-      ctx.lineWidth = 2.5; ctx.setLineDash([8, 8]); ctx.stroke(); ctx.setLineDash([]);
-    }
-
-    // Cobblestone Walkways + Cozy Central Village Plaza
-    const plaza = gridToWorld(7.5, 4.5);
-    ctx.fillStyle = aut > 0.5 ? 'rgba(105, 75, 40, 0.3)' : 'rgba(155, 190, 224, 0.45)';
-    ctx.beginPath(); ctx.ellipse(plaza.x, plaza.y + 4, 72, 36, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#DFC9A8';
-    ctx.beginPath(); ctx.ellipse(plaza.x, plaza.y, 64, 31, 0, 0, Math.PI * 2); ctx.fill();
-
-    const roadSegments = [
-      [gridToWorld(4.5, 4.5), gridToWorld(11.2, 4.5)],
-      [gridToWorld(7.5, 4.5), gridToWorld(7.5, 9.6)],
-      [gridToWorld(4.5, 7.2), gridToWorld(11.6, 7.2)]
-    ];
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = aut > 0.5 ? 'rgba(105, 75, 40, 0.35)' : 'rgba(155, 190, 224, 0.52)';
-    ctx.lineWidth = 44;
-    for (const [a, b] of roadSegments) { ctx.beginPath(); ctx.moveTo(a.x, a.y + 3); ctx.lineTo(b.x, b.y + 3); ctx.stroke(); }
-    ctx.strokeStyle = '#C9AE8C'; ctx.lineWidth = 36;
-    for (const [a, b] of roadSegments) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-    ctx.strokeStyle = '#DFC9A8'; ctx.lineWidth = 26;
-    for (const [a, b] of roadSegments) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-
-    const stoneCoords = [
-      [5.1, 4.5], [6.0, 4.5], [6.9, 4.5], [8.1, 4.5], [9.1, 4.5], [10.1, 4.5], [10.9, 4.5],
-      [7.5, 5.2], [7.5, 6.1], [7.5, 7.9], [7.5, 8.8],
-      [5.2, 7.2], [6.2, 7.2], [8.4, 7.2], [9.4, 7.2], [10.4, 7.2], [11.2, 7.2]
-    ];
-    for (let i = 0; i < stoneCoords.length; i++) {
-      const c = gridToWorld(stoneCoords[i][0], stoneCoords[i][1]);
-      ctx.fillStyle = i % 2 === 0 ? '#EBDCC2' : '#D5BA94';
+      const zt = gridToWorld(b.x0, b.y0);
+      const zr = gridToWorld(b.x1 + 1, b.y0);
+      const zb = gridToWorld(b.x1 + 1, b.y1 + 1);
+      const zl = gridToWorld(b.x0, b.y1 + 1);
       ctx.beginPath();
-      ctx.ellipse(c.x - 8, c.y - 2, 11, 5.2, 0.22, 0, Math.PI * 2);
-      ctx.ellipse(c.x + 9, c.y + 3, 10, 4.8, -0.18, 0, Math.PI * 2);
+      ctx.moveTo(zt.x, zt.y); ctx.lineTo(zr.x, zr.y); ctx.lineTo(zb.x, zb.y); ctx.lineTo(zl.x, zl.y);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(130, 168, 206, 0.14)';
       ctx.fill();
+      ctx.strokeStyle = 'rgba(118, 152, 188, 0.38)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([7, 7]);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
-    // Scenic Valley Pond + Wooden Dock + Swimming Autumn Ducks / Winter Ice Swirls!
-    const pond = gridToWorld(13.8, 15.2);
-    ctx.save();
-    ctx.translate(pond.x, pond.y);
-    ctx.fillStyle = aut > 0.5 ? '#8FA368' : '#B8D4EC';
-    ctx.beginPath(); ctx.ellipse(0, 6, 155, 74, -0.1, 0, Math.PI * 2); ctx.fill();
-    const iceG = ctx.createRadialGradient(-30, -14, 16, 0, 0, 150);
-    if (aut > 0.5) {
-      iceG.addColorStop(0, '#7DD3FC'); iceG.addColorStop(0.55, '#2A8BB5'); iceG.addColorStop(1, '#1A5F80');
-    } else {
-      iceG.addColorStop(0, '#B5EAFF'); iceG.addColorStop(0.55, '#6CC4EE'); iceG.addColorStop(1, '#3D99CF');
+    // 6. Grid-Aligned Alpine Cobblestone Village Road (runs horizon-to-horizon!) + Courtyard Paths
+    this._drawVillageRoads(ctx);
+
+    // 7. Split-Rail Timber Estate Fence framing unlocked core farmstead (Hay-Day charm!)
+    this._drawEstateFences(ctx, unlocked);
+
+    // 8. Snow-Dusted Valley Boulders along forest perimeter
+    for (const b of this.valleyBoulders) {
+      const p = gridToWorld(b.gx, b.gy);
+      ctx.fillStyle = 'rgba(62, 92, 128, 0.18)';
+      ctx.beginPath(); ctx.ellipse(p.x + 2, p.y + 4, b.r * 1.15, b.r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#8A9BAA';
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, b.r, b.r * 0.68, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#F4F9FE';
+      ctx.beginPath(); ctx.ellipse(p.x - b.r * 0.12, p.y - b.r * 0.25, b.r * 0.82, b.r * 0.36, -0.1, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.fillStyle = iceG;
-    ctx.beginPath(); ctx.ellipse(0, 0, 146, 68, -0.1, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = aut > 0.5 ? '#D4B982' : '#FFFFFF'; ctx.lineWidth = 4; ctx.stroke();
 
-    // Cute Wooden Jetty / Dock extending into the pond!
-    ctx.fillStyle = '#9C5A2B'; ctx.strokeStyle = '#4A2408'; ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(-118, -32); ctx.lineTo(-74, -12); ctx.lineTo(-92, 6); ctx.lineTo(-136, -14); ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    // Planks
-    ctx.strokeStyle = '#6B3710'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-104, -25); ctx.lineTo(-122, -7);
-    ctx.moveTo(-90, -19); ctx.lineTo(-108, -1);
-    ctx.stroke();
-
-    if (aut > 0.5) {
-      // Cute swimming golden-white duck circling gently in the autumn pond!
-      const dx = Math.cos(sec * 0.55) * 46;
-      const dy = Math.sin(sec * 0.55) * 18;
-      ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.ellipse(dx, dy + 4, 14, 6, 0, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = '#FFFDF5'; ctx.strokeStyle = '#78350F'; ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.ellipse(dx, dy, 9, 6, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.arc(dx + 6, dy - 6, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#F97316';
-      ctx.beginPath(); ctx.ellipse(dx + 11, dy - 5, 3, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    } else {
-      // Shimmering Winter Ice Skate Swirls
-      ctx.strokeStyle = 'rgba(255,255,255,0.52)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.ellipse(15, 4, 42, 16, 0.2, 0, Math.PI * 1.4); ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.48)';
-      const gl = Math.sin(sec * 1.8) * 14;
-      ctx.beginPath();
-      ctx.ellipse(-28 + gl, -12, 30, 6, -0.15, 0, Math.PI * 2);
-      ctx.ellipse(38 - gl * 0.7, 14, 22, 4.5, -0.15, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // Build / Move Grid Overlay
+    // 9. Build / Move Snap-to-Grid Overlay
     if (uiState.mode === 'move' || uiState.mode === 'place') {
-      ctx.strokeStyle = 'rgba(37, 99, 235, 0.28)'; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(30, 64, 175, 0.2)';
+      ctx.lineWidth = 1.25;
       for (let i = 0; i <= GRID_SIZE; i++) {
         const a = gridToWorld(i, 0), b = gridToWorld(i, GRID_SIZE);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
@@ -958,12 +846,231 @@ export class WinterWorld {
         const { gx, gy, size = 1, valid } = uiState.previewTile;
         const t = gridToWorld(gx, gy), r = gridToWorld(gx + size, gy), b = gridToWorld(gx + size, gy + size), l = gridToWorld(gx, gy + size);
         ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(r.x, r.y); ctx.lineTo(b.x, b.y); ctx.lineTo(l.x, l.y); ctx.closePath();
-        ctx.fillStyle = valid ? 'rgba(34, 197, 94, 0.42)' : 'rgba(239, 68, 68, 0.45)';
+        ctx.fillStyle = valid ? 'rgba(34, 197, 94, 0.38)' : 'rgba(220, 38, 38, 0.42)';
         ctx.fill();
-        ctx.strokeStyle = valid ? '#16A34A' : '#DC2626'; ctx.lineWidth = 3.5; ctx.stroke();
+        ctx.strokeStyle = valid ? '#15803D' : '#B91C1C';
+        ctx.lineWidth = 3;
+        ctx.stroke();
       }
     }
+
     ctx.restore();
+  }
+
+  _drawAlpineBrookAndPond(ctx, sec) {
+    // Sinuous frozen mountain brook flowing into the scenic alpine lake
+    const b0 = gridToWorld(23, 10.5);
+    const b1 = gridToWorld(18.5, 13.0);
+    const b2 = gridToWorld(14.5, 15.6);
+    const b3 = gridToWorld(10.5, 17.4);
+    const b4 = gridToWorld(6.5, 19.6);
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Recessed snow bank shadow along river
+    ctx.strokeStyle = '#B7D2EA';
+    ctx.lineWidth = 66;
+    ctx.beginPath();
+    ctx.moveTo(b0.x, b0.y + 4);
+    ctx.bezierCurveTo(b1.x, b1.y + 4, b2.x, b2.y + 4, b3.x, b3.y + 4);
+    ctx.lineTo(b4.x, b4.y + 4);
+    ctx.stroke();
+
+    // Crisp white snow shoreline
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 54;
+    ctx.beginPath();
+    ctx.moveTo(b0.x, b0.y);
+    ctx.bezierCurveTo(b1.x, b1.y, b2.x, b2.y, b3.x, b3.y);
+    ctx.lineTo(b4.x, b4.y);
+    ctx.stroke();
+
+    // Glacial blue ice brook body
+    ctx.strokeStyle = '#7DC6EB';
+    ctx.lineWidth = 42;
+    ctx.stroke();
+
+    ctx.strokeStyle = '#A8DDF5';
+    ctx.lineWidth = 22;
+    ctx.stroke();
+
+    // Scenic snow-banked widening pond clear of the south fence line
+    const pond = gridToWorld(14.8, 16.1);
+    ctx.save();
+    ctx.translate(pond.x, pond.y);
+    ctx.fillStyle = '#B7D2EA';
+    ctx.beginPath(); ctx.ellipse(0, 6, 162, 76, -0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath(); ctx.ellipse(0, 1, 154, 70, -0.22, 0, Math.PI * 2); ctx.fill();
+    const iceG = ctx.createRadialGradient(-28, -12, 14, 0, 0, 148);
+    iceG.addColorStop(0, '#C7EEFF');
+    iceG.addColorStop(0.55, '#76C4EB');
+    iceG.addColorStop(1, '#4898C7');
+    ctx.fillStyle = iceG;
+    ctx.beginPath(); ctx.ellipse(0, 0, 144, 62, -0.22, 0, Math.PI * 2); ctx.fill();
+
+    // Subtle specular ice sheen & skate swirls
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.ellipse(18, 4, 38, 13, -0.15, 0, Math.PI * 1.35); ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.34)';
+    const sh = Math.sin(sec * 0.9) * 8;
+    ctx.beginPath();
+    ctx.ellipse(-26 + sh, -10, 32, 6, -0.25, 0, Math.PI * 2);
+    ctx.ellipse(36 - sh * 0.6, 12, 24, 4.5, -0.25, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Detailed Isometric Wooden Jetty extending onto the ice
+    ctx.fillStyle = '#6E391B';
+    ctx.fillRect(-114, -18, 6, 18);
+    ctx.fillRect(-84, -4, 6, 18);
+    ctx.fillStyle = '#9C5A2B';
+    ctx.strokeStyle = '#4A2408';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-124, -30); ctx.lineTo(-76, -8); ctx.lineTo(-92, 8); ctx.lineTo(-140, -14); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#6B3710';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-112, -24); ctx.lineTo(-128, -8);
+    ctx.moveTo(-100, -19); ctx.lineTo(-116, -3);
+    ctx.moveTo(-88, -13); ctx.lineTo(-104, 3);
+    ctx.stroke();
+    // Snow dusting on jetty edge
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath(); ctx.ellipse(-118, -22, 12, 4, 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  _drawVillageRoads(ctx) {
+    // Horizon-to-horizon main cobblestone road along gy = 5.5 (zero overlap with Chalet, Bakery, or Fields!)
+    const mainA = gridToWorld(-12, 5.5);
+    const mainB = gridToWorld(28, 5.5);
+    // Clean short entry aprons directly into Chalet front steps & Bakery front door
+    const chaletA = gridToWorld(6.0, 4.15);
+    const chaletB = gridToWorld(6.0, 5.5);
+    const bakeryA = gridToWorld(4.0, 5.5);
+    const bakeryB = gridToWorld(4.0, 6.95);
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const segs = [
+      [mainA, mainB, 46],
+      [chaletA, chaletB, 34],
+      [bakeryA, bakeryB, 32]
+    ];
+
+    // 1. Soft snow-bank border shadow
+    ctx.strokeStyle = 'rgba(132, 168, 206, 0.5)';
+    for (const [a, b, w] of segs) {
+      ctx.lineWidth = w + 10;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y + 3); ctx.lineTo(b.x, b.y + 3); ctx.stroke();
+    }
+
+    // 2. Warm stone curb edge
+    ctx.strokeStyle = '#C0A47E';
+    for (const [a, b, w] of segs) {
+      ctx.lineWidth = w;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+
+    // 3. Tamped warm gravel center
+    ctx.strokeStyle = '#E1CCA9';
+    for (const [a, b, w] of segs) {
+      ctx.lineWidth = w - 10;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+
+    // 4. Hand-set cobbled village square at (7.5, 5.5) with concentric flagstone rings
+    const plaza = gridToWorld(7.5, 5.5);
+    ctx.fillStyle = '#B89B74';
+    ctx.beginPath(); ctx.ellipse(plaza.x, plaza.y, 64, 32, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#E6D4B5';
+    ctx.beginPath(); ctx.ellipse(plaza.x, plaza.y, 56, 28, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#C9AE86';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(plaza.x, plaza.y, 38, 19, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(plaza.x, plaza.y, 18, 9, 0, 0, Math.PI * 2); ctx.stroke();
+
+    // 5. Hand-fitted isometric cobblestone pavers
+    const tones = ['#F0E3CC', '#D3B993', '#E4D0AE'];
+    for (const pv of this.roadPavers) {
+      const c = gridToWorld(pv.gx, pv.gy);
+      ctx.fillStyle = tones[pv.tone];
+      ctx.beginPath();
+      ctx.ellipse(c.x + pv.off, c.y - 1, 9.5, 4.4, 0.28, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  _drawEstateFences(ctx, unlocked) {
+    const drawFenceLine = (ax, ay, bx, by, posts) => {
+      const a = gridToWorld(ax, ay);
+      const b = gridToWorld(bx, by);
+      ctx.save();
+      ctx.strokeStyle = '#5C2D12';
+      ctx.lineWidth = 4.2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y - 12); ctx.lineTo(b.x, b.y - 12);
+      ctx.moveTo(a.x, a.y - 5); ctx.lineTo(b.x, b.y - 5);
+      ctx.stroke();
+      ctx.strokeStyle = '#A66230';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y - 12.5); ctx.lineTo(b.x, b.y - 12.5);
+      ctx.moveTo(a.x, a.y - 5.5); ctx.lineTo(b.x, b.y - 5.5);
+      ctx.stroke();
+
+      for (let i = 0; i <= posts; i++) {
+        const t = i / posts;
+        const px = a.x + (b.x - a.x) * t;
+        const py = a.y + (b.y - a.y) * t;
+        ctx.fillStyle = '#7A421D';
+        ctx.strokeStyle = '#4A240E';
+        ctx.lineWidth = 1.4;
+        ctx.fillRect(px - 2.5, py - 17, 5, 18);
+        ctx.strokeRect(px - 2.5, py - 17, 5, 18);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath(); ctx.ellipse(px, py - 17, 3.6, 2, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    };
+
+    // North ridge boundary
+    if (!unlocked.has('north_ridge')) drawFenceLine(2, 2, 14, 2, 10);
+    // West boundary split cleanly at the main road gy = 5.5!
+    if (!unlocked.has('west_forest')) {
+      drawFenceLine(2, 2, 2, 4.7, 3);
+      drawFenceLine(2, 6.3, 2, 14, 6);
+    }
+    // East boundary split cleanly at the main road gy = 5.5!
+    if (!unlocked.has('east_glade')) {
+      drawFenceLine(14, 2, 14, 4.7, 3);
+      drawFenceLine(14, 6.3, 14, 14, 6);
+    }
+    // South boundary above pond
+    if (!unlocked.has('south_meadow')) drawFenceLine(2, 14, 14, 14, 10);
+
+    // Decorative snow-dusted evergreen shrubs tucked naturally at estate corners & road gates
+    const shrubSpots = [[2.1, 4.6], [2.1, 6.4], [13.9, 4.6], [13.9, 6.4], [2.2, 13.8], [13.8, 13.8]];
+    for (const [sx, sy] of shrubSpots) {
+      const p = gridToWorld(sx, sy);
+      ctx.save();
+      ctx.fillStyle = 'rgba(42, 74, 114, 0.18)';
+      ctx.beginPath(); ctx.ellipse(p.x, p.y + 2, 15, 7, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1E5B34';
+      ctx.beginPath(); ctx.arc(p.x - 5, p.y - 4, 8, 0, Math.PI * 2); ctx.arc(p.x + 5, p.y - 3, 7, 0, Math.PI * 2); ctx.arc(p.x, p.y - 8, 8.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.ellipse(p.x, p.y - 11, 9, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
   }
 
   _drawGhostPreview(ctx, state, uiState) {
@@ -989,43 +1096,42 @@ export class WinterWorld {
     if (!spr) return;
     const pos = gridToWorld(pt.gx + (pt.size || 1) * 0.5, pt.gy + (pt.size || 1) * 0.5);
     ctx.save();
-    ctx.globalAlpha = pt.valid ? 0.78 : 0.42;
-    const w = (pt.size || 1) === 2 ? 215 : spriteKey === 'snow_field_plot' ? 124 : 96;
+    ctx.globalAlpha = pt.valid ? 0.78 : 0.4;
+    const w = (pt.size || 1) === 2 ? 206 : spriteKey === 'snow_field_plot' ? 120 : 72;
     const h = (w * spr.height) / spr.width;
-    const yOff = spriteKey === 'snow_field_plot' ? -h * 0.5 : -h + 16;
+    const yOff = spriteKey === 'snow_field_plot' ? -h * 0.5 : -h + 14;
     ctx.drawImage(spr, pos.x - w * 0.5, pos.y + yOff, w, h);
     ctx.restore();
   }
 
-  _buildDrawList(state, uiState, now, sec, aut, ev) {
+  _buildDrawList(state, uiState, now, sec, ev) {
     const list = [];
     const levelInfo = getLevelInfo(state.xp);
     const unlockedLands = new Set(state.unlockedLands || []);
 
-    // A) 3D Surrounding Valley Forest
+    // A) Dense Layered Alpine Pine Forest framing the valley
     const pineImg = sprites.get('deco_pine');
-    const autumnTreeImg = sprites.get('deco_autumn_tree');
-    for (const t of this.borderTrees) {
-      const img = aut > 0.5 && t.autumnVariant && autumnTreeImg ? autumnTreeImg : pineImg;
-      if (!img) continue;
-      const pos = gridToWorld(t.gx + 0.5, t.gy + 0.5);
-      list.push({
-        depth: t.gx + t.gy,
-        draw: (ctx) => {
-          const w = 114 * t.scale;
-          const h = (w * img.height) / img.width;
-          const sway = Math.sin(sec * 1.1 + t.phase) * 0.025;
-          this._drawShadow(ctx, pos.x, pos.y + 4, w * 0.36, w * 0.16);
-          ctx.save();
-          ctx.translate(pos.x, pos.y + 8);
-          ctx.rotate(sway);
-          ctx.drawImage(img, -w * 0.5, -h + 10, w, h);
-          ctx.restore();
-        }
-      });
+    if (pineImg) {
+      for (const t of this.borderTrees) {
+        const pos = gridToWorld(t.gx + 0.5, t.gy + 0.5);
+        list.push({
+          depth: t.gx + t.gy,
+          draw: (ctx) => {
+            const w = 112 * t.scale;
+            const h = (w * pineImg.height) / pineImg.width;
+            const sway = Math.sin(sec * 0.8 + t.phase) * 0.01;
+            this._drawShadow(ctx, pos.x, pos.y + 4, w * 0.34, w * 0.15);
+            ctx.save();
+            ctx.translate(pos.x, pos.y + 8);
+            ctx.rotate(sway);
+            ctx.drawImage(pineImg, -w * 0.5, -h + 10, w, h);
+            ctx.restore();
+          }
+        });
+      }
     }
 
-    // B) Land Expansion Wooden Signs
+    // B) Clean Wooden Land Expansion Signs (Zero Emojis)
     for (const zone of LAND_ZONES) {
       if (unlockedLands.has(zone.id)) continue;
       const pos = gridToWorld(zone.signPos.gx + 0.5, zone.signPos.gy + 0.5);
@@ -1033,46 +1139,45 @@ export class WinterWorld {
         depth: zone.signPos.gx + zone.signPos.gy + 0.25,
         draw: (ctx) => {
           ctx.save();
-          ctx.translate(pos.x, pos.y + Math.sin(sec * 2.4) * 2);
-          this._drawShadow(ctx, 0, 8, 30, 12);
-          ctx.fillStyle = '#7C3F1A'; ctx.strokeStyle = '#3E1D09'; ctx.lineWidth = 2.5;
-          ctx.fillRect(-5, -34, 10, 40); ctx.strokeRect(-5, -34, 10, 40);
-          ctx.fillStyle = '#FFF7E0'; ctx.strokeStyle = '#8C4818'; ctx.lineWidth = 3;
-          this._roundRect(ctx, -58, -68, 116, 40, 11); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = '#4A240E'; ctx.font = '900 12px ui-rounded, system-ui, sans-serif';
+          ctx.translate(pos.x, pos.y);
+          this._drawShadow(ctx, 0, 6, 24, 10);
+          ctx.fillStyle = '#6E391B'; ctx.strokeStyle = '#3B1A08'; ctx.lineWidth = 2;
+          ctx.fillRect(-4, -32, 8, 38); ctx.strokeRect(-4, -32, 8, 38);
+          ctx.fillStyle = '#FCF6E8'; ctx.strokeStyle = '#7A421D'; ctx.lineWidth = 2.2;
+          this._roundRect(ctx, -46, -62, 92, 34, 9); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = '#2E190C'; ctx.font = '800 11px Inter, system-ui, sans-serif';
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText(`🗺️ ${zone.cost} ★`, 0, -54);
-          ctx.font = '700 10px ui-rounded, system-ui, sans-serif'; ctx.fillStyle = '#9A531C';
-          ctx.fillText(`Ab Lv.${zone.unlockLevel}`, 0, -39);
+          ctx.fillText(`${zone.cost} Münzen`, 0, -50);
+          ctx.font = '700 9.5px Inter, system-ui, sans-serif'; ctx.fillStyle = '#765742';
+          ctx.fillText(`Ab Level ${zone.unlockLevel}`, 0, -37);
           ctx.restore();
         }
       });
     }
 
-    // C) Wild Forageable Forest Schwammerl (3D!)
-    const wildImg = sprites.get('wild_mushroom');
-    for (const wm of state.wildMushrooms || []) {
-      const pos = gridToWorld(wm.gx + 0.5, wm.gy + 0.5);
+    // C) Daily Treasure Chest calmly placed by the scenic lakeside jetty
+    if (uiState.dailyChestReady) {
+      const pos = gridToWorld(DAILY_CHEST_POS.gx, DAILY_CHEST_POS.gy);
       list.push({
-        depth: wm.gx + wm.gy + 0.2,
-        draw: (ctx) => {
-          const pulse = 1 + Math.sin(sec * 3.4 + wm.gx) * 0.045;
-          this._drawShadow(ctx, pos.x, pos.y + 6, 36, 16);
+        depth: DAILY_CHEST_POS.gx + DAILY_CHEST_POS.gy + 0.35,
+        draw: (ctx, glows) => {
+          const spr = sprites.get('treasure_chest');
+          this._drawShadow(ctx, pos.x, pos.y + 5, 28, 12);
           ctx.save();
-          ctx.translate(pos.x, pos.y + 10);
-          ctx.scale(pulse, pulse);
-          if (wildImg) ctx.drawImage(wildImg, -44, -76, 88, 80);
+          ctx.translate(pos.x, pos.y + 6);
+          const hg = ctx.createRadialGradient(0, -24, 4, 0, -24, 40);
+          hg.addColorStop(0, 'rgba(254, 240, 138, 0.55)');
+          hg.addColorStop(1, 'rgba(254, 240, 138, 0)');
+          ctx.fillStyle = hg;
+          ctx.beginPath(); ctx.arc(0, -24, 40, 0, Math.PI * 2); ctx.fill();
+          if (spr) ctx.drawImage(spr, -30, -56, 60, 56);
           ctx.restore();
-          ctx.save();
-          ctx.globalAlpha = 0.5 + 0.5 * Math.sin(sec * 4.5 + wm.gx);
-          ctx.fillStyle = '#FEF08A';
-          this._drawStar(ctx, pos.x + 18, pos.y - 64, 6);
-          ctx.restore();
+          glows.push({ x: pos.x, y: pos.y - 24, r: 72 });
         }
       });
     }
 
-    // D) Farm Field Plots with TRUE 4-Stage Crop Growth!
+    // D) Farm Field Plots (Crisp 4-Stage Growth · Gentle Wind Sway)
     const fieldImg = sprites.get('snow_field_plot');
     for (const f of state.fields) {
       const pos = gridToWorld(f.gx + 0.5, f.gy + 0.5);
@@ -1090,24 +1195,23 @@ export class WinterWorld {
           ctx.scale(b.sx, b.sy);
 
           if (fieldImg) {
-            ctx.drawImage(fieldImg, -TILE_W * 0.54, -TILE_H * 0.62, TILE_W * 1.08, TILE_H * 1.28);
+            ctx.drawImage(fieldImg, -TILE_W * 0.53, -TILE_H * 0.61, TILE_W * 1.06, TILE_H * 1.25);
           }
 
           if (crop) {
             if (isReady) {
               const cImg = sprites.get('crop_' + crop.id);
-              const sway = Math.sin(sec * 2.4 + f.gx * 0.9 + f.gy) * 0.032;
-              const pulse = 1 + Math.sin(sec * 3.2 + f.gx) * 0.025;
+              const sway = Math.sin(sec * 1.6 + f.gx * 0.8 + f.gy) * 0.014;
               ctx.save();
-              ctx.translate(0, 12);
+              ctx.translate(0, 10);
               ctx.rotate(sway);
-              ctx.scale(pulse, pulse);
-              if (cImg) ctx.drawImage(cImg, -50, -74, 100, 84);
+              if (cImg) ctx.drawImage(cImg, -46, -68, 92, 76);
               ctx.restore();
 
-              const spAlpha = 0.45 + 0.55 * Math.sin(sec * 4 + f.gx * 2 + f.gy);
+              // Subtle golden ripe shimmer star
+              const spAlpha = 0.3 + 0.5 * Math.sin(sec * 2.6 + f.gx * 2 + f.gy);
               ctx.save(); ctx.globalAlpha = spAlpha; ctx.fillStyle = '#FEF08A';
-              this._drawStar(ctx, 22, -26, 6);
+              this._drawStar(ctx, 18, -22, 4.5);
               ctx.restore();
             } else {
               this._draw4StageCrop(ctx, crop, pct, sec + f.gx);
@@ -1115,15 +1219,15 @@ export class WinterWorld {
           }
 
           if (uiState.selectedMoveId === f.id) {
-            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 3.5;
-            ctx.beginPath(); ctx.ellipse(0, 0, 52, 26, 0, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.ellipse(0, 0, 50, 25, 0, 0, Math.PI * 2); ctx.stroke();
           }
           ctx.restore();
         }
       });
     }
 
-    // E) Hero Farmhouse Chalet (+ Season-Reactive Autumn Roof Trim!)
+    // E) Hero Farmhouse Chalet (Solid, Grounded Architecture — 242px)
     {
       const c = state.chalet;
       const pos = gridToWorld(c.gx + 1, c.gy + 1);
@@ -1132,12 +1236,11 @@ export class WinterWorld {
         draw: (ctx, glows) => {
           const spr = sprites.get('winter_chalet');
           const b = this._getBounceScale('chalet', now);
-          this._drawShadow(ctx, pos.x, pos.y + 6, 108, 52);
+          this._drawShadow(ctx, pos.x, pos.y + 6, 106, 50);
           ctx.save();
           ctx.translate(pos.x, pos.y + 18);
           ctx.scale(b.sx, b.sy);
-          if (spr) ctx.drawImage(spr, -124, -222, 248, 238);
-          if (aut > 0.08) this._drawAutumnRoofTrim(ctx, aut, 248, 238, sec, 'chalet');
+          if (spr) ctx.drawImage(spr, -121, -216, 242, 232);
           ctx.restore();
           glows.push({ x: pos.x - 36, y: pos.y - 54, r: 95 });
           glows.push({ x: pos.x + 42, y: pos.y - 42, r: 85 });
@@ -1145,75 +1248,39 @@ export class WinterWorld {
       });
     }
 
-    // E2) Daily Glowing Treasure Chest on Village Plaza!
-    if (uiState.dailyChestReady) {
-      const pos = gridToWorld(6.5, 4.5);
-      list.push({
-        depth: 6.5 + 4.5 + 0.36,
-        draw: (ctx, glows) => {
-          const spr = sprites.get('treasure_chest');
-          const pulse = 1 + Math.sin(sec * 3.8) * 0.055;
-          const bob = Math.sin(sec * 2.8) * 2.5;
-          this._drawShadow(ctx, pos.x, pos.y + 6, 36, 16);
-          ctx.save();
-          ctx.translate(pos.x, pos.y + 8 + bob);
-          // Warm golden beacon halo
-          const hg = ctx.createRadialGradient(0, -34, 6, 0, -34, 52 * pulse);
-          hg.addColorStop(0, 'rgba(254, 240, 138, 0.72)');
-          hg.addColorStop(1, 'rgba(254, 240, 138, 0)');
-          ctx.fillStyle = hg;
-          ctx.beginPath(); ctx.arc(0, -34, 52 * pulse, 0, Math.PI * 2); ctx.fill();
-          ctx.scale(pulse, pulse);
-          if (spr) ctx.drawImage(spr, -40, -76, 80, 76);
-          // Floating pill badge
-          ctx.fillStyle = '#FFFDF5'; ctx.strokeStyle = '#D97706'; ctx.lineWidth = 2.2;
-          this._roundRect(ctx, -40, -98, 80, 22, 11); ctx.fill(); ctx.stroke();
-          ctx.fillStyle = '#8A1C17'; ctx.font = '900 11px ui-rounded, system-ui, sans-serif';
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText('Tages-Schatz', 0, -87);
-          ctx.restore();
-          glows.push({ x: pos.x, y: pos.y - 32, r: 88 });
-        }
-      });
-    }
-
-    // F) Central Village Landmark Tree (3D Christmas Tree ↔ 3D Grand Autumn Maple & Pumpkins!)
+    // F) Central Village Christmas Tree (Grows gracefully with player level!)
     {
       const tr = state.christmasTree;
       const pos = gridToWorld(tr.gx + 1, tr.gy + 1);
-      const stageScale = levelInfo.treeStage === 1 ? 0.85 : levelInfo.treeStage === 2 ? 0.96 : 1.08;
+      const stageScale = levelInfo.treeStage === 1 ? 0.88 : levelInfo.treeStage === 2 ? 0.98 : 1.1;
       list.push({
         depth: tr.gx + tr.gy + 1.5,
         draw: (ctx, glows) => {
-          const spr = aut > 0.5 ? sprites.get('autumn_tree_landmark') : sprites.get('christmas_tree');
+          const spr = sprites.get('christmas_tree');
           const b = this._getBounceScale('christmasTree', now);
-          const sway = Math.sin(sec * 1.1) * 0.014;
-          this._drawShadow(ctx, pos.x, pos.y + 8, 88 * stageScale, 42 * stageScale);
+          this._drawShadow(ctx, pos.x, pos.y + 8, 78 * stageScale, 36 * stageScale);
           ctx.save();
           ctx.translate(pos.x, pos.y + 18);
-          ctx.rotate(sway);
           ctx.scale(b.sx * stageScale, b.sy * stageScale);
           if (spr) {
-            const w = aut > 0.5 ? 228 : 192;
+            const w = 192;
             const h = (w * spr.height) / spr.width;
             ctx.drawImage(spr, -w * 0.5, -h + 18, w, h);
           }
-          if (aut <= 0.5) {
-            const starPulse = 1 + Math.sin(sec * 3.8) * 0.22;
-            const sg = ctx.createRadialGradient(0, -234, 2, 0, -234, 34 * starPulse);
-            sg.addColorStop(0, 'rgba(255, 250, 190, 0.95)');
-            sg.addColorStop(0.5, 'rgba(255, 210, 75, 0.45)');
-            sg.addColorStop(1, 'rgba(255, 210, 75, 0)');
-            ctx.fillStyle = sg;
-            ctx.beginPath(); ctx.arc(0, -234, 34 * starPulse, 0, Math.PI * 2); ctx.fill();
-          }
+          const starPulse = 1 + Math.sin(sec * 2.4) * 0.12;
+          const sg = ctx.createRadialGradient(0, -230, 2, 0, -230, 28 * starPulse);
+          sg.addColorStop(0, 'rgba(255, 250, 195, 0.9)');
+          sg.addColorStop(0.55, 'rgba(255, 210, 75, 0.38)');
+          sg.addColorStop(1, 'rgba(255, 210, 75, 0)');
+          ctx.fillStyle = sg;
+          ctx.beginPath(); ctx.arc(0, -230, 28 * starPulse, 0, Math.PI * 2); ctx.fill();
           ctx.restore();
-          glows.push({ x: pos.x, y: pos.y - 110 * stageScale, r: 155 * stageScale });
+          glows.push({ x: pos.x, y: pos.y - 106 * stageScale, r: 150 * stageScale });
         }
       });
     }
 
-    // G) Wishlist Notice Board
+    // G) Wishlist Notice Board (Proportional 88px along road)
     {
       const wb = state.wishlistBoard;
       const pos = gridToWorld(wb.gx + 0.5, wb.gy + 0.5);
@@ -1225,18 +1292,22 @@ export class WinterWorld {
         draw: (ctx, glows) => {
           const spr = sprites.get('wishlist_board');
           const b = this._getBounceScale('wishlistBoard', now);
-          this._drawShadow(ctx, pos.x, pos.y + 6, 48, 22);
+          this._drawShadow(ctx, pos.x, pos.y + 5, 36, 16);
           ctx.save();
-          ctx.translate(pos.x, pos.y + 12); ctx.scale(b.sx, b.sy);
-          if (spr) ctx.drawImage(spr, -58, -126, 116, 138);
+          ctx.translate(pos.x, pos.y + 10); ctx.scale(b.sx, b.sy);
+          if (spr) {
+            const w = 88;
+            const h = (w * spr.height) / spr.width;
+            ctx.drawImage(spr, -w * 0.5, -h + 10, w, h);
+          }
           ctx.restore();
-          glows.push({ x: pos.x - 38, y: pos.y - 36, r: 62 });
-          if (readyOrders > 0) this._drawActionBadge(ctx, pos.x + 26, pos.y - 118 + Math.sin(sec * 4) * 4, '🛷', '#16A34A');
+          glows.push({ x: pos.x - 28, y: pos.y - 30, r: 54 });
+          if (readyOrders > 0) this._drawReadyIndicator(ctx, pos.x + 22, pos.y - 92 + Math.sin(sec * 2.4) * 2, String(readyOrders), '#1F7A45');
         }
       });
     }
 
-    // H) Parked Reindeer Sleigh
+    // H) Parked Reindeer Sleigh (Grounded solidly beside the main road — ZERO bobbing!)
     if (!this.sleighAnim || !this.sleighAnim.active) {
       const sp = state.sleighPos;
       const pos = gridToWorld(sp.gx + 0.5, sp.gy + 0.5);
@@ -1244,14 +1315,17 @@ export class WinterWorld {
         depth: sp.gx + sp.gy + 0.6,
         draw: (ctx) => {
           const spr = sprites.get('reindeer_sleigh');
-          const bob = Math.sin(sec * 2.2) * 2.5;
-          this._drawShadow(ctx, pos.x, pos.y + 10, 88, 38);
-          if (spr) ctx.drawImage(spr, pos.x - 102, pos.y - 134 + bob, 204, 180);
+          this._drawShadow(ctx, pos.x, pos.y + 8, 72, 30);
+          if (spr) {
+            const w = 170;
+            const h = (w * spr.height) / spr.width;
+            ctx.drawImage(spr, pos.x - w * 0.5, pos.y - h + 32, w, h);
+          }
         }
       });
     }
 
-    // I) Eulenpost Mailbox
+    // I) Winter Post Mailbox (Realistic 52px scale!)
     {
       const mb = state.mailbox;
       const pos = gridToWorld(mb.gx + 0.5, mb.gy + 0.5);
@@ -1260,20 +1334,24 @@ export class WinterWorld {
         draw: (ctx) => {
           const spr = sprites.get('gift_mailbox');
           const b = this._getBounceScale('mailbox', now);
-          this._drawShadow(ctx, pos.x, pos.y + 6, 34, 16);
+          this._drawShadow(ctx, pos.x, pos.y + 4, 22, 10);
           ctx.save();
-          ctx.translate(pos.x, pos.y + 10); ctx.scale(b.sx, b.sy);
-          if (spr) ctx.drawImage(spr, -36, -110, 72, 122);
+          ctx.translate(pos.x, pos.y + 8); ctx.scale(b.sx, b.sy);
+          if (spr) {
+            const w = 52;
+            const h = (w * spr.height) / spr.width;
+            ctx.drawImage(spr, -w * 0.5, -h + 8, w, h);
+          }
           ctx.restore();
-          this._drawActionBadge(ctx, pos.x + 18, pos.y - 106 + Math.sin(sec * 3.1) * 3.5, '🦉', '#B91C1C');
         }
       });
     }
 
-    // J) Production Stations (Wrapped Construction Ribbon OR Active Live Production Animations!)
+    // J) Production Stations (True 3D WebP · Grounded Architecture · Subtle Live Details)
     for (const st of state.stations) {
       if (!st.built) continue;
       const def = STATIONS[st.type];
+      if (!def) continue;
       const pos = gridToWorld(st.gx + 1, st.gy + 1);
       const isWorking = !st.wrapped && st.queue.length > 0;
       const readyCount = st.ready.length;
@@ -1283,136 +1361,77 @@ export class WinterWorld {
         depth: st.gx + st.gy + 1.5,
         draw: (ctx, glows) => {
           const b = this._getBounceScale(st.id, now);
-          this._drawShadow(ctx, pos.x, pos.y + 8, 96, 46);
+          this._drawShadow(ctx, pos.x, pos.y + 7, 86, 40);
 
           if (st.wrapped) {
-            // Hay-Day Red-Ribbon Wrapped Construction Crate waiting to be unwrapped!
             this._drawWrappedConstruction(ctx, pos.x, pos.y, sec, b);
             return;
           }
 
           const spr = sprites.get(def.sprite);
-          const workPulse = isWorking ? 1 + Math.sin(sec * 5.6) * 0.025 : 1;
           ctx.save();
-          ctx.translate(pos.x, pos.y + 18);
-          ctx.scale(b.sx * workPulse, b.sy / workPulse);
-          let drawnW = st.type === 'teahouse' ? 208 : 232;
-          let drawnH = drawnW;
+          ctx.translate(pos.x, pos.y + 16);
+          ctx.scale(b.sx, b.sy);
+          const w = st.type === 'teahouse' ? 184 : 206;
           if (spr) {
-            drawnH = (drawnW * spr.height) / spr.width;
-            ctx.drawImage(spr, -drawnW * 0.5, -drawnH + 16, drawnW, drawnH);
+            const h = (w * spr.height) / spr.width;
+            ctx.drawImage(spr, -w * 0.5, -h + 14, w, h);
           }
 
-          // Season-Reactive Autumn Foliage & Pumpkin Garland on Roofs!
-          if (aut > 0.08) {
-            this._drawAutumnRoofTrim(ctx, aut, drawnW, drawnH, sec, st.type);
-          }
-
-          // Rotating Wooden Windmill Sails on Mill & Dairy (idle breeze vs brisk grinding!)
-          if (st.type === 'mill_dairy') {
-            const sailSpeed = isWorking ? 2.6 : 0.45;
-            ctx.save();
-            ctx.translate(-37, -121);
-            ctx.rotate(sec * sailSpeed);
-            for (let k = 0; k < 4; k++) {
-              ctx.rotate(Math.PI * 0.5);
-              ctx.fillStyle = '#F5E6C8';
-              ctx.strokeStyle = '#5C2B0D';
-              ctx.lineWidth = 2.4;
-              ctx.beginPath();
-              ctx.rect(5, -6, 38, 12);
-              ctx.fill();
-              ctx.stroke();
-              ctx.strokeStyle = '#9A531C';
-              ctx.lineWidth = 1.6;
-              ctx.beginPath();
-              ctx.moveTo(0, 0); ctx.lineTo(44, 0);
-              ctx.moveTo(18, -6); ctx.lineTo(18, 6);
-              ctx.moveTo(31, -6); ctx.lineTo(31, 6);
-              ctx.stroke();
-            }
-            ctx.fillStyle = '#FACC15';
-            ctx.strokeStyle = '#5C2B0D';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-            ctx.restore();
-          }
-
-          // LIVE PRODUCTION ANIMATIONS right on the building (like Hay Day!)
+          // Subtle, grounded live crafting cues (NO building wobble!)
           if (isWorking) {
             if (st.type === 'teahouse') {
-              // Animated wooden stirring spoon circling inside the copper cauldron!
-              const sx = -42 + Math.cos(sec * 4.5) * 11;
-              const sy = -76 + Math.sin(sec * 4.5) * 4;
-              ctx.save();
-              ctx.strokeStyle = '#6B3410'; ctx.lineWidth = 6; ctx.lineCap = 'round';
-              ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.sin(sec * 4.5) * 7, sy - 26); ctx.stroke();
-              ctx.strokeStyle = '#DF9E5E'; ctx.lineWidth = 3;
-              ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.sin(sec * 4.5) * 7, sy - 25); ctx.stroke();
-              ctx.restore();
+              const sx = -36 + Math.cos(sec * 3.4) * 9;
+              const sy = -68 + Math.sin(sec * 3.4) * 3;
+              ctx.strokeStyle = '#6B3410'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+              ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + Math.sin(sec * 3.4) * 5, sy - 22); ctx.stroke();
             } else if (st.type === 'bakery') {
-              // Pulsing warm oven embers glow at the arched oven window!
-              const og = ctx.createRadialGradient(-26, -78, 4, -26, -78, 32 + Math.sin(sec * 8) * 6);
-              og.addColorStop(0, 'rgba(255, 240, 150, 0.72)');
+              const og = ctx.createRadialGradient(-24, -70, 3, -24, -70, 28 + Math.sin(sec * 5) * 4);
+              og.addColorStop(0, 'rgba(255, 240, 150, 0.6)');
               og.addColorStop(1, 'rgba(255, 160, 40, 0)');
               ctx.fillStyle = og;
-              ctx.beginPath(); ctx.arc(-26, -78, 38, 0, Math.PI * 2); ctx.fill();
-            } else if (st.type === 'patisserie') {
-              // Sparkling golden shimmer inside the pastry showcase!
-              ctx.fillStyle = '#FEF08A';
-              ctx.globalAlpha = 0.5 + 0.5 * Math.sin(sec * 6);
-              this._drawStar(ctx, -12, -58, 7);
-              this._drawStar(ctx, 10, -48, 5);
-              ctx.globalAlpha = 1;
-            } else if (st.type === 'gift_workshop') {
-              // Rotating festive ribbon star above porch!
-              ctx.save();
-              ctx.translate(10, -110);
-              ctx.rotate(sec * 2.5);
-              ctx.fillStyle = '#FACC15';
-              this._drawStar(ctx, 0, 0, 9);
-              ctx.restore();
+              ctx.beginPath(); ctx.arc(-24, -70, 32, 0, Math.PI * 2); ctx.fill();
             }
           }
           ctx.restore();
 
-          // Display earned Mastery Stars cleanly near base of building!
+          // Subtle Mastery Star plaque
           if (mastery.stars > 0) {
             ctx.save();
-            ctx.font = '900 13px system-ui, sans-serif';
+            ctx.font = '800 11px Inter, system-ui, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillStyle = '#FACC15';
-            ctx.strokeStyle = '#4A240E';
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#3B1A08';
+            ctx.lineWidth = 2.5;
             const starsStr = '★'.repeat(mastery.stars);
-            ctx.strokeText(starsStr, pos.x, pos.y + 24);
-            ctx.fillText(starsStr, pos.x, pos.y + 24);
+            ctx.strokeText(starsStr, pos.x, pos.y + 20);
+            ctx.fillText(starsStr, pos.x, pos.y + 20);
             ctx.restore();
           }
 
           if (uiState.selectedMoveId === st.id) {
-            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.ellipse(pos.x, pos.y + 6, 98, 48, 0, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.ellipse(pos.x, pos.y + 6, 92, 44, 0, 0, Math.PI * 2); ctx.stroke();
           }
 
           for (const gp of def.glowPoints) {
-            glows.push({ x: pos.x + gp.x * 200, y: pos.y + gp.y * 190, r: gp.r * 260 });
+            glows.push({ x: pos.x + gp.x * 185, y: pos.y + gp.y * 175, r: gp.r * 240 });
           }
 
           if (readyCount > 0) {
-            this._drawCollectBubble(ctx, pos.x, pos.y - 178 + Math.sin(sec * 4.2) * 5, st.ready[0], readyCount);
+            this._drawCollectBubble(ctx, pos.x, pos.y - 162 + Math.sin(sec * 2.5) * 2, st.ready[0], readyCount);
           } else if (isWorking) {
             const job = st.queue[0];
             const recipe = ITEMS[job.itemId];
             const totalMs = recipe.craftTime * mastery.speedMult * 1000;
             const pct = Math.min(1, Math.max(0, 1 - (job.finishAt - Date.now()) / totalMs));
-            this._drawMiniProgress(ctx, pos.x, pos.y - 155, pct, job.itemId);
+            this._drawMiniProgress(ctx, pos.x, pos.y - 144, pct, job.itemId);
           }
         }
       });
     }
 
-    // K) Autonomous Walking & Sleeping Cozy Animals!
+    // K) Properly Scaled Alpine Animals inside Isometric Wooden Pens!
     const isNightSleep = ev > 0.72;
     for (const an of state.animals) {
       const def = ANIMALS[an.type];
@@ -1422,120 +1441,102 @@ export class WinterWorld {
       const livePos = gridToWorld(an.gx + 0.5 + mot.ox, an.gy + 0.5 + mot.oy);
       const isReady = an.state === 'ready';
       const isFed = an.state === 'producing';
-      const hopY = mot.hop > 0 ? Math.abs(Math.sin(mot.hop)) * -7 : 0;
+      const stepY = mot.walkPhase > 0 ? Math.abs(Math.sin(mot.walkPhase)) * -3 : 0;
 
       list.push({
         depth: an.gx + mot.ox + an.gy + mot.oy + 0.35,
         draw: (ctx) => {
-          // Subtle cozy pasture straw/moss bed & tiny rustic wooden corner posts
-          if (an.type !== 'owl') {
-            ctx.save();
-            ctx.fillStyle = aut > 0.5 ? 'rgba(180, 130, 62, 0.28)' : 'rgba(214, 184, 132, 0.32)';
-            ctx.beginPath(); ctx.ellipse(basePos.x, basePos.y + 4, 48, 22, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#8C4E1B'; ctx.strokeStyle = '#4A2408'; ctx.lineWidth = 1.6;
-            ctx.fillRect(basePos.x - 42, basePos.y - 8, 6, 15); ctx.strokeRect(basePos.x - 42, basePos.y - 8, 6, 15);
-            ctx.fillRect(basePos.x + 36, basePos.y - 8, 6, 15); ctx.strokeRect(basePos.x + 36, basePos.y - 8, 6, 15);
-            ctx.restore();
-          }
+          // Proper isometric wooden pen (back rails, warm straw bedding, corner posts)
+          this._drawAnimalPen(ctx, basePos.x, basePos.y);
 
           const spr = sprites.get(def.sprite);
           const b = this._getBounceScale(an.id, now);
-          const idleBob = Math.sin(sec * 2.8 + an.gx * 1.7) * 2.2;
-          const size = an.type === 'chicken' ? 84 : an.type === 'owl' ? 88 : an.type === 'sheep' ? 104 : 108;
-          this._drawShadow(ctx, livePos.x, livePos.y + 6, size * 0.34, size * 0.16);
+          // Realistic animal proportions relative to houses & villagers!
+          const size = an.type === 'chicken' ? 48 : an.type === 'sheep' ? 64 : 78;
+          this._drawShadow(ctx, livePos.x, livePos.y + 4, size * 0.34, size * 0.16);
           ctx.save();
-          ctx.translate(livePos.x, livePos.y + 10 + idleBob + hopY);
+          ctx.translate(livePos.x, livePos.y + 6 + stepY);
           ctx.scale((mot.flip ? -1 : 1) * b.sx, b.sy);
           if (spr) {
             const h = (size * spr.height) / spr.width;
-            ctx.drawImage(spr, -size * 0.5, -h + 10, size, h);
+            ctx.drawImage(spr, -size * 0.5, -h + 6, size, h);
           }
           ctx.restore();
 
           if (uiState.selectedMoveId === an.id) {
-            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 3.5;
-            ctx.beginPath(); ctx.ellipse(livePos.x, livePos.y + 4, 46, 22, 0, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.ellipse(livePos.x, livePos.y + 4, 42, 20, 0, 0, Math.PI * 2); ctx.stroke();
           }
 
-          // Nighttime adorable Zzz sleeping bubbles!
-          if (isNightSleep && !isReady && an.type !== 'owl') {
-            const zOff = (sec * 14 + an.gx * 5) % 24;
+          if (isNightSleep && !isReady) {
+            const zOff = (sec * 10 + an.gx * 4) % 20;
             ctx.save();
-            ctx.globalAlpha = 1 - zOff / 24;
-            ctx.font = '900 14px ui-rounded, system-ui, sans-serif';
+            ctx.globalAlpha = (1 - zOff / 20) * 0.85;
+            ctx.font = '800 11px Inter, system-ui, sans-serif';
             ctx.fillStyle = '#E0F2FE';
-            ctx.fillText('Zzz', livePos.x + 18, livePos.y - size * 0.72 - zOff);
+            ctx.fillText('z', livePos.x + 14, livePos.y - size * 0.72 - zOff);
             ctx.restore();
           }
 
           if (isReady) {
-            this._drawCollectBubble(ctx, livePos.x, livePos.y - size * 0.96 + Math.sin(sec * 4.5 + an.gx) * 4, def.produceItem, 1);
+            this._drawCollectBubble(ctx, livePos.x, livePos.y - size - 14 + Math.sin(sec * 2.5 + an.gx) * 2, def.produceItem, 1);
           } else if (isFed) {
             const pct = Math.min(1, Math.max(0, 1 - (an.readyAt - Date.now()) / (def.produceTime * 1000)));
-            this._drawMiniProgress(ctx, livePos.x, livePos.y - size * 0.92, pct, def.produceItem);
+            this._drawMiniProgress(ctx, livePos.x, livePos.y - size - 12, pct, def.produceItem);
           } else {
-            this._drawHungryBubble(ctx, livePos.x, livePos.y - size * 0.92 + Math.sin(sec * 2.6 + an.gx) * 3, def.feedItem);
+            this._drawHungryBubble(ctx, livePos.x, livePos.y - size - 10, def.feedItem);
           }
         }
       });
     }
 
-    // L) Strolling Village NPCs walking along the cobblestone walkways!
+    // L) Illustrated Alpine Villagers strolling along roads (ZERO Emojis!)
     for (const v of this.villagers) {
       const pos = gridToWorld(v.gx, v.gy);
       const walking = v.pause <= 0;
-      const stepBob = walking ? Math.abs(Math.sin(sec * 9 + v.gx * 3)) * -5 : Math.sin(sec * 2.2) * -1;
+      const stepBob = walking ? Math.abs(Math.sin(sec * 7.5 + v.gx * 2.5)) * -2.8 : 0;
       list.push({
         depth: v.gx + v.gy + 0.38,
         draw: (ctx) => {
-          this._drawShadow(ctx, pos.x, pos.y + 2, 16, 7);
+          this._drawShadow(ctx, pos.x, pos.y + 2, 13, 5.5);
           ctx.save();
           ctx.translate(pos.x, pos.y + stepBob);
-          // Cozy cloak body
-          ctx.fillStyle = v.coat; ctx.strokeStyle = '#2B180A'; ctx.lineWidth = 2.2;
-          ctx.beginPath(); ctx.ellipse(0, -14, 12, 15, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          // Head circle with friendly NPC emoji
-          ctx.fillStyle = '#FFF7E6';
-          ctx.beginPath(); ctx.arc(0, -32, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-          ctx.font = '18px system-ui, sans-serif';
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText(v.emoji, 0, -31);
-          // Active Doorstep Buy Offer Bubble (Hay-Day Style!)
+          this._drawIllustratedVillager(ctx, v, walking, sec);
+
           if (v.offer) {
-            const bobO = Math.sin(sec * 4.2 + v.gx) * 3;
+            const bobO = Math.sin(sec * 2.4 + v.gx) * 1.8;
             ctx.save();
-            ctx.translate(0, -68 + bobO);
+            ctx.translate(0, -60 + bobO);
             ctx.fillStyle = '#FFFBEB';
-            ctx.strokeStyle = '#D97706';
-            ctx.lineWidth = 2.5;
-            this._roundRect(ctx, -34, -18, 68, 30, 15);
-            ctx.fill();
-            ctx.stroke();
+            ctx.strokeStyle = '#B47720';
+            ctx.lineWidth = 2;
+            this._roundRect(ctx, -32, -15, 64, 26, 13);
+            ctx.fill(); ctx.stroke();
             const oImg = sprites.getIconImg(v.offer.itemId);
-            if (oImg) ctx.drawImage(oImg, -28, -14, 22, 22);
-            ctx.fillStyle = '#78350F';
-            ctx.font = '900 11px ui-rounded, system-ui, sans-serif';
+            if (oImg) ctx.drawImage(oImg, -26, -12, 20, 20);
+            ctx.fillStyle = '#4A2410';
+            ctx.font = '800 10.5px Inter, system-ui, sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.fillText(`${v.offer.price}★`, -2, -2);
+            ctx.fillText(`${v.offer.price}`, -2, -1.5);
             ctx.restore();
           } else if (v.quoteTimer > 0 && v.quote) {
-            // Speech bubble if chatting!
-            ctx.font = '800 11px ui-rounded, system-ui, sans-serif';
+            ctx.font = '700 10.5px Inter, system-ui, sans-serif';
             const tw = ctx.measureText(v.quote).width;
-            const bw = tw + 18;
-            ctx.fillStyle = 'rgba(255, 253, 245, 0.95)';
-            ctx.strokeStyle = '#C88D48'; ctx.lineWidth = 2;
-            this._roundRect(ctx, -bw * 0.5, -72, bw, 24, 12); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = '#3B1E0D';
-            ctx.fillText(v.quote, 0, -59.5);
+            const bw = tw + 16;
+            ctx.fillStyle = 'rgba(252, 246, 232, 0.95)';
+            ctx.strokeStyle = '#9B562B'; ctx.lineWidth = 1.6;
+            this._roundRect(ctx, -bw * 0.5, -66, bw, 22, 11); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#2E190C';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(v.quote, 0, -55);
           }
           ctx.restore();
         }
       });
     }
 
-    // M) Placed Decorations (3D!)
+    // M) Placed Winter Decorations (Realistic Proportions)
     for (const d of state.decorations) {
       const def = DECORATIONS[d.type];
       if (!def) continue;
@@ -1545,41 +1546,31 @@ export class WinterWorld {
         draw: (ctx, glows) => {
           const spr = sprites.get(def.sprite);
           const b = this._getBounceScale(d.id, now);
-          const floatY = def.floatAnim ? Math.sin(sec * 2.4 + d.gx * 1.3) * 7 : 0;
-          const w = d.type === 'lightarch' ? 132
-            : (d.type === 'pine' || d.type === 'autumn_tree') ? 112
-            : d.type === 'lantern' ? 78
-            : d.type === 'pumpkin_lantern' ? 76
-            : d.type === 'ghost' ? 84
-            : 92;
-          this._drawShadow(ctx, pos.x, pos.y + 6, w * 0.34, w * 0.15);
+          const w = d.type === 'lightarch' ? 116
+            : d.type === 'pine' ? 104
+            : d.type === 'lantern' ? 56
+            : d.type === 'snowman' ? 64
+            : 72;
+          this._drawShadow(ctx, pos.x, pos.y + 5, w * 0.34, w * 0.15);
           ctx.save();
-          ctx.translate(pos.x, pos.y + 10 + floatY);
+          ctx.translate(pos.x, pos.y + 9);
           ctx.scale(b.sx, b.sy);
           if (spr) {
             const h = (w * spr.height) / spr.width;
-            ctx.drawImage(spr, -w * 0.5, -h + 10, w, h);
-          }
-          // Animated glowing emerald bubbles rising from the magic cauldron!
-          if (d.type === 'cauldron') {
-            const bub = (sec * 18) % 20;
-            ctx.fillStyle = '#86EFAC';
-            ctx.globalAlpha = 1 - bub / 20;
-            ctx.beginPath(); ctx.arc(Math.sin(sec * 3) * 10, -54 - bub, 4.5, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = 1;
+            ctx.drawImage(spr, -w * 0.5, -h + 8, w, h);
           }
           ctx.restore();
 
           if (uiState.selectedMoveId === d.id) {
-            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 3.5;
-            ctx.beginPath(); ctx.ellipse(pos.x, pos.y + 4, 44, 21, 0, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = '#FACC15'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.ellipse(pos.x, pos.y + 4, 40, 19, 0, 0, Math.PI * 2); ctx.stroke();
           }
 
           if (def.glow && def.glowOffset) {
             glows.push({
-              x: pos.x + def.glowOffset.x * 100,
-              y: pos.y + def.glowOffset.y * 120 + floatY,
-              r: def.glowOffset.r * 215
+              x: pos.x + def.glowOffset.x * 90,
+              y: pos.y + def.glowOffset.y * 105,
+              r: def.glowOffset.r * 195
             });
           }
         }
@@ -1589,265 +1580,239 @@ export class WinterWorld {
     return list;
   }
 
-  _drawAutumnRoofTrim(ctx, aut, w, h, sec, kind) {
+  _drawAnimalPen(ctx, x, y) {
     ctx.save();
-    ctx.globalAlpha = Math.min(1, aut * 0.95);
-    const roofY = -h * 0.62;
-    const span = w * 0.34;
-    const flutter = Math.sin(sec * 2.2) * 1.4;
-
-    // Warm golden-amber autumn sunlight glaze over snowy upper roof
-    const glaze = ctx.createRadialGradient(0, roofY - 14, 10, 0, roofY, span * 1.35);
-    glaze.addColorStop(0, 'rgba(249, 115, 22, 0.42)');
-    glaze.addColorStop(0.6, 'rgba(234, 88, 12, 0.28)');
-    glaze.addColorStop(1, 'rgba(217, 119, 6, 0)');
-    ctx.fillStyle = glaze;
+    // Warm sunlit straw/pasture base pad
+    ctx.fillStyle = 'rgba(218, 189, 138, 0.42)';
+    ctx.beginPath(); ctx.ellipse(x, y + 3, 44, 21, 0, 0, Math.PI * 2); ctx.fill();
+    // Subtle isometric 4-corner rustic posts & back rails
+    const pN = { x, y: y - 20 };
+    const pE = { x: x + 42, y };
+    const pS = { x, y: y + 20 };
+    const pW = { x: x - 42, y };
+    ctx.strokeStyle = '#7A421D';
+    ctx.lineWidth = 2.4;
     ctx.beginPath();
-    ctx.ellipse(0, roofY - 8, span * 1.25, h * 0.24, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Festive draped autumn garland along the front eave
-    const eaveY = kind === 'teahouse' ? -h * 0.46 : -h * 0.52;
-    ctx.strokeStyle = '#7C2D12';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(-span, eaveY - 4);
-    ctx.quadraticCurveTo(0, eaveY + 18, span, eaveY - 4);
+    ctx.moveTo(pW.x, pW.y - 8); ctx.lineTo(pN.x, pN.y - 8); ctx.lineTo(pE.x, pE.y - 8);
     ctx.stroke();
-
-    // Colorful maple leaves + mini pumpkins along the garland & roof ridge
-    const leafCols = ['#EA580C', '#F59E0B', '#DC2626', '#F97316', '#D97706'];
-    const garlandPts = [
-      [-span * 0.82, eaveY + 1],
-      [-span * 0.42, eaveY + 7],
-      [0, eaveY + 9],
-      [span * 0.42, eaveY + 7],
-      [span * 0.82, eaveY + 1],
-      [-span * 0.48, roofY - 22],
-      [span * 0.36, roofY - 20],
-      [0, roofY - 34]
-    ];
-    for (let i = 0; i < garlandPts.length; i++) {
-      const [lx, ly] = garlandPts[i];
-      ctx.save();
-      ctx.translate(lx, ly + (i < 5 ? flutter * 0.5 : 0));
-      ctx.rotate((i % 2 === 0 ? 0.35 : -0.35) + flutter * 0.04);
-      if (i === 2 || i === 0 || i === 4) {
-        // Tiny hanging autumn pumpkin charm
-        ctx.fillStyle = '#F97316';
-        ctx.strokeStyle = '#7C2D12';
-        ctx.lineWidth = 1.6;
-        ctx.beginPath(); ctx.ellipse(0, 3, 7, 5.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#15803D';
-        ctx.fillRect(-1.5, -4, 3, 3);
-      } else {
-        // Autumn maple leaf cluster
-        ctx.fillStyle = leafCols[i % leafCols.length];
-        ctx.strokeStyle = '#7C2D12';
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.ellipse(-4, 0, 7, 4.2, -0.4, 0, Math.PI * 2);
-        ctx.ellipse(4, 1, 6.5, 4, 0.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.restore();
+    ctx.fillStyle = '#6E391B';
+    for (const pt of [pN, pE, pW, pS]) {
+      ctx.fillRect(pt.x - 2.2, pt.y - 12, 4.4, 13);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(pt.x - 2.2, pt.y - 13, 4.4, 2.2);
+      ctx.fillStyle = '#6E391B';
     }
     ctx.restore();
   }
 
+  _drawIllustratedVillager(ctx, v, walking, sec) {
+    // Grounded illustrated miniature winter villager (boots, coat, scarf, face, beanie — zero emoji!)
+    const swing = walking ? Math.sin(sec * 9 + v.gx) * 2.4 : 0;
+    // Boots
+    ctx.fillStyle = '#3B1A08';
+    ctx.beginPath();
+    ctx.ellipse(-4 + swing, -2, 3.2, 2.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(4 - swing, -2, 3.2, 2.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Tailored winter coat
+    ctx.fillStyle = v.coat;
+    ctx.strokeStyle = '#2B1408';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-9, -6);
+    ctx.quadraticCurveTo(-10, -21, -5, -26);
+    ctx.lineTo(5, -26);
+    ctx.quadraticCurveTo(10, -21, 9, -6);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Cozy knit scarf
+    ctx.fillStyle = v.scarf;
+    ctx.beginPath(); ctx.roundRect(-7, -27, 14, 5, 2.5); ctx.fill();
+    ctx.fillRect(2, -23, 3.5, 8);
+    // Head
+    ctx.fillStyle = v.skin;
+    ctx.strokeStyle = '#4A240E';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(0, -33, 7.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // Rosy winter cheeks & crisp eyes
+    ctx.fillStyle = 'rgba(220, 90, 90, 0.45)';
+    ctx.beginPath(); ctx.arc(-3.5, -31.5, 1.5, 0, Math.PI * 2); ctx.arc(3.5, -31.5, 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2B1408';
+    ctx.beginPath(); ctx.arc(-2.2, -33.2, 1.1, 0, Math.PI * 2); ctx.arc(2.2, -33.2, 1.1, 0, Math.PI * 2); ctx.fill();
+    // Knit winter hat + pom-pom
+    ctx.fillStyle = v.hat;
+    ctx.beginPath(); ctx.arc(0, -35.5, 7.5, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath(); ctx.roundRect(-8, -37.2, 16, 3.4, 1.7); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -43.5, 2.6, 0, Math.PI * 2); ctx.fill();
+  }
+
   _drawWrappedConstruction(ctx, x, y, sec, b) {
-    const pulse = 1 + Math.sin(sec * 4.5) * 0.04;
     ctx.save();
     ctx.translate(x, y + 12);
-    ctx.scale(b.sx * pulse, b.sy * pulse);
-    // Warm wooden crate isometric box
-    ctx.strokeStyle = '#4A2408'; ctx.lineWidth = 3.5; ctx.lineJoin = 'round';
+    ctx.scale(b.sx, b.sy);
+    ctx.strokeStyle = '#4A2408'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round';
     ctx.fillStyle = '#D99B52';
-    ctx.beginPath(); ctx.moveTo(0, -108); ctx.lineTo(74, -72); ctx.lineTo(0, -36); ctx.lineTo(-74, -72); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -96); ctx.lineTo(66, -64); ctx.lineTo(0, -32); ctx.lineTo(-66, -64); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#B87232';
-    ctx.beginPath(); ctx.moveTo(-74, -72); ctx.lineTo(0, -36); ctx.lineTo(0, 14); ctx.lineTo(-74, -22); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-66, -64); ctx.lineTo(0, -32); ctx.lineTo(0, 12); ctx.lineTo(-66, -20); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#9A5B22';
-    ctx.beginPath(); ctx.moveTo(74, -72); ctx.lineTo(0, -36); ctx.lineTo(0, 14); ctx.lineTo(74, -22); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // Glossy Festive Red Ribbon Cross!
-    ctx.fillStyle = '#DC2626'; ctx.strokeStyle = '#7F1D1D'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(-42, -56); ctx.lineTo(-28, -50); ctx.lineTo(-28, 0); ctx.lineTo(-42, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(42, -56); ctx.lineTo(28, -50); ctx.lineTo(28, 0); ctx.lineTo(42, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // Big Glossy Bow on Top!
-    ctx.fillStyle = '#EF4444';
-    ctx.beginPath(); ctx.ellipse(-22, -96, 24, 13, -0.35, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(22, -96, 24, 13, 0.35, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.arc(0, -90, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    // "Tippen zum Auspacken!" floating pill
-    ctx.fillStyle = '#FFFDF5'; ctx.strokeStyle = '#D97706'; ctx.lineWidth = 2.5;
-    this._roundRect(ctx, -64, -148 + Math.sin(sec * 5) * 4, 128, 28, 14); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#8A1C17'; ctx.font = '900 12px ui-rounded, system-ui, sans-serif';
+    ctx.beginPath(); ctx.moveTo(66, -64); ctx.lineTo(0, -32); ctx.lineTo(0, 12); ctx.lineTo(66, -20); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Crimson ribbon cross & bow
+    ctx.fillStyle = '#B91C1C'; ctx.strokeStyle = '#781016'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-38, -50); ctx.lineTo(-26, -44); ctx.lineTo(-26, 0); ctx.lineTo(-38, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(38, -50); ctx.lineTo(26, -44); ctx.lineTo(26, 0); ctx.lineTo(38, -6); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#DC2626';
+    ctx.beginPath(); ctx.ellipse(-19, -86, 20, 11, -0.35, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(19, -86, 20, 11, 0.35, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, -80, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // Clean label pill (Zero Emoji)
+    const floatY = Math.sin(sec * 2.5) * 2;
+    ctx.fillStyle = '#FCF6E8'; ctx.strokeStyle = '#B47720'; ctx.lineWidth = 2;
+    this._roundRect(ctx, -50, -130 + floatY, 100, 24, 12); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#7B1516'; ctx.font = '800 11px Inter, system-ui, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('🎀 Auspacken!', 0, -134 + Math.sin(sec * 5) * 4);
+    ctx.fillText('Auspacken', 0, -118 + floatY);
     ctx.restore();
   }
 
   _draw4StageCrop(ctx, crop, pct, phase) {
-    const sway = Math.sin(phase * 2.2) * 0.04;
+    const sway = Math.sin(phase * 1.4) * 0.015;
     ctx.save();
     ctx.rotate(sway);
-    const pts = [[-22, -4], [0, -12], [22, -4], [-10, 8], [12, 8]];
+    const pts = [[-20, -4], [0, -11], [20, -4], [-9, 7], [11, 7]];
 
     if (pct < 0.22) {
-      // STAGE 0: Freshly planted seeds & tiny soil mounds!
       for (const [ox, oy] of pts) {
-        ctx.fillStyle = '#5C3014';
-        ctx.beginPath(); ctx.ellipse(ox, oy, 7, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#6B3E20';
+        ctx.beginPath(); ctx.ellipse(ox, oy, 6.5, 3.2, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#FDE68A';
-        ctx.beginPath(); ctx.arc(ox - 2, oy - 2, 2.2, 0, Math.PI * 2); ctx.arc(ox + 2.5, oy - 1, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ox - 2, oy - 2, 2, 0, Math.PI * 2); ctx.arc(ox + 2.2, oy - 1, 1.8, 0, Math.PI * 2); ctx.fill();
       }
     } else if (pct < 0.58) {
-      // STAGE 1: Tender young sprouts emerging!
       const s = 0.55 + ((pct - 0.22) / 0.36) * 0.35;
       for (const [ox, oy] of pts) {
-        ctx.fillStyle = '#4ADE80'; ctx.strokeStyle = '#166534'; ctx.lineWidth = 1.6;
-        ctx.beginPath(); ctx.ellipse(ox - 5 * s, oy - 8 * s, 7 * s, 4 * s, -0.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(ox + 5 * s, oy - 8 * s, 7 * s, 4 * s, 0.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#4ADE80'; ctx.strokeStyle = '#166534'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.ellipse(ox - 4.5 * s, oy - 7 * s, 6.5 * s, 3.8 * s, -0.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(ox + 4.5 * s, oy - 7 * s, 6.5 * s, 3.8 * s, 0.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       }
     } else {
-      // STAGE 2: Lush mid-growth showing crop-specific buds!
-      const s = 0.88 + ((pct - 0.58) / 0.42) * 0.25;
+      const s = 0.85 + ((pct - 0.58) / 0.42) * 0.22;
       for (const [ox, oy] of pts) {
-        ctx.fillStyle = '#2E9E46'; ctx.strokeStyle = '#14532D'; ctx.lineWidth = 1.8;
-        ctx.beginPath(); ctx.ellipse(ox - 7 * s, oy - 10 * s, 9 * s, 5.5 * s, -0.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(ox + 7 * s, oy - 10 * s, 9 * s, 5.5 * s, 0.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        // Crop-specific budding shapes
+        ctx.fillStyle = '#2E9E46'; ctx.strokeStyle = '#14532D'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.ellipse(ox - 6.5 * s, oy - 9 * s, 8.5 * s, 5 * s, -0.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(ox + 6.5 * s, oy - 9 * s, 8.5 * s, 5 * s, 0.45, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = crop.color;
-        if (crop.id === 'mushroom') {
-          ctx.beginPath(); ctx.arc(ox, oy - 14 * s, 6.5 * s, Math.PI, 0); ctx.fill();
-        } else if (crop.id === 'pumpkin') {
-          ctx.beginPath(); ctx.ellipse(ox, oy - 12 * s, 7.5 * s, 6 * s, 0, 0, Math.PI * 2); ctx.fill();
-        } else {
-          ctx.beginPath(); ctx.arc(ox, oy - 15 * s, 5.5 * s, 0, Math.PI * 2); ctx.fill();
-        }
+        ctx.beginPath(); ctx.arc(ox, oy - 14 * s, 5 * s, 0, Math.PI * 2); ctx.fill();
       }
     }
 
-    // Crisp circular growth progress ring
-    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3.2;
-    ctx.beginPath(); ctx.arc(0, -30, 10, -Math.PI * 0.5, -Math.PI * 0.5 + Math.PI * 2 * pct); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 2.8;
+    ctx.beginPath(); ctx.arc(0, -28, 9, -Math.PI * 0.5, -Math.PI * 0.5 + Math.PI * 2 * pct); ctx.stroke();
     ctx.restore();
   }
 
   _drawShadow(ctx, x, y, rx, ry) {
-    ctx.fillStyle = this.seasonBlend > 0.5 ? 'rgba(54, 40, 18, 0.22)' : 'rgba(42, 74, 118, 0.22)';
+    ctx.fillStyle = 'rgba(42, 74, 114, 0.2)';
     ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
   }
 
   _drawCollectBubble(ctx, x, y, itemId, count) {
     ctx.save();
-    ctx.fillStyle = 'rgba(254, 240, 138, 0.48)';
-    ctx.beginPath(); ctx.arc(x, y, 29, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#FFFDF5'; ctx.strokeStyle = '#D97706'; ctx.lineWidth = 3.5;
-    ctx.beginPath(); ctx.arc(x, y, 23, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#FFFDF7'; ctx.strokeStyle = '#B47720'; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     const img = sprites.getIconImg(itemId);
-    if (img) ctx.drawImage(img, x - 16, y - 16, 32, 32);
+    if (img) ctx.drawImage(img, x - 14, y - 14, 28, 28);
     if (count > 1) {
-      ctx.fillStyle = '#E62937'; ctx.beginPath(); ctx.arc(x + 17, y - 16, 10, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#FFFFFF'; ctx.font = '800 12px system-ui, sans-serif';
+      ctx.fillStyle = '#B42324'; ctx.beginPath(); ctx.arc(x + 15, y - 14, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFFFFF'; ctx.font = '800 11px Inter, system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(String(count), x + 17, y - 15.5);
+      ctx.fillText(String(count), x + 15, y - 13.5);
     }
     ctx.restore();
   }
 
   _drawHungryBubble(ctx, x, y, feedItemId) {
     ctx.save();
-    ctx.globalAlpha = 0.92;
-    ctx.fillStyle = 'rgba(255, 253, 245, 0.94)'; ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = 'rgba(255, 253, 247, 0.94)'; ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     const img = sprites.getIconImg(feedItemId);
-    if (img) ctx.drawImage(img, x - 11, y - 11, 22, 22);
+    if (img) ctx.drawImage(img, x - 10, y - 10, 20, 20);
     ctx.restore();
   }
 
-  _drawActionBadge(ctx, x, y, emoji, bgColor) {
+  _drawReadyIndicator(ctx, x, y, label, bg) {
     ctx.save();
-    ctx.fillStyle = bgColor; ctx.strokeStyle = '#FFFDF5'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.font = '18px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(emoji, x, y + 1);
+    ctx.fillStyle = bg; ctx.strokeStyle = '#FFFDF7'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#FFFFFF'; ctx.font = '800 11px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y + 0.5);
     ctx.restore();
   }
 
   _drawMiniProgress(ctx, x, y, pct, itemId) {
     ctx.save();
-    const w = 68, h = 22;
-    ctx.fillStyle = 'rgba(42, 24, 14, 0.8)';
-    this._roundRect(ctx, x - w * 0.5, y - h * 0.5, w, h, 11); ctx.fill();
-    const bx = x - 10, bw = 38;
-    ctx.fillStyle = 'rgba(255,255,255,0.22)';
-    this._roundRect(ctx, bx, y - 4, bw, 8, 4); ctx.fill();
-    ctx.fillStyle = '#FACC15';
-    this._roundRect(ctx, bx, y - 4, Math.max(4, bw * pct), 8, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(43, 20, 8, 0.84)';
+    this._roundRect(ctx, x - 26, y - 12, 52, 22, 11); ctx.fill();
     const img = sprites.getIconImg(itemId);
-    if (img) ctx.drawImage(img, x - w * 0.5 + 3, y - 9, 18, 18);
+    if (img) ctx.drawImage(img, x - 22, y - 9, 16, 16);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    this._roundRect(ctx, x - 3, y - 3.5, 24, 7, 3.5); ctx.fill();
+    ctx.fillStyle = '#FACC15';
+    this._roundRect(ctx, x - 3, y - 3.5, Math.max(4, 24 * pct), 7, 3.5); ctx.fill();
     ctx.restore();
   }
 
   _drawWarmLights(ctx, glowSpots, ev, sec) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    const intensity = Math.min(1, ev * 1.2);
     for (let i = 0; i < glowSpots.length; i++) {
       const g = glowSpots[i];
-      const flicker = 0.92 + Math.sin(sec * 3.6 + i * 2.1) * 0.08;
-      const rad = g.r * flicker;
-      const grad = ctx.createRadialGradient(g.x, g.y, 4, g.x, g.y, rad);
-      grad.addColorStop(0, `rgba(255, 224, 130, ${0.46 * intensity})`);
-      grad.addColorStop(0.5, `rgba(255, 178, 68, ${0.2 * intensity})`);
-      grad.addColorStop(1, 'rgba(255, 160, 40, 0)');
+      const flicker = 0.94 + Math.sin(sec * 3.5 + i * 1.7) * 0.06;
+      const r = g.r * flicker;
+      const grad = ctx.createRadialGradient(g.x, g.y, 4, g.x, g.y, r);
+      grad.addColorStop(0, `rgba(255, 226, 148, ${0.42 * ev})`);
+      grad.addColorStop(0.5, `rgba(255, 176, 74, ${0.18 * ev})`);
+      grad.addColorStop(1, 'rgba(255, 160, 50, 0)');
       ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(g.x, g.y, rad, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(g.x, g.y, r, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
   }
 
-  _drawEveningOverlay(ctx, ev, aut) {
-    ctx.save();
-    const duskBell = Math.sin(ev * Math.PI);
-    if (duskBell > 0.05) {
-      ctx.fillStyle = `rgba(255, 148, 66, ${duskBell * (0.14 + aut * 0.05)})`;
-      ctx.fillRect(0, 0, this.width, this.height);
-    }
-    if (ev > 0.25) {
-      const nightAmt = (ev - 0.25) / 0.75;
-      ctx.fillStyle = aut > 0.5
-        ? `rgba(26, 20, 58, ${nightAmt * 0.34})`
-        : `rgba(18, 34, 78, ${nightAmt * 0.32})`;
-      ctx.fillRect(0, 0, this.width, this.height);
-    }
-    ctx.restore();
+  _drawEveningOverlay(ctx, ev) {
+    const grad = ctx.createLinearGradient(0, 0, 0, this.height);
+    grad.addColorStop(0, `rgba(18, 32, 72, ${ev * 0.44})`);
+    grad.addColorStop(1, `rgba(12, 22, 52, ${ev * 0.34})`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, this.width, this.height);
   }
 
-  _drawParachuteGift(ctx, p) {
-    const x = this.width * 0.5 + Math.sin(p * Math.PI * 3) * 48 * (1 - p);
-    const y = -60 + p * (this.height * 0.56);
+  _drawParachuteGift(ctx, progress) {
+    const x = this.width * 0.5 + Math.sin(progress * Math.PI * 2.5) * 46;
+    const y = -50 + progress * (this.height * 0.62);
+    const giftImg = sprites.getIconImg('mega_gift');
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(Math.cos(p * Math.PI * 3) * 0.12);
-    const owl = sprites.get('animal_owl');
-    if (owl) ctx.drawImage(owl, -32, -74, 64, 74);
-    const giftImg = sprites.getIconImg('mega_gift');
-    if (giftImg) ctx.drawImage(giftImg, -24, -4, 48, 48);
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(-22, -26); ctx.lineTo(-8, 4); ctx.moveTo(22, -26); ctx.lineTo(8, 4); ctx.stroke();
+    ctx.fillStyle = '#B42324'; ctx.strokeStyle = '#FFFDF7'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, -24, 24, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (giftImg) ctx.drawImage(giftImg, -20, -2, 40, 40);
     ctx.restore();
   }
 
   _drawSwipeTrail(ctx) {
     ctx.save();
+    ctx.lineCap = 'round';
     for (let i = 1; i < this.swipeTrail.length; i++) {
-      const a = this.swipeTrail[i - 1], b = this.swipeTrail[i];
-      const alpha = Math.max(0, 1 - b.life / b.maxLife);
-      ctx.strokeStyle = b.mode === 'harvest'
-        ? `rgba(254, 240, 138, ${alpha * 0.9})`
-        : `rgba(134, 239, 172, ${alpha * 0.9})`;
-      ctx.lineWidth = 10 * alpha; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      const p0 = this.swipeTrail[i - 1], p1 = this.swipeTrail[i];
+      const alpha = 1 - p1.life / p1.maxLife;
+      ctx.strokeStyle = p1.mode === 'harvest' ? `rgba(250, 204, 21, ${alpha * 0.8})` : `rgba(52, 211, 153, ${alpha * 0.8})`;
+      ctx.lineWidth = 9 * alpha;
+      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
     }
     ctx.restore();
   }
@@ -1855,28 +1820,33 @@ export class WinterWorld {
   _drawStar(ctx, x, y, r) {
     ctx.beginPath();
     for (let i = 0; i < 8; i++) {
-      const ang = (i * Math.PI) / 4;
       const rad = i % 2 === 0 ? r : r * 0.36;
-      const px = x + Math.cos(ang) * rad, py = y + Math.sin(ang) * rad;
+      const a = (i * Math.PI) / 4;
+      const px = x + Math.cos(a) * rad, py = y + Math.sin(a) * rad;
       if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
     }
     ctx.closePath(); ctx.fill();
   }
 
-  _drawHeart(ctx, x, y, s) {
+  _drawHeart(ctx, x, y, r) {
     ctx.beginPath();
-    ctx.moveTo(x, y + s * 0.35);
-    ctx.bezierCurveTo(x - s, y - s * 0.35, x - s * 0.5, y - s, x, y - s * 0.35);
-    ctx.bezierCurveTo(x + s * 0.5, y - s, x + s, y - s * 0.35, x, y + s * 0.35);
+    ctx.moveTo(x, y + r * 0.4);
+    ctx.bezierCurveTo(x - r, y - r * 0.4, x - r * 0.5, y - r * 1.1, x, y - r * 0.4);
+    ctx.bezierCurveTo(x + r * 0.5, y - r * 1.1, x + r, y - r * 0.4, x, y + r * 0.4);
     ctx.fill();
   }
 
   _roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
-    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
   }
 }
