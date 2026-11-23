@@ -2,6 +2,7 @@
 
 Grundlage: Entscheidungen Hannes 23.11. (LEITUNG_CLAUDE.md Nr. 6).
 **Weihnachten ist das Konzept (Hannes 23.11.):** Jede Neuheit muss nach Weihnachten aussehen und schmecken (Advent, Plätzchen, Geschenke, Kerzen, Christbaum, Markt). Die Alpen sind nur die Kulisse. Kein normaler Bauernhof-Inhalt ohne Weihnachtsbezug (keine Kuh, keine Kartoffel, kein Kohl).
+**Tierfreundlich, möglichst vegan (Hannes 23.11.):** Kein Tier wird geschlachtet, gefangen oder gerupft, kein Fleisch, kein Fisch. Tiere helfen mit (tragen, bringen Post, ziehen Schlitten). Milde Tierprodukte wie Eier, Milch, Wolle, Honig bleiben in Maßen; neue Rezepte möglichst pflanzlich.
 Alle Namen eigen, keine Namen/Figuren anderer Spiele. Grafik zuerst als Platzhalter, echte Bilder am Schluss (STIL_REGELN §6a: ab Stufe 10 auffälliger, ab 20 Hingucker).
 Zahlen (Preise, Zeiten) legt der Kern beim Einbau fest, der Wirtschafts-Bot prüft sie.
 
@@ -34,13 +35,13 @@ Quellen: Zufallsfund beim Ernten/Abholen/Produzieren, Tagestruhe, volle Bergbahn
 | Stufe | Art | Inhalt |
 |---|---|---|
 | 6 | **System + Land** | Baumaterial, Grundstück Bachwiese · Feld **Rotbäckchen-Äpfel** |
-| 7 | Tier + Gebäude | **Weihnachtsgans** (Daunen) · **Bratapfel-Stand**: Bratapfel, Apfelpunsch |
+| 7 | Tier + Gebäude | **Krippen-Esel** (holt Brennholz aus dem Wald) · **Bratapfel-Stand**: Bratapfel, Apfelpunsch (mit Brennholz) |
 | 8 | Feld + Gebäude | **Mandeln** · **Mandelbude**: Gebrannte Mandeln, Marzipankartoffeln |
 | 9 | **System + Wahrzeichen** | **Bergbahn-Lieferungen**: Geschenkpakete für das Bergdorf, Gondel mit 6 Kisten |
 | 10 | Feld + Gebäude + Land | **Tannengrün** · **Kranzbinderei**: Adventskranz, Türkranz · Land Waldsaum |
-| 11 | Tier + Gebäude | **Schneeeule** (Federn) · **Wichtelpost**: Wunschzettel, Weihnachtskarten |
+| 11 | Tier + Gebäude | **Schneeeule** (bringt Briefe) · **Wichtelpost**: Wunschzettel, Weihnachtskarten |
 | 12 | Feld + Gebäude | **Walnüsse** · **Spielzeugwerkstatt**: Schaukelpferd, Holzeisenbahn |
-| 13 | **System + Land** | **Eisfischen**: Weiher friert zu, Eislöcher, Teigköder · Fische: **Weihnachtskarpfen**, Forelle, Saibling, selten Goldkarpfen · Land Seeufer |
+| 13 | **System + Land** | **Eisangeln nach Schätzen**: Weiher friert zu, Eislöcher, man angelt Versunkenes (verlorene Geschenke, Glasperlen, Flaschenpost, selten Bernstein); Fische sieht man nur unter dem Eis · Land Seeufer |
 | 14 | Tier + Gebäude | **Winterbienen** (Wachs, Honig) · **Kerzenzieherei**: Adventskerze, Honigkerze |
 | 15 | Feld + Gebäude | **Weihnachtsorangen** (Wintergarten-Beet) · **Schokoladenmanufaktur**: Orangenschokolade, Pralinen, Schoko-Weihnachtsmann |
 | 16 | **System + Land** | **Schneestollen**: Stolleneingang mit Lore, bringt Kohle, Bergkristall, Silbererz, selten Gold · Land Nordhang |
@@ -64,7 +65,7 @@ Zusätzlich je Stufe 1–2 Weihnachts-Deko (z. B. Riesen-Nussknacker, Lichter-Re
 ## Systeme im Detail
 **Bergbahn-Lieferungen (9):** Gondel mit 6 Geschenk-Kisten für das Bergdorf. Jede gefüllte Kiste gibt sofort Münzen + XP. Zeitfenster 12 h, dann fährt die Gondel ab, kommt nach 1 h mit neuem Auftrag zurück. Alle 6 voll → Bonus-Paket mit 1–3 Baumaterial.
 
-**Eisfischen (13):** Eislöcher am Seeufer (wie ein Feld). Teigköder rein, warten, Fang nach Zufall. Der Weihnachtskarpfen ist der Hauptfang, der Goldkarpfen die Seltenheit. Neues Eisloch kostet einen Eisbohrer.
+**Eisangeln nach Schätzen (13):** Eislöcher am Seeufer (wie ein Feld). Angel rein, warten, Fund nach Zufall: verlorene Geschenke, Glasperlen (für Glasbläserei), Flaschenpost (Bonus-Auftrag), selten Bernstein. Kein Fisch wird gefangen, Fische schwimmen nur sichtbar unter dem Eis. Neues Eisloch kostet einen Eisbohrer.
 
 **Schneestollen (16):** Fahrt kostet Spitzhacke + Grubenlampe, bringt 3–5 Funde für Glockengießerei, Glasbläserei und Silberschmiede.
 
@@ -74,6 +75,6 @@ Zusätzlich je Stufe 1–2 Weihnachts-Deko (z. B. Riesen-Nussknacker, Lichter-Re
 1. ~~Baumaterial im Kern + Tests, Bachwiese~~ erledigt 23.11.
 2. Stufe 6–12 als Daten + Bot bis Stufe 12.
 3. Bergbahn-Lieferungen.
-4. Stufe 13–19 + Eisfischen + Schneestollen.
+4. Stufe 13–19 + Eisangeln + Schneestollen.
 5. Weihnachtsmarkt-Fest, Stufe 20–30, Karte vergrößern.
 6. Wirtschafts-Bot bis Stufe 30 (Vielspieler: Stufe 30 nach etwa 6–8 Wochen).
