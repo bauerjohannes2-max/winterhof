@@ -62,24 +62,11 @@ const ROAD_DESTINATIONS = [
   { gx: 15, gy: 6 }
 ];
 
-const STATION_SPRITES = {
-  bakery: 'christmas_bakery',
-  teahouse: 'punch_stand',
-  patisserie: 'patisserie_house',
-  gift_workshop: 'gift_workshop'
-};
-
-const ANIMAL_SPRITES = {
-  chicken: 'animal_chicken',
-  reindeer: 'animal_reindeer',
-  sheep: 'animal_sheep'
-};
-
-const DECO_SPRITES = {
-  pine: 'deco_pine',
-  snowman: 'deco_snowman',
-  lantern: 'deco_lantern'
-};
+// Bild je Objekt kommt aus den Inhalten (sprite-Feld); fehlt die Datei, liefert sprites.js einen Platzhalter.
+const spriteOf = (table, type, fallback) => content[table]?.[type]?.sprite || fallback;
+// Höhe für Bilder ohne Eintrag in der Größentabelle (Platzhalter), in Kacheln je Gruppe
+const PLACEHOLDER_HEIGHT = { station: 1.7, animal: 0.5, deco: 0.8, crop: 0.55 };
+const heightFor = (key, group) => (ART[key] ? artH(key) : PLACEHOLDER_HEIGHT[group] * TILE_W);
 
 function makeSeededRand(seed) {
   let s = seed >>> 0;
@@ -1034,8 +1021,8 @@ export class WinterWorld {
     for (const st of state.stations || []) {
       if (!st.built) continue;
       const sp = gridToWorld(st.gx + 1.0, st.gy + 1.0);
-      const texKey = STATION_SPRITES[st.type] || 'christmas_bakery';
-      const size = artH(texKey);
+      const texKey = spriteOf('stations', st.type, 'christmas_bakery');
+      const size = heightFor(texKey, 'station');
 
       if (st.wrapped) {
         placeEntity(`st_${st.id}`, texKey, sp.x, sp.y + 30, 0, size * 0.7, {
@@ -1115,7 +1102,7 @@ export class WinterWorld {
         if (pct >= 1) {
           const cropTexKey = `crop_${f.cropId}`;
           const sway = Math.sin(sec * 2.1 + f.gx * 1.3 + f.gy * 0.9) * 0.018;
-          placeEntity(`crop_${f.id}`, cropTexKey, fp.x, fp.y + 2, 0, artH(cropTexKey), {
+          placeEntity(`crop_${f.id}`, cropTexKey, fp.x, fp.y + 2, 0, heightFor(cropTexKey, 'crop'), {
             bounceId: f.id,
             zIndex: fp.y + 4,
             anchorY: 0.72,
@@ -1155,8 +1142,8 @@ export class WinterWorld {
       const mot = this.getAnimalMotion(an);
       const ap = gridToWorld(an.gx + 0.5 + mot.ox, an.gy + 0.5 + mot.oy);
       const def = ANIMALS[an.type];
-      const texKey = ANIMAL_SPRITES[an.type] || 'animal_chicken';
-      const sz = artH(texKey);
+      const texKey = spriteOf('animals', an.type, 'animal_chicken');
+      const sz = heightFor(texKey, 'animal');
       const hop = Math.abs(Math.sin(mot.phase)) * 3.0;
 
       placeEntity(`an_${an.id}`, texKey, ap.x, ap.y - hop, sz, sz, {
@@ -1185,14 +1172,14 @@ export class WinterWorld {
     // ---- G. Decorations (1x1 Exact Tile Center) ----
     for (const d of state.decorations || []) {
       const dp = gridToWorld(d.gx + 0.5, d.gy + 0.5);
-      const texKey = DECO_SPRITES[d.type] || 'deco_lantern';
-      placeEntity(`deco_${d.id}`, texKey, dp.x, dp.y + 8, 0, artH(texKey), {
+      const texKey = spriteOf('decorations', d.type, 'deco_lantern');
+      placeEntity(`deco_${d.id}`, texKey, dp.x, dp.y + 8, 0, heightFor(texKey, 'deco'), {
         bounceId: d.id,
         zIndex: dp.y + 8,
         shadowW: 0.68,
         shadowH: 0.24
       });
-      if (d.type === 'lantern') {
+      if (content.decorations[d.type]?.glow) {
         this.glowSpots.push({ x: dp.x, y: dp.y - 34, r: 108, tint: 0xffc04d, intensity: 0.96 });
       }
     }

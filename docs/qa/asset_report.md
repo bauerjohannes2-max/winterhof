@@ -33,4 +33,4 @@
 
 Gesamt: **GRÜN**
 
-Aufstellungsbild: docs/qa/aufstellung.png
+Aufstellungsbild: docs\qa\aufstellung.png

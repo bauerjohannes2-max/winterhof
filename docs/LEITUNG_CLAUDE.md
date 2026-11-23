@@ -15,6 +15,7 @@
 3. Geminis Stand gesichert als Tag `v6-prototyp`.
 4. Thema: Alpen-Winter als Basis, Daten so, dass später Jahreszeiten möglich sind.
 5. Grafik mutiger: gleiche Handschrift, aber jedes Objekt mit eigener Silhouette, Star-Merkmal, Akzentfarbe; später = spektakulärer. Gemini liefert je Auftrag 3 Varianten (zurückhaltend → wild), Hannes wählt (STIL_REGELN §6a). **Erst ganz zum Schluss** (Hannes 23.11.): zuerst Spiel fertig, dann Grafik-Runde.
+6. Stufe 6–30 (Hannes 23.11.): Baumaterial ab Stufe 6 für Lager- und Landausbau. Neue Systeme: Bergbahn-Lieferungen, Eisfischen, Schneestollen (Mine), Weihnachtsmarkt-Fest. Inhalte jetzt mit Platzhalter-Bildern einbauen, echte Grafik am Schluss.
 
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof). `src/gameData.js` ist nur noch ein Adapter für die alte Oberfläche.
@@ -37,7 +38,7 @@
 
 ## Stil und Prüfung
 - Verbindliche Regeln: `docs/STIL_REGELN.md` (nur Querformat, Maßstab in Kacheln, nie verzerren, Licht oben links, Bodenlinie).
-- Prüfung: `python scripts/qa/pruefe_assets.py` erzeugt Ampel + `docs/qa/aufstellung.png`. Vorschau ohne Datenänderung: `--set key=hoehe --out datei.png`.
+- Prüfung: `python scripts/pruefe_assets.py` erzeugt Ampel + `docs/qa/aufstellung.png`. Vorschau ohne Datenänderung: `--set key=hoehe --out datei.png`.
 - Veröffentlichen erlaubt (Hannes 23.11.): wenn Tests, Typprüfung und Build grün sind. GitHub prüft das vor jedem Deploy automatisch.
 
 ## Nächste Schritte

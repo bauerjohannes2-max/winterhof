@@ -3,31 +3,15 @@
 // Zero Emojis · Consistent Warm Storybook Visual Language
 // ============================================================================
 
+import content from './content/winterhof.json';
+import { missingPlaceholders } from './ui/placeholders.js';
+
+// Alle Bilder aus der Größentabelle (art.sprites) + Landschaftsteile ohne Tabelleneintrag.
+// Neues Bild = Datei in assets/sprites/ + Eintrag in art.sprites – kein Code nötig.
 const WEBP_SPRITES = [
-  'winter_chalet',
-  'christmas_bakery',
-  'punch_stand',
-  'patisserie_house',
-  'gift_workshop',
-  'christmas_tree',
-  'reindeer_sleigh',
-  'wishlist_board',
-  'gift_mailbox',
-  'animal_chicken',
-  'animal_sheep',
-  'animal_reindeer',
-  'snow_field_plot',
-  'crop_wheat',
-  'crop_berries',
-  'crop_matcha',
-  'deco_pine',
-  'deco_snowman',
-  'deco_lantern',
+  ...Object.entries(content.art.sprites).filter(([, d]) => String(d.file || '').endsWith('.webp')).map(([k]) => k),
   'timber_bridge',
-  'alpine_cliff',
-  'alpine_villager',
-  'alpine_villager_green',
-  'alpine_villager_navy'
+  'alpine_cliff'
 ];
 
 const TERRAIN_TEXTURES = [
@@ -242,6 +226,18 @@ export class SpriteManager {
         this.iconUrls[alias] = this.iconUrls[target];
       }
     }
+
+    // Platzhalter für alles ohne eigenes Bild (echte Grafik kommt ganz am Schluss)
+    const ph = missingPlaceholders(content, (key) => !!(this.images[key] || this.iconUrls[key]));
+    await Promise.all(ph.map(async (p) => {
+      const url = svgToDataUrl(p.svg);
+      if (p.icon) this.iconUrls[p.key] = url;
+      const img = await loadImg(url);
+      if (!img) return;
+      if (p.itemIcon) this.images['icon_' + p.key] = img;
+      else this.images[p.key] = img;
+    }));
+    this.placeholderKeys = ph.map((p) => p.key);
 
     this.ready = true;
   }

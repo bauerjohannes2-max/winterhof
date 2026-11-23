@@ -1,7 +1,7 @@
 # Winterhof – Stil- und Größenregeln (verbindlich)
 
 Gilt für jedes Bild, jede Figur, jedes Gebäude und jeden Code, der etwas zeichnet, egal ob von Claude oder Gemini.
-Geprüft wird automatisch mit `python scripts/qa/pruefe_assets.py`. Es wird nur veröffentlicht, was GRÜN ist. Bei GELB entscheidet Hannes anhand des Aufstellungsbilds `docs/qa/aufstellung.png`.
+Geprüft wird automatisch mit `python scripts/pruefe_assets.py`. Es wird nur veröffentlicht, was GRÜN ist. Bei GELB entscheidet Hannes anhand des Aufstellungsbilds `docs/qa/aufstellung.png`.
 
 ## 1. Grundgefühl
 - Cozy, weihnachtlich, Alpen-Winter: warmes Licht, Schnee, Holz, Lichterketten. Nie kalt oder düster.

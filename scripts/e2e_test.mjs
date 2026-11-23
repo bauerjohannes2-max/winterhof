@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.dirname(__dirname);
 const DIST = path.join(ROOT, 'dist');
-const OUT = path.join(__dirname, 'qa');
+const OUT = path.join(__dirname, 'qa', 'e2e'); // nur eigener Unterordner wird geleert
 const HTTP_PORT = 8086;
 const CDP_PORT = 9224;
 const TARGET_URL = `http://127.0.0.1:${HTTP_PORT}/index.html`;
