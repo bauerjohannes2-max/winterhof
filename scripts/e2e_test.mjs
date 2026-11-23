@@ -176,11 +176,10 @@ try {
     if (!g) throw new Error('Game instance missing');
     const bodyText = document.body.innerText || '';
     const emojiRe = /[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u;
-    const rotStyle = getComputedStyle(document.getElementById('rotate-overlay')).display;
     const validation = g.world.validateState(g.state);
     return {
       modalHidden: document.getElementById('modal-backdrop').classList.contains('hidden'),
-      rotateDisplayInLandscape: rotStyle,
+      hasRotateOverlay: !!document.getElementById('rotate-overlay'),
       hasZoomButtons: !!(document.getElementById('btn-zoom-in') || document.getElementById('btn-zoom-out')),
       hasEmojiInHud: emojiRe.test(bodyText),
       renderer: g.world.getRendererInfo(),
@@ -247,15 +246,17 @@ try {
   });
   await sleep(260);
   const portraitCheck = await cdp.eval(`
-    const el = document.getElementById('rotate-overlay');
+    const app = document.getElementById('app');
     return {
       isPortraitClass: document.body.classList.contains('is-portrait'),
-      display: getComputedStyle(el).display,
-      text: el.innerText.trim()
+      transform: getComputedStyle(app).transform,
+      worldW: window.__WINTERHOF__.world.width,
+      worldH: window.__WINTERHOF__.world.height,
+      hasOverlay: !!document.getElementById('rotate-overlay')
     };
   `);
-  assert(portraitCheck.isPortraitClass === true && portraitCheck.display === 'flex', 'Portrait orientation guard cleanly activates rotate overlay');
-  shots.push(await cdp.screenshot('01_portrait_rotate_overlay.png'));
+  assert(portraitCheck.isPortraitClass === true && portraitCheck.transform !== 'none' && portraitCheck.worldW > portraitCheck.worldH && !portraitCheck.hasOverlay, 'Hochkant: App wird ins Querformat gedreht, kein Hinweis-Overlay');
+  shots.push(await cdp.screenshot('01_portrait_auto_landscape.png'));
 
   // Return to Desktop Landscape for Full Core Gameplay Loop & FPS Telemetry
   await cdp.send('Emulation.setDeviceMetricsOverride', {

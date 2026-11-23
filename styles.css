@@ -1102,96 +1102,18 @@ button:disabled { opacity: 0.44; cursor: not-allowed; transform: none !important
   -webkit-user-select: all;
 }
 
-/* ---- Landscape-Only Orientation Guard (Zero Emojis) ---- */
-.rotate-overlay {
+/* ---- Immer Querformat: hochkant wird die App um 90 Grad gedreht ---- */
+body.is-portrait #app {
   position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: radial-gradient(circle at 50% 35%, #1E3A68 0%, #0E1C36 72%, #081122 100%);
-  color: #FFFDF7;
+  top: 0;
+  left: 0;
+  width: 100vh;
+  height: 100vw;
+  transform-origin: top left;
+  transform: rotate(90deg) translateY(-100%);
+  overflow: hidden;
 }
 
-@media (orientation: portrait) {
-  .rotate-overlay {
-    display: flex;
-  }
-  #game-canvas {
-    pointer-events: none;
-  }
-}
-
-body.is-portrait .rotate-overlay {
-  display: flex;
-}
-
-body.is-portrait #game-canvas {
-  pointer-events: none;
-}
-
-.rotate-card {
-  width: 100%;
-  max-width: 320px;
-  padding: 28px 24px 26px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(74, 36, 16, 0.94) 0%, rgba(43, 20, 8, 0.98) 100%);
-  border: 2.5px solid var(--brass);
-  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(254, 240, 138, 0.35);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
-}
-
-.rotate-icon-wrap {
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
-  background: rgba(14, 28, 54, 0.72);
-  border: 1.5px solid rgba(228, 182, 98, 0.48);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-}
-
-.rotate-phone-svg {
-  animation: rotateHint 2.6s ease-in-out infinite;
-  transform-origin: center center;
-}
-
-@keyframes rotateHint {
-  0%, 18% { transform: rotate(0deg); }
-  45%, 72% { transform: rotate(-90deg); }
-  92%, 100% { transform: rotate(0deg); }
-}
-
-.rotate-kicker {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.24em;
-  color: var(--brass-bright);
-  text-transform: uppercase;
-}
-
-.rotate-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: #FFFDF7;
-}
-
-.rotate-sub {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.45;
-  color: rgba(252, 246, 232, 0.86);
-}
 
 @media (max-height: 460px) {
   .medallion-btn { width: 48px; height: 48px; }

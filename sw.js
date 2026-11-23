@@ -1,4 +1,6 @@
-const CACHE_NAME = 'winterhof-v6-grid';
+// Bei jedem Release hochzählen. Seite/Code: erst Netz, dann Cache (Updates kommen an).
+// Bilder: erst Cache, dann Netz (schnell, offline).
+const CACHE_NAME = 'winterhof-v8-1';
 const ASSETS = [
   './',
   './index.html',
@@ -48,18 +50,29 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
+function isAsset(url) {
+  return /\.(webp|png|jpg|jpeg|svg|mp3|ogg|woff2?)$/i.test(url.pathname);
+}
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  const putInCache = (res) => {
+    if (res && res.ok) {
+      const clone = res.clone();
+      caches.open(CACHE_NAME).then((c) => c.put(e.request, clone)).catch(() => {});
+    }
+    return res;
+  };
+
+  if (isAsset(url)) {
+    e.respondWith(caches.match(e.request).then((cached) => cached || fetch(e.request).then(putInCache)));
+    return;
+  }
+  // HTML, JS, CSS, JSON: Netz zuerst, offline aus dem Cache
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request).then((res) => {
-        if (res && res.ok && e.request.url.startsWith(self.location.origin)) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(e.request, clone)).catch(() => {});
-        }
-        return res;
-      });
-    })
+    fetch(e.request).then(putInCache).catch(() => caches.match(e.request).then((c) => c || caches.match('./index.html')))
   );
 });

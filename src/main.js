@@ -21,6 +21,7 @@ import {
   getStationMastery
 } from './gameData.js';
 import { sprites } from './sprites.js';
+import { vx, vy, applyOrientationClass, tryLockLandscape } from './viewport.js';
 import { audio } from './audio.js';
 import { WinterWorld, DAILY_CHEST_POS, gridToWorld, worldToGrid } from './world.js';
 import {
@@ -184,13 +185,12 @@ class WinterhofGame {
   }
 
   syncOrientationGuard() {
-    const updateOrientation = () => {
-      const portrait = window.innerHeight > window.innerWidth;
-      document.body.classList.toggle('is-portrait', portrait);
-    };
-    updateOrientation();
-    window.addEventListener('resize', updateOrientation);
-    window.addEventListener('orientationchange', updateOrientation);
+    // Kein Hinweis "Bitte Querformat": hochkant dreht CSS die App, Android/PWA sperrt echtes Querformat.
+    applyOrientationClass();
+    tryLockLandscape();
+    window.addEventListener('resize', applyOrientationClass);
+    window.addEventListener('orientationchange', () => { applyOrientationClass(); setTimeout(() => this.world && this.world.resize(), 120); });
+    document.addEventListener('pointerdown', tryLockLandscape, { once: true });
   }
 
   mountHudIcons() {
@@ -1452,7 +1452,7 @@ class WinterhofGame {
       audio.unlock();
       this.world.cam.targetZoom = null;
       c.setPointerCapture(e.pointerId);
-      this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      this.pointers.set(e.pointerId, { x: vx(e), y: vy(e) });
 
       if (this.pointers.size === 2) {
         const pts = [...this.pointers.values()];
@@ -1464,29 +1464,29 @@ class WinterhofGame {
 
       this.world.cam.vx = 0;
       this.world.cam.vy = 0;
-      this.dragStart = { x: e.clientX, y: e.clientY, time: performance.now() };
-      this.lastPanPos = { x: e.clientX, y: e.clientY };
+      this.dragStart = { x: vx(e), y: vy(e), time: performance.now() };
+      this.lastPanPos = { x: vx(e), y: vy(e) };
       this.lastPanTime = performance.now();
       this.swipedFieldIds.clear();
       this.dragMode = null;
 
       if (this.ui.mode === 'place' || (this.ui.mode === 'move' && this.ui.selectedMoveId)) {
-        this._updatePlacementPreview(e.clientX, e.clientY);
+        this._updatePlacementPreview(vx(e), vy(e));
       }
 
       if (this.ui.mode === 'normal') {
-        const wp = this.world.screenToWorld(e.clientX, e.clientY);
+        const wp = this.world.screenToWorld(vx(e), vy(e));
         const f = this.getFieldAtWorld(wp.x, wp.y);
         if (f && this.isFieldReady(f)) {
           this.dragMode = 'swipe-harvest';
           this.harvestField(f, true);
           this.swipedFieldIds.add(f.id);
-          this.world.addSwipePoint(e.clientX, e.clientY, 'harvest');
+          this.world.addSwipePoint(vx(e), vy(e), 'harvest');
         } else if (f && !f.cropId && this.ui.seedTrayOpen && this.ui.selectedSeed) {
           this.dragMode = 'swipe-plant';
           this.plantField(f, this.ui.selectedSeed);
           this.swipedFieldIds.add(f.id);
-          this.world.addSwipePoint(e.clientX, e.clientY, 'plant');
+          this.world.addSwipePoint(vx(e), vy(e), 'plant');
         }
       }
     });
@@ -1494,11 +1494,11 @@ class WinterhofGame {
     c.addEventListener('pointermove', (e) => {
       if (!this.pointers.has(e.pointerId)) {
         if (this.ui.mode === 'place' || (this.ui.mode === 'move' && this.ui.selectedMoveId)) {
-          this._updatePlacementPreview(e.clientX, e.clientY);
+          this._updatePlacementPreview(vx(e), vy(e));
         }
         return;
       }
-      this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      this.pointers.set(e.pointerId, { x: vx(e), y: vy(e) });
 
       if (this.pointers.size === 2 && this.pinchStartDist > 0) {
         const pts = [...this.pointers.values()];
@@ -1509,8 +1509,8 @@ class WinterhofGame {
       }
 
       if (this.dragMode === 'swipe-harvest') {
-        this.world.addSwipePoint(e.clientX, e.clientY, 'harvest');
-        const wp = this.world.screenToWorld(e.clientX, e.clientY);
+        this.world.addSwipePoint(vx(e), vy(e), 'harvest');
+        const wp = this.world.screenToWorld(vx(e), vy(e));
         const f = this.getFieldAtWorld(wp.x, wp.y);
         if (f && !this.swipedFieldIds.has(f.id) && this.isFieldReady(f)) {
           this.swipedFieldIds.add(f.id);
@@ -1520,8 +1520,8 @@ class WinterhofGame {
       }
 
       if (this.dragMode === 'swipe-plant') {
-        this.world.addSwipePoint(e.clientX, e.clientY, 'plant');
-        const wp = this.world.screenToWorld(e.clientX, e.clientY);
+        this.world.addSwipePoint(vx(e), vy(e), 'plant');
+        const wp = this.world.screenToWorld(vx(e), vy(e));
         const f = this.getFieldAtWorld(wp.x, wp.y);
         if (f && !this.swipedFieldIds.has(f.id) && !f.cropId && this.ui.selectedSeed) {
           this.swipedFieldIds.add(f.id);
@@ -1531,11 +1531,11 @@ class WinterhofGame {
       }
 
       if (this.dragStart) {
-        const dist = Math.hypot(e.clientX - this.dragStart.x, e.clientY - this.dragStart.y);
+        const dist = Math.hypot(vx(e) - this.dragStart.x, vy(e) - this.dragStart.y);
         if (dist > 7 || this.dragMode === 'pan') {
           this.dragMode = 'pan';
-          const dx = (e.clientX - this.lastPanPos.x) / this.world.cam.zoom;
-          const dy = (e.clientY - this.lastPanPos.y) / this.world.cam.zoom;
+          const dx = (vx(e) - this.lastPanPos.x) / this.world.cam.zoom;
+          const dy = (vy(e) - this.lastPanPos.y) / this.world.cam.zoom;
           this.world.cam.x -= dx;
           this.world.cam.y -= dy;
           this.world.clampCamera();
@@ -1544,7 +1544,7 @@ class WinterhofGame {
           const dt = Math.max(8, now - this.lastPanTime) / 1000;
           this.world.cam.vx = (-dx / dt) * 0.5;
           this.world.cam.vy = (-dy / dt) * 0.5;
-          this.lastPanPos = { x: e.clientX, y: e.clientY };
+          this.lastPanPos = { x: vx(e), y: vy(e) };
           this.lastPanTime = now;
         }
       }
@@ -1554,7 +1554,7 @@ class WinterhofGame {
       this.pointers.delete(e.pointerId);
       if (this.pointers.size === 0) {
         const wasTap = this.dragStart && !this.dragMode;
-        if (wasTap) this.handleCanvasTap(e.clientX, e.clientY);
+        if (wasTap) this.handleCanvasTap(vx(e), vy(e));
         this.dragStart = null;
         this.dragMode = null;
         this.pinchStartDist = 0;

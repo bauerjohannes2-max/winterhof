@@ -4,6 +4,7 @@
 // Aligned Bridge · Grounded Isometric Footprints · Zero-GC Pools · Zero Emojis
 // ============================================================================
 import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
+import { viewSize, elementCenter } from './viewport.js';
 import { LAND_ZONES, ITEMS, ANIMALS, getLevelInfo, getStationMastery } from './gameData.js';
 import { GpuTextures } from './engine/textures.js';
 import { WorldGrid, SURFACE } from './engine/worldGrid.js';
@@ -87,8 +88,9 @@ export class WinterWorld {
   constructor(canvas) {
     this.canvas = canvas;
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.width = window.innerWidth || 1280;
-    this.height = window.innerHeight || 720;
+    const vs = viewSize();
+    this.width = vs.w;
+    this.height = vs.h;
 
     // Single Source of Truth World Grid
     this.grid = new WorldGrid();
@@ -187,8 +189,8 @@ export class WinterWorld {
       autoDensity: true,
       resolution: this.dpr,
       backgroundColor: 0xe6f1fa,
-      width: window.innerWidth || 1280,
-      height: window.innerHeight || 720,
+      width: viewSize().w,
+      height: viewSize().h,
       powerPreference: 'high-performance',
       failIfMajorPerformanceCaveat: false
     });
@@ -387,8 +389,9 @@ export class WinterWorld {
   }
 
   resize() {
-    this.width = window.innerWidth || 1280;
-    this.height = window.innerHeight || 720;
+    const vs = viewSize();
+    this.width = vs.w;
+    this.height = vs.h;
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
     if (this.width > this.height) {
       const idealZoom = Math.max(0.56, Math.min(0.90, this.height / 760));
@@ -447,9 +450,9 @@ export class WinterWorld {
     const sc = this.worldToScreen(wx, wy);
     const elId = target === 'coins' ? 'btn-coins' : 'dock-barn';
     const el = document.getElementById(elId);
-    const rect = el ? el.getBoundingClientRect() : { left: this.width - 60, top: 40, width: 32, height: 32 };
-    const tx = rect.left + rect.width * 0.5;
-    const ty = rect.top + rect.height * 0.5;
+    const c = el ? elementCenter(el) : { x: this.width - 44, y: 56 };
+    const tx = c.x;
+    const ty = c.y;
     this.particles.spawnFlyingHudItem(sc.x, sc.y, tx, ty, iconId, () => {
       if (el) {
         el.classList.remove('hud-pop');
