@@ -1,0 +1,299 @@
+// ============================================================================
+// Winterhof Core – Typen
+// Reiner Logik-Kern: kein DOM, kein Pixi, kein Audio, keine globale Zeit/Zufall.
+// ============================================================================
+
+export type ItemId = string;
+export type ObjectId = string;
+export type Inventory = Record<ItemId, number>;
+
+export type StorageKind = 'silo' | 'barn';
+export type ItemCategory = 'crop' | 'animal' | 'crafted';
+
+// ---------------------------------------------------------------- Inhalte
+export interface ItemDef {
+  id: ItemId;
+  name: string;
+  category: ItemCategory;
+  storage: StorageKind;
+  sellPrice: number;
+  xp: number;
+  unlockLevel: number;
+  // Feldfrüchte
+  growTime?: number;      // Sekunden
+  seedCost?: number;      // Münzen, falls kein Saatgut im Silo
+  harvestYield?: number;  // Ernte pro Feld (Saatgut kommt zurück)
+  // Produkte
+  station?: string;
+  craftTime?: number;     // Sekunden
+  ingredients?: Inventory;
+}
+
+export interface AnimalDef {
+  id: string;
+  name: string;
+  feedItem: ItemId;
+  feedQty: number;
+  produceItem: ItemId;
+  produceTime: number;
+  cost: number;
+  unlockLevel: number;
+  maxCount: number;
+}
+
+export interface StationDef {
+  id: string;
+  name: string;
+  cost: number;
+  unlockLevel: number;
+  recipes: ItemId[];
+  queueSlots: number;
+  readySlots: number;
+}
+
+export interface DecoDef {
+  id: string;
+  name: string;
+  cost: number;
+  xp: number;
+  unlockLevel: number;
+}
+
+export interface LandZoneDef {
+  id: string;
+  name: string;
+  bounds: { x0: number; y0: number; x1: number; y1: number };
+  signPos: { gx: number; gy: number };
+  cost: number;
+  unlockLevel: number;
+}
+
+export interface LevelDef {
+  level: number;
+  xpNeeded: number;
+  coinBonus: number;
+}
+
+export type Condition =
+  | { kind: 'stat'; stat: StatKey; goal: number }
+  | { kind: 'hasObject'; objectKind: MapObject['kind']; type: string; ready?: boolean };
+
+export interface GoalDef {
+  id: string;
+  title: string;
+  conditions: Condition[];
+  coins: number;
+  xp: number;
+}
+
+export interface StorageDef {
+  baseCapacity: number;
+  stepCapacity: number;
+  maxCapacity: number;
+  baseCost: number;
+  costStep: number;
+}
+
+export interface OrderRules {
+  slots: number;
+  minLines: number;
+  maxLines: number;
+  coinFactor: number;   // Belohnung = Warenwert * Faktor
+  xpFactor: number;
+  refillSeconds: number; // Wartezeit nach Ablehnen
+}
+
+// ---------------------------------------------------------------- Karte
+export type Footprint = { w: number; h: number };
+
+interface MapObjectBase {
+  id: ObjectId;
+  type: string;
+  gx: number;
+  gy: number;
+}
+
+export interface FieldObject extends MapObjectBase {
+  kind: 'field';
+  crop: ItemId | null;
+  plantedAt: number;
+}
+
+export interface AnimalObject extends MapObjectBase {
+  kind: 'animal';
+  nick: string;
+  /** hungry = muss gefüttert werden, producing = arbeitet bis readyAt, ready = Produkt abholbar */
+  state: 'hungry' | 'producing' | 'ready';
+  readyAt: number;
+  lastPet: number;
+}
+
+export interface ProductionJob {
+  item: ItemId;
+  /** null = wartet in der Schlange */
+  startAt: number | null;
+  endAt: number | null;
+}
+
+export interface StationObject extends MapObjectBase {
+  kind: 'station';
+  wrapped: boolean;
+  queue: ProductionJob[];
+  ready: ItemId[];
+  craftedCount: number;
+}
+
+export interface DecoObject extends MapObjectBase {
+  kind: 'deco';
+}
+
+/** Feste Hof-Gebäude ohne Spielfunktion (Chalet, Baum, Wunschtafel, Schlitten, Briefkasten, Truhe) */
+export interface PropObject extends MapObjectBase {
+  kind: 'prop';
+}
+
+export type MapObject = FieldObject | AnimalObject | StationObject | DecoObject | PropObject;
+
+// ---------------------------------------------------------------- Spielstand
+export interface OrderLine { item: ItemId; qty: number }
+export interface Order {
+  id: string;
+  npc: string;
+  lines: OrderLine[];
+  coins: number;
+  xp: number;
+  /** Auftrag erst ab diesem Zeitpunkt sichtbar (nach Ablehnen) */
+  availableAt: number;
+}
+
+export interface StandSlot {
+  item: ItemId;
+  qty: number;
+  price: number;
+  sellAt: number;
+  sold: boolean;
+  buyer: string | null;
+}
+
+export interface VillagerOffer {
+  npc: string;
+  item: ItemId;
+  qty: number;
+  coins: number;
+  xp: number;
+  expiresAt: number;
+}
+
+export const STAT_KEYS = [
+  'harvests', 'planted', 'crafted', 'collected', 'pets', 'fed', 'ordersDone',
+  'standSales', 'landsUnlocked', 'chestsOpened', 'villagerDeals', 'storageUpgrades'
+] as const;
+export type StatKey = (typeof STAT_KEYS)[number];
+export type Stats = Record<StatKey, number>;
+
+export interface GameState {
+  schemaVersion: number;
+  createdAt: number;
+  /** Höchster je gesehener Zeitpunkt – Uhr-Rücksprünge werden darauf geklemmt */
+  clockMaxMs: number;
+  rngState: number;
+  nextId: number;
+
+  villageName: string;
+  playerName: string;
+  coins: number;
+  xp: number;
+  level: number;
+
+  inventory: Inventory;
+  storage: Record<StorageKind, number>; // Kapazität
+  objects: MapObject[];
+  storedDecos: Record<string, number>;
+  unlockedZones: string[];
+
+  orders: Order[];
+  stand: (StandSlot | null)[];
+  villagerOffer: VillagerOffer | null;
+  nextOfferAt: number;
+
+  daily: { lastDay: string | null; streak: number };
+  discovered: ItemId[];
+  stats: Stats;
+  claimedGoals: string[];
+
+  settings: { sfx: boolean; music: boolean; lighting: 'day' | 'dusk' | 'night' | 'auto' };
+}
+
+// ---------------------------------------------------------------- Befehle & Ereignisse
+export type Command =
+  | { type: 'plant'; fieldId: ObjectId; crop: ItemId }
+  | { type: 'harvest'; fieldId: ObjectId }
+  | { type: 'harvestAll' }
+  | { type: 'feedAnimal'; animalId: ObjectId }
+  | { type: 'collectAnimal'; animalId: ObjectId }
+  | { type: 'petAnimal'; animalId: ObjectId }
+  | { type: 'startProduction'; stationId: ObjectId; item: ItemId }
+  | { type: 'collectProduct'; stationId: ObjectId }
+  | { type: 'unwrapStation'; stationId: ObjectId }
+  | { type: 'buyStation'; stationType: string; gx: number; gy: number }
+  | { type: 'buyAnimal'; animalType: string; gx: number; gy: number }
+  | { type: 'buyField'; gx: number; gy: number }
+  | { type: 'buyDeco'; decoType: string; gx: number; gy: number }
+  | { type: 'placeStoredDeco'; decoType: string; gx: number; gy: number }
+  | { type: 'storeDeco'; decoId: ObjectId }
+  | { type: 'moveObject'; objectId: ObjectId; gx: number; gy: number }
+  | { type: 'sellItem'; item: ItemId; qty: number }
+  | { type: 'fulfillOrder'; orderId: string }
+  | { type: 'skipOrder'; orderId: string }
+  | { type: 'listOnStand'; slot: number; item: ItemId; qty: number; price: number }
+  | { type: 'collectStand'; slot: number }
+  | { type: 'acceptOffer' }
+  | { type: 'declineOffer' }
+  | { type: 'upgradeStorage'; storage: StorageKind }
+  | { type: 'unlockZone'; zoneId: string }
+  | { type: 'claimDaily' }
+  | { type: 'claimGoal'; goalId: string }
+  | { type: 'setSetting'; key: keyof GameState['settings']; value: unknown }
+  | { type: 'rename'; villageName?: string; playerName?: string };
+
+export type GameEvent =
+  | { type: 'itemsGained'; items: Inventory; at?: ObjectId }
+  | { type: 'itemsSpent'; items: Inventory }
+  | { type: 'coinsChanged'; delta: number; at?: ObjectId }
+  | { type: 'xpGained'; amount: number; at?: ObjectId }
+  | { type: 'levelUp'; level: number; coinBonus: number }
+  | { type: 'planted'; fieldId: ObjectId; crop: ItemId }
+  | { type: 'harvested'; fieldId: ObjectId; crop: ItemId; qty: number }
+  | { type: 'animalFed'; animalId: ObjectId }
+  | { type: 'animalCollected'; animalId: ObjectId; item: ItemId }
+  | { type: 'animalPetted'; animalId: ObjectId }
+  | { type: 'productionStarted'; stationId: ObjectId; item: ItemId }
+  | { type: 'productionFinished'; stationId: ObjectId; item: ItemId }
+  | { type: 'productCollected'; stationId: ObjectId; item: ItemId }
+  | { type: 'animalReady'; animalId: ObjectId }
+  | { type: 'objectPlaced'; objectId: ObjectId }
+  | { type: 'objectMoved'; objectId: ObjectId }
+  | { type: 'objectStored'; objectId: ObjectId }
+  | { type: 'stationUnwrapped'; stationId: ObjectId }
+  | { type: 'orderFulfilled'; orderId: string }
+  | { type: 'orderSkipped'; orderId: string }
+  | { type: 'standSold'; slot: number; buyer: string }
+  | { type: 'standCollected'; slot: number; coins: number }
+  | { type: 'offerArrived'; npc: string }
+  | { type: 'offerClosed'; accepted: boolean }
+  | { type: 'storageUpgraded'; storage: StorageKind; capacity: number }
+  | { type: 'zoneUnlocked'; zoneId: string }
+  | { type: 'dailyClaimed'; streak: number; coins: number; items: Inventory }
+  | { type: 'goalClaimed'; goalId: string }
+  | { type: 'goalReady'; goalId: string }
+  | { type: 'discovered'; item: ItemId };
+
+export type ErrorCode =
+  | 'not_found' | 'invalid' | 'locked' | 'no_coins' | 'missing_items' | 'storage_full'
+  | 'not_ready' | 'busy' | 'blocked' | 'limit' | 'already_done';
+
+export interface CommandError { code: ErrorCode; message: string; detail?: unknown }
+
+export type CommandResult =
+  | { ok: true; state: GameState; events: GameEvent[] }
+  | { ok: false; error: CommandError };

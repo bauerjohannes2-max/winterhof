@@ -1,0 +1,1428 @@
+{
+  "version": 1,
+  "map": {
+    "starterBounds": {
+      "x0": 2,
+      "y0": 2,
+      "x1": 11,
+      "y1": 11
+    }
+  },
+  "items": {
+    "wheat": {
+      "id": "wheat",
+      "name": "Goldweizen",
+      "category": "crop",
+      "growTime": 60,
+      "seedCost": 3,
+      "sellPrice": 10,
+      "xp": 2,
+      "unlockLevel": 1,
+      "color": "#F5B82E",
+      "desc": "Goldener Winterweizen – Grundlage für Butterplätzchen, Waffeln und Hühnerfutter.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "berries": {
+      "id": "berries",
+      "name": "Winterbeeren",
+      "category": "crop",
+      "growTime": 120,
+      "seedCost": 6,
+      "sellPrice": 20,
+      "xp": 3,
+      "unlockLevel": 1,
+      "color": "#D92B3A",
+      "desc": "Rubinrote Beeren für Winterpunsch, Rentierfutter und festliche Torten.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "matcha": {
+      "id": "matcha",
+      "name": "Winter-Matcha",
+      "category": "crop",
+      "growTime": 210,
+      "seedCost": 11,
+      "sellPrice": 34,
+      "xp": 5,
+      "unlockLevel": 2,
+      "color": "#4D9F3B",
+      "desc": "Feine grüne Teeblätter aus dem Gewächsbeet für Matcha-Latte und Matcha-Tiramisu.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "cocoa": {
+      "id": "cocoa",
+      "name": "Kakaobohnen",
+      "category": "crop",
+      "growTime": 300,
+      "seedCost": 16,
+      "sellPrice": 48,
+      "xp": 7,
+      "unlockLevel": 2,
+      "color": "#7A4224",
+      "desc": "Aromatische Kakaobohnen für Heiße Schokolade, Lebkuchen und Tiramisu.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "cinnamon": {
+      "id": "cinnamon",
+      "name": "Zimt & Vanille",
+      "category": "crop",
+      "growTime": 450,
+      "seedCost": 24,
+      "sellPrice": 72,
+      "xp": 10,
+      "unlockLevel": 3,
+      "color": "#B85D19",
+      "desc": "Duftende Zimtstangen und Vanilleschoten für Christstollen und Wintertee.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "candycane": {
+      "id": "candycane",
+      "name": "Zuckerstangen",
+      "category": "crop",
+      "growTime": 600,
+      "seedCost": 32,
+      "sellPrice": 96,
+      "xp": 13,
+      "unlockLevel": 4,
+      "color": "#E63946",
+      "desc": "Knusprige rot-weiße Zuckerstangen aus dem festlichen Winterbeet.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "egg": {
+      "id": "egg",
+      "name": "Frische Eier",
+      "category": "animal",
+      "sellPrice": 22,
+      "xp": 3,
+      "unlockLevel": 1,
+      "color": "#FFF2CC",
+      "desc": "Landfrische Eier deiner Schneehühner.",
+      "storage": "barn"
+    },
+    "starmilk": {
+      "id": "starmilk",
+      "name": "Wintermilch",
+      "category": "animal",
+      "sellPrice": 36,
+      "xp": 5,
+      "unlockLevel": 1,
+      "color": "#FEF3C7",
+      "desc": "Cremige Milch deiner Glöckchen-Rentiere für Kakao, Latte und Tiramisu.",
+      "storage": "barn"
+    },
+    "wool": {
+      "id": "wool",
+      "name": "Kuschelwolle",
+      "category": "animal",
+      "sellPrice": 54,
+      "xp": 6,
+      "unlockLevel": 2,
+      "color": "#F1F5F9",
+      "desc": "Weiche Schafwolle für warme Winter-Strickschals.",
+      "storage": "barn"
+    },
+    "butterplaetzchen": {
+      "id": "butterplaetzchen",
+      "name": "Butterplätzchen",
+      "category": "crafted",
+      "station": "bakery",
+      "craftTime": 120,
+      "ingredients": {
+        "wheat": 2,
+        "egg": 1
+      },
+      "sellPrice": 72,
+      "xp": 7,
+      "unlockLevel": 1,
+      "color": "#F6C873",
+      "desc": "Zarte, goldbraune Ausstech-Plätzchen direkt aus dem Steinofen.",
+      "storage": "barn"
+    },
+    "waffles": {
+      "id": "waffles",
+      "name": "Knusprige Waffeln",
+      "category": "crafted",
+      "station": "bakery",
+      "craftTime": 180,
+      "ingredients": {
+        "wheat": 2,
+        "egg": 1,
+        "berries": 1
+      },
+      "sellPrice": 105,
+      "xp": 10,
+      "unlockLevel": 1,
+      "color": "#E59F49",
+      "desc": "Goldene Herzwaffeln mit Puderzucker und warmen Winterbeeren.",
+      "storage": "barn"
+    },
+    "lebkuchen": {
+      "id": "lebkuchen",
+      "name": "Lebkuchenmann",
+      "category": "crafted",
+      "station": "bakery",
+      "craftTime": 270,
+      "ingredients": {
+        "wheat": 2,
+        "cocoa": 1,
+        "egg": 1
+      },
+      "sellPrice": 148,
+      "xp": 14,
+      "unlockLevel": 2,
+      "color": "#A0522D",
+      "desc": "Würziger Lebkuchen mit feinem Zuckerguss.",
+      "storage": "barn"
+    },
+    "stollen": {
+      "id": "stollen",
+      "name": "Christstollen",
+      "category": "crafted",
+      "station": "bakery",
+      "craftTime": 480,
+      "ingredients": {
+        "wheat": 3,
+        "berries": 2,
+        "cinnamon": 1,
+        "starmilk": 1
+      },
+      "sellPrice": 285,
+      "xp": 24,
+      "unlockLevel": 3,
+      "color": "#F8F0E3",
+      "desc": "Saftiger Festtagsstollen mit Winterbeeren, Zimt und Puderzucker.",
+      "storage": "barn"
+    },
+    "winter_punch": {
+      "id": "winter_punch",
+      "name": "Winterpunsch",
+      "category": "crafted",
+      "station": "teahouse",
+      "craftTime": 150,
+      "ingredients": {
+        "berries": 2,
+        "wheat": 1
+      },
+      "sellPrice": 96,
+      "xp": 9,
+      "unlockLevel": 1,
+      "color": "#B91C1C",
+      "desc": "Wärmender Beerenpunsch aus dem Kupferkessel.",
+      "storage": "barn"
+    },
+    "matcha_latte": {
+      "id": "matcha_latte",
+      "name": "Matcha-Latte",
+      "category": "crafted",
+      "station": "teahouse",
+      "craftTime": 180,
+      "ingredients": {
+        "matcha": 2,
+        "starmilk": 1
+      },
+      "sellPrice": 142,
+      "xp": 13,
+      "unlockLevel": 2,
+      "color": "#6BBF59",
+      "desc": "Samtiger Matcha-Latte mit cremigem Milchschaum.",
+      "storage": "barn"
+    },
+    "hot_cocoa": {
+      "id": "hot_cocoa",
+      "name": "Heiße Schokolade",
+      "category": "crafted",
+      "station": "teahouse",
+      "craftTime": 240,
+      "ingredients": {
+        "cocoa": 2,
+        "starmilk": 1
+      },
+      "sellPrice": 182,
+      "xp": 16,
+      "unlockLevel": 2,
+      "color": "#6B3E26",
+      "desc": "Cremige Winter-Schokolade mit Sahnehäubchen.",
+      "storage": "barn"
+    },
+    "cinnamon_tea": {
+      "id": "cinnamon_tea",
+      "name": "Zimt-Beeren-Tee",
+      "category": "crafted",
+      "station": "teahouse",
+      "craftTime": 330,
+      "ingredients": {
+        "berries": 2,
+        "cinnamon": 1,
+        "matcha": 1
+      },
+      "sellPrice": 215,
+      "xp": 19,
+      "unlockLevel": 3,
+      "color": "#C84B31",
+      "desc": "Duftende Winterkanne mit Zimtstange und Beeren.",
+      "storage": "barn"
+    },
+    "berry_tart": {
+      "id": "berry_tart",
+      "name": "Winterbeer-Torte",
+      "category": "crafted",
+      "station": "patisserie",
+      "craftTime": 240,
+      "ingredients": {
+        "butterplaetzchen": 1,
+        "berries": 2,
+        "starmilk": 1
+      },
+      "sellPrice": 210,
+      "xp": 18,
+      "unlockLevel": 2,
+      "color": "#C2410C",
+      "desc": "Feine Sahnetorte auf Mürbeteig mit glasierten Winterbeeren.",
+      "storage": "barn"
+    },
+    "tiramisu": {
+      "id": "tiramisu",
+      "name": "Klassisches Tiramisu",
+      "category": "crafted",
+      "station": "patisserie",
+      "craftTime": 360,
+      "ingredients": {
+        "butterplaetzchen": 1,
+        "cocoa": 1,
+        "egg": 1,
+        "starmilk": 1
+      },
+      "sellPrice": 265,
+      "xp": 23,
+      "unlockLevel": 3,
+      "color": "#8D5524",
+      "desc": "Luftige Mascarpone-Creme auf Butterplätzchen, fein bestäubt mit Kakao.",
+      "storage": "barn"
+    },
+    "matcha_tiramisu": {
+      "id": "matcha_tiramisu",
+      "name": "Matcha-Tiramisu",
+      "category": "crafted",
+      "station": "patisserie",
+      "craftTime": 420,
+      "ingredients": {
+        "butterplaetzchen": 1,
+        "matcha": 2,
+        "starmilk": 1,
+        "egg": 1
+      },
+      "sellPrice": 298,
+      "xp": 26,
+      "unlockLevel": 3,
+      "color": "#4F9D45",
+      "desc": "Zartes Winter-Tiramisu gekrönt mit feinem grünen Matcha.",
+      "storage": "barn"
+    },
+    "wool_scarf": {
+      "id": "wool_scarf",
+      "name": "Winter-Strickschal",
+      "category": "crafted",
+      "station": "gift_workshop",
+      "craftTime": 360,
+      "ingredients": {
+        "wool": 2,
+        "berries": 1
+      },
+      "sellPrice": 195,
+      "xp": 17,
+      "unlockLevel": 3,
+      "color": "#B91C1C",
+      "desc": "Handgestrickter rot-goldener Wollschal für kalte Tage.",
+      "storage": "barn"
+    },
+    "cookie_tin": {
+      "id": "cookie_tin",
+      "name": "Plätzchendose",
+      "category": "crafted",
+      "station": "gift_workshop",
+      "craftTime": 510,
+      "ingredients": {
+        "butterplaetzchen": 1,
+        "waffles": 1,
+        "candycane": 1
+      },
+      "sellPrice": 365,
+      "xp": 29,
+      "unlockLevel": 4,
+      "color": "#1D6F42",
+      "desc": "Festliche Blechdose gefüllt mit Plätzchen, Waffeln und Zuckerstangen.",
+      "storage": "barn"
+    },
+    "mega_gift": {
+      "id": "mega_gift",
+      "name": "Festtagskorb",
+      "category": "crafted",
+      "station": "gift_workshop",
+      "craftTime": 690,
+      "ingredients": {
+        "matcha_tiramisu": 1,
+        "winter_punch": 1,
+        "wool_scarf": 1
+      },
+      "sellPrice": 740,
+      "xp": 52,
+      "unlockLevel": 5,
+      "color": "#E63946",
+      "desc": "Prachtvoller Weihnachtskorb mit Tiramisu, Punsch und Strickschal.",
+      "storage": "barn"
+    }
+  },
+  "cropIds": [
+    "wheat",
+    "berries",
+    "matcha",
+    "cocoa",
+    "cinnamon",
+    "candycane"
+  ],
+  "animals": {
+    "chicken": {
+      "id": "chicken",
+      "name": "Schneehuhn",
+      "defaultNick": "Flöckchen",
+      "sprite": "animal_chicken",
+      "feedItem": "wheat",
+      "feedQty": 1,
+      "produceItem": "egg",
+      "produceTime": 120,
+      "cost": 55,
+      "unlockLevel": 1,
+      "maxCount": 4,
+      "soundPitch": 1.25,
+      "desc": "Frisst Goldweizen und legt landfrische Eier (2 Min.)."
+    },
+    "reindeer": {
+      "id": "reindeer",
+      "name": "Glöckchen-Rentier",
+      "defaultNick": "Rudi",
+      "sprite": "animal_reindeer",
+      "feedItem": "berries",
+      "feedQty": 1,
+      "produceItem": "starmilk",
+      "produceTime": 240,
+      "cost": 125,
+      "unlockLevel": 1,
+      "maxCount": 3,
+      "soundPitch": 1.05,
+      "desc": "Liebt Winterbeeren und schenkt cremige Wintermilch (4 Min.)."
+    },
+    "sheep": {
+      "id": "sheep",
+      "name": "Wollschaf",
+      "defaultNick": "Wölkchen",
+      "sprite": "animal_sheep",
+      "feedItem": "wheat",
+      "feedQty": 2,
+      "produceItem": "wool",
+      "produceTime": 300,
+      "cost": 165,
+      "unlockLevel": 2,
+      "maxCount": 3,
+      "soundPitch": 0.9,
+      "desc": "Schenkt weiche Kuschelwolle für die Geschenkewerkstatt (5 Min.)."
+    }
+  },
+  "stations": {
+    "bakery": {
+      "id": "bakery",
+      "name": "Backstube",
+      "sprite": "christmas_bakery",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 1,
+      "cost": 0,
+      "recipes": [
+        "butterplaetzchen",
+        "waffles",
+        "lebkuchen",
+        "stollen"
+      ],
+      "chimneyOffset": {
+        "x": 0.2,
+        "y": -0.78
+      },
+      "glowPoints": [
+        {
+          "x": -0.14,
+          "y": -0.34,
+          "r": 0.28
+        }
+      ],
+      "desc": "Duftender Steinofen für Butterplätzchen, Waffeln, Lebkuchen und Christstollen.",
+      "queueSlots": 3,
+      "readySlots": 6
+    },
+    "teahouse": {
+      "id": "teahouse",
+      "name": "Punsch- & Café-Stand",
+      "sprite": "punch_stand",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 1,
+      "cost": 90,
+      "recipes": [
+        "winter_punch",
+        "matcha_latte",
+        "hot_cocoa",
+        "cinnamon_tea"
+      ],
+      "chimneyOffset": {
+        "x": -0.18,
+        "y": -0.45
+      },
+      "glowPoints": [
+        {
+          "x": 0,
+          "y": -0.52,
+          "r": 0.42
+        }
+      ],
+      "desc": "Heißer Winterpunsch, Matcha-Latte, Schokolade und Zimt-Beeren-Tee.",
+      "queueSlots": 3,
+      "readySlots": 6
+    },
+    "patisserie": {
+      "id": "patisserie",
+      "name": "Hof-Patisserie",
+      "sprite": "patisserie_house",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 2,
+      "cost": 165,
+      "recipes": [
+        "berry_tart",
+        "tiramisu",
+        "matcha_tiramisu"
+      ],
+      "chimneyOffset": {
+        "x": 0.16,
+        "y": -0.76
+      },
+      "glowPoints": [
+        {
+          "x": 0,
+          "y": -0.32,
+          "r": 0.36
+        }
+      ],
+      "desc": "Feine Konditorei für Winterbeer-Torte, Tiramisu und Matcha-Tiramisu.",
+      "queueSlots": 3,
+      "readySlots": 6
+    },
+    "gift_workshop": {
+      "id": "gift_workshop",
+      "name": "Geschenkewerkstatt",
+      "sprite": "gift_workshop",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 3,
+      "cost": 240,
+      "recipes": [
+        "wool_scarf",
+        "cookie_tin",
+        "mega_gift"
+      ],
+      "chimneyOffset": {
+        "x": 0.24,
+        "y": -0.74
+      },
+      "glowPoints": [
+        {
+          "x": 0.14,
+          "y": -0.22,
+          "r": 0.32
+        },
+        {
+          "x": -0.16,
+          "y": -0.42,
+          "r": 0.24
+        }
+      ],
+      "desc": "Werkstatt für Winter-Strickschals, Plätzchendosen und Festtagskörbe.",
+      "queueSlots": 3,
+      "readySlots": 6
+    }
+  },
+  "decorations": {
+    "pine": {
+      "id": "pine",
+      "name": "Schneetanne",
+      "theme": "Winter",
+      "sprite": "deco_pine",
+      "cost": 30,
+      "xp": 10,
+      "unlockLevel": 1,
+      "glow": false,
+      "desc": "Tief verschneite Alpentanne für deinen Waldrand."
+    },
+    "snowman": {
+      "id": "snowman",
+      "name": "Schneemann",
+      "theme": "Winter",
+      "sprite": "deco_snowman",
+      "cost": 40,
+      "xp": 14,
+      "unlockLevel": 1,
+      "glow": false,
+      "desc": "Fröhlicher Schneemann mit gestreiftem Schal und Karottennase."
+    },
+    "lantern": {
+      "id": "lantern",
+      "name": "Dorf-Laterne",
+      "theme": "Winter",
+      "sprite": "deco_lantern",
+      "cost": 45,
+      "xp": 15,
+      "unlockLevel": 1,
+      "glow": true,
+      "glowOffset": {
+        "x": 0,
+        "y": -0.62,
+        "r": 0.58
+      },
+      "desc": "Taucht deine Dorfwege am Abend in warmes goldenes Licht."
+    },
+    "giftpile": {
+      "id": "giftpile",
+      "name": "Geschenkehaufen",
+      "theme": "Winter",
+      "sprite": "deco_giftpile",
+      "cost": 60,
+      "xp": 22,
+      "unlockLevel": 2,
+      "glow": false,
+      "desc": "Festlich verpackte Päckchen mit glänzenden Schleifen."
+    },
+    "bench": {
+      "id": "bench",
+      "name": "Kuschelbank",
+      "theme": "Winter",
+      "sprite": "deco_bench",
+      "cost": 70,
+      "xp": 24,
+      "unlockLevel": 2,
+      "glow": true,
+      "glowOffset": {
+        "x": 0.2,
+        "y": -0.35,
+        "r": 0.35
+      },
+      "desc": "Holzbank mit karierter Winterdecke und Laterne."
+    },
+    "lightarch": {
+      "id": "lightarch",
+      "name": "Lichterbogen",
+      "theme": "Winter",
+      "sprite": "deco_lightarch",
+      "cost": 120,
+      "xp": 38,
+      "unlockLevel": 3,
+      "glow": true,
+      "glowOffset": {
+        "x": 0,
+        "y": -0.65,
+        "r": 0.72
+      },
+      "desc": "Tannenbogen mit warm leuchtender goldener Lichterkette."
+    }
+  },
+  "landZones": [
+    {
+      "id": "west_forest",
+      "name": "Tannenwäldchen",
+      "desc": "Erweitert den westlichen Waldrand (2×10 Felder) für zusätzliche Beete & Deko.",
+      "bounds": {
+        "x0": 0,
+        "y0": 2,
+        "x1": 1,
+        "y1": 11
+      },
+      "signPos": {
+        "gx": 1,
+        "gy": 9
+      },
+      "cost": 120,
+      "unlockLevel": 2
+    },
+    {
+      "id": "south_meadow",
+      "name": "Teichwiese",
+      "desc": "Öffnet die sonnige Südwiese (10×2 Felder) oberhalb des gefrorenen Alpenteichs.",
+      "bounds": {
+        "x0": 2,
+        "y0": 12,
+        "x1": 11,
+        "y1": 13
+      },
+      "signPos": {
+        "gx": 5,
+        "gy": 12
+      },
+      "cost": 180,
+      "unlockLevel": 3
+    },
+    {
+      "id": "east_glade",
+      "name": "Schlittenlichtung",
+      "desc": "Schaltet die östliche Lichtung (2×10 Felder) direkt am Gebirgsbach frei.",
+      "bounds": {
+        "x0": 12,
+        "y0": 2,
+        "x1": 13,
+        "y1": 11
+      },
+      "signPos": {
+        "gx": 12,
+        "gy": 9
+      },
+      "cost": 250,
+      "unlockLevel": 4
+    },
+    {
+      "id": "north_ridge",
+      "name": "Nordlicht-Gipfel",
+      "desc": "Erschließt das obere Panorama (12×2 Felder) hinter dem Chalet.",
+      "bounds": {
+        "x0": 0,
+        "y0": 0,
+        "x1": 11,
+        "y1": 1
+      },
+      "signPos": {
+        "gx": 11,
+        "gy": 1
+      },
+      "cost": 320,
+      "unlockLevel": 5
+    }
+  ],
+  "levels": [
+    {
+      "level": 1,
+      "xpNeeded": 0,
+      "coinBonus": 0,
+      "treeStage": 1,
+      "unlockText": "Willkommen auf deinem Winterhof."
+    },
+    {
+      "level": 2,
+      "xpNeeded": 60,
+      "coinBonus": 20,
+      "treeStage": 1,
+      "unlockText": "Freigeschaltet: Hof-Patisserie, Wollschaf, Winter-Matcha, Kakao und Lebkuchen."
+    },
+    {
+      "level": 3,
+      "xpNeeded": 276,
+      "coinBonus": 25,
+      "treeStage": 2,
+      "unlockText": "Freigeschaltet: Alles-ernten-Sense, Geschenkewerkstatt, Zimt, Stollen und Tiramisu."
+    },
+    {
+      "level": 4,
+      "xpNeeded": 673,
+      "coinBonus": 30,
+      "treeStage": 2,
+      "unlockText": "Freigeschaltet: Zuckerstangen, Plätzchendose und Schlittenlichtung."
+    },
+    {
+      "level": 5,
+      "xpNeeded": 1267,
+      "coinBonus": 35,
+      "treeStage": 3,
+      "unlockText": "Freigeschaltet: Festtagskorb und Nordlicht-Gipfel. Dein Weihnachtsbaum erstrahlt voll."
+    },
+    {
+      "level": 6,
+      "xpNeeded": 2070,
+      "coinBonus": 40,
+      "treeStage": 3,
+      "unlockText": "Meister der Weihnachtsbäckerei."
+    },
+    {
+      "level": 7,
+      "xpNeeded": 3091,
+      "coinBonus": 45,
+      "treeStage": 3,
+      "unlockText": "Ehrengast des Alpentals."
+    },
+    {
+      "level": 8,
+      "xpNeeded": 4339,
+      "coinBonus": 50,
+      "treeStage": 3,
+      "unlockText": "Hüter des verschneiten Winterhofs."
+    },
+    {
+      "level": 9,
+      "xpNeeded": 5820,
+      "coinBonus": 55,
+      "treeStage": 3,
+      "unlockText": "Meister des Wintertals."
+    },
+    {
+      "level": 10,
+      "xpNeeded": 7542,
+      "coinBonus": 60,
+      "treeStage": 3,
+      "unlockText": "Höchste Stufe auf dem Winterhof erreicht."
+    },
+    {
+      "level": 11,
+      "xpNeeded": 9509,
+      "coinBonus": 65,
+      "treeStage": 3,
+      "unlockText": "Stufe 11 erreicht."
+    },
+    {
+      "level": 12,
+      "xpNeeded": 11728,
+      "coinBonus": 70,
+      "treeStage": 3,
+      "unlockText": "Stufe 12 erreicht."
+    },
+    {
+      "level": 13,
+      "xpNeeded": 14202,
+      "coinBonus": 75,
+      "treeStage": 3,
+      "unlockText": "Stufe 13 erreicht."
+    },
+    {
+      "level": 14,
+      "xpNeeded": 16937,
+      "coinBonus": 80,
+      "treeStage": 3,
+      "unlockText": "Stufe 14 erreicht."
+    },
+    {
+      "level": 15,
+      "xpNeeded": 19936,
+      "coinBonus": 85,
+      "treeStage": 3,
+      "unlockText": "Stufe 15 erreicht."
+    },
+    {
+      "level": 16,
+      "xpNeeded": 23203,
+      "coinBonus": 90,
+      "treeStage": 3,
+      "unlockText": "Stufe 16 erreicht."
+    },
+    {
+      "level": 17,
+      "xpNeeded": 26743,
+      "coinBonus": 95,
+      "treeStage": 3,
+      "unlockText": "Stufe 17 erreicht."
+    },
+    {
+      "level": 18,
+      "xpNeeded": 30559,
+      "coinBonus": 100,
+      "treeStage": 3,
+      "unlockText": "Stufe 18 erreicht."
+    },
+    {
+      "level": 19,
+      "xpNeeded": 34654,
+      "coinBonus": 105,
+      "treeStage": 3,
+      "unlockText": "Stufe 19 erreicht."
+    },
+    {
+      "level": 20,
+      "xpNeeded": 39031,
+      "coinBonus": 110,
+      "treeStage": 3,
+      "unlockText": "Stufe 20 erreicht."
+    },
+    {
+      "level": 21,
+      "xpNeeded": 43694,
+      "coinBonus": 115,
+      "treeStage": 3,
+      "unlockText": "Stufe 21 erreicht."
+    },
+    {
+      "level": 22,
+      "xpNeeded": 48644,
+      "coinBonus": 120,
+      "treeStage": 3,
+      "unlockText": "Stufe 22 erreicht."
+    },
+    {
+      "level": 23,
+      "xpNeeded": 53887,
+      "coinBonus": 125,
+      "treeStage": 3,
+      "unlockText": "Stufe 23 erreicht."
+    },
+    {
+      "level": 24,
+      "xpNeeded": 59423,
+      "coinBonus": 130,
+      "treeStage": 3,
+      "unlockText": "Stufe 24 erreicht."
+    },
+    {
+      "level": 25,
+      "xpNeeded": 65255,
+      "coinBonus": 135,
+      "treeStage": 3,
+      "unlockText": "Stufe 25 erreicht."
+    },
+    {
+      "level": 26,
+      "xpNeeded": 71387,
+      "coinBonus": 140,
+      "treeStage": 3,
+      "unlockText": "Stufe 26 erreicht."
+    },
+    {
+      "level": 27,
+      "xpNeeded": 77820,
+      "coinBonus": 145,
+      "treeStage": 3,
+      "unlockText": "Stufe 27 erreicht."
+    },
+    {
+      "level": 28,
+      "xpNeeded": 84557,
+      "coinBonus": 150,
+      "treeStage": 3,
+      "unlockText": "Stufe 28 erreicht."
+    },
+    {
+      "level": 29,
+      "xpNeeded": 91601,
+      "coinBonus": 155,
+      "treeStage": 3,
+      "unlockText": "Stufe 29 erreicht."
+    },
+    {
+      "level": 30,
+      "xpNeeded": 98953,
+      "coinBonus": 160,
+      "treeStage": 3,
+      "unlockText": "Stufe 30 erreicht."
+    }
+  ],
+  "npcs": [
+    {
+      "id": "hilde",
+      "name": "Oma Hilde",
+      "avatarBg": "#9B2226",
+      "coat": "#9B2226",
+      "scarf": "#FDE68A",
+      "hat": "#FAF0E6",
+      "hair": "#E2E8F0",
+      "skin": "#F6CBA5",
+      "quotes": [
+        "Für den Adventskaffee fehlen noch frische Butterplätzchen.",
+        "Deine knusprigen Waffeln duften bis ins ganze Tal.",
+        "Eine Tasse warmer Winterpunsch wärmt das Herz."
+      ]
+    },
+    {
+      "id": "rudi",
+      "name": "Förster Rudi",
+      "avatarBg": "#2D6A4F",
+      "coat": "#2D6A4F",
+      "scarf": "#C1121F",
+      "hat": "#5C3317",
+      "hair": "#5C3317",
+      "skin": "#ECC099",
+      "quotes": [
+        "Die Tannen stehen heute prächtig im frischen Schnee.",
+        "Nach dem Waldgang wäre eine Heiße Schokolade genau richtig.",
+        "Beste Grüße an deine Rentiere und Schneehühner."
+      ]
+    },
+    {
+      "id": "clara",
+      "name": "Bäckerin Clara",
+      "avatarBg": "#B5651D",
+      "coat": "#8C4A27",
+      "scarf": "#E0F2FE",
+      "hat": "#B91C1C",
+      "hair": "#4A2511",
+      "skin": "#F8D4B4",
+      "quotes": [
+        "Ein cremiger Matcha-Latte vor dem Backen wirkt Wunder.",
+        "Dein Christstollen ist im ganzen Dorf beliebt.",
+        "Frisches Tiramisu kommt bei allen Nachbarn gut an."
+      ]
+    },
+    {
+      "id": "nikolaus",
+      "name": "Nikolaus",
+      "avatarBg": "#B91C1C",
+      "coat": "#B91C1C",
+      "scarf": "#FFFFFF",
+      "hat": "#B91C1C",
+      "hair": "#FFFFFF",
+      "skin": "#F5C7A3",
+      "quotes": [
+        "Der Schlitten ist startklar für deine nächste Lieferung.",
+        "Waffeln, Plätzchen und Zimt – genau mein Geschmack.",
+        "Dein Winterhof wächst mit jeder Lieferung prächtig."
+      ]
+    }
+  ],
+  "achievements": [
+    {
+      "id": "ach_harvest",
+      "title": "Ernte-Freude",
+      "desc": "Ernte 12 Felder auf deinem Winterhof",
+      "icon": "wheat",
+      "coins": 45,
+      "xp": 20,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "harvests",
+          "goal": 12
+        }
+      ]
+    },
+    {
+      "id": "ach_bake",
+      "title": "Ofenmeister",
+      "desc": "Stelle 5 Leckereien in deinen Gebäuden her",
+      "icon": "bakery",
+      "coins": 75,
+      "xp": 35,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "crafted",
+          "goal": 5
+        }
+      ]
+    },
+    {
+      "id": "ach_pet",
+      "title": "Tierfreund",
+      "desc": "Streichle deine Hoftiere 5-mal",
+      "icon": "heart",
+      "coins": 50,
+      "xp": 25,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "pets",
+          "goal": 5
+        }
+      ]
+    },
+    {
+      "id": "ach_orders",
+      "title": "Fleißiger Schlitten",
+      "desc": "Erfülle 4 Dorf-Wunschzettel",
+      "icon": "orders",
+      "coins": 100,
+      "xp": 50,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "ordersDone",
+          "goal": 4
+        }
+      ]
+    },
+    {
+      "id": "ach_stand",
+      "title": "Hofladen-Star",
+      "desc": "Verkaufe 3 Kisten im Hofladen",
+      "icon": "coin",
+      "coins": 80,
+      "xp": 40,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "standSales",
+          "goal": 3
+        }
+      ]
+    },
+    {
+      "id": "ach_villager",
+      "title": "Gute Nachbarschaft",
+      "desc": "Erfülle 2 Haustür-Angebote der Dorfbewohner",
+      "icon": "village",
+      "coins": 85,
+      "xp": 42,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "villagerDeals",
+          "goal": 2
+        }
+      ]
+    },
+    {
+      "id": "ach_land",
+      "title": "Hof-Erweiterung",
+      "desc": "Schalte ein neues Grundstück frei",
+      "icon": "land",
+      "coins": 120,
+      "xp": 60,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "landsUnlocked",
+          "goal": 1
+        }
+      ]
+    },
+    {
+      "id": "ach_barn",
+      "title": "Vorratshaltung",
+      "desc": "Erweitere dein Scheunen-Lager 1-mal",
+      "icon": "barn",
+      "coins": 90,
+      "xp": 45,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "storageUpgrades",
+          "goal": 1
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "id": "ch_1",
+      "num": 1,
+      "title": "Kapitel 1: Erste Ernte",
+      "goalText": "Ernte 4 Felder und backe 1x Butterplätzchen",
+      "coins": 55,
+      "xp": 35,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "harvests",
+          "goal": 4
+        },
+        {
+          "kind": "stat",
+          "stat": "crafted",
+          "goal": 1
+        }
+      ]
+    },
+    {
+      "id": "ch_2",
+      "num": 2,
+      "title": "Kapitel 2: Punsch- & Café-Stand",
+      "goalText": "Baue den Punsch-Stand und packe die rote Schleife aus",
+      "coins": 85,
+      "xp": 55,
+      "conditions": [
+        {
+          "kind": "hasObject",
+          "objectKind": "station",
+          "type": "teahouse",
+          "ready": true
+        }
+      ]
+    },
+    {
+      "id": "ch_3",
+      "num": 3,
+      "title": "Kapitel 3: Glöckchen-Rentier",
+      "goalText": "Hole dir ein Glöckchen-Rentier und erfülle 1 Wunschzettel",
+      "coins": 110,
+      "xp": 75,
+      "conditions": [
+        {
+          "kind": "hasObject",
+          "objectKind": "animal",
+          "type": "reindeer"
+        },
+        {
+          "kind": "stat",
+          "stat": "ordersDone",
+          "goal": 1
+        }
+      ]
+    },
+    {
+      "id": "ch_4",
+      "num": 4,
+      "title": "Kapitel 4: Blühender Winterhof",
+      "goalText": "Erfülle 3 Wunschzettel und verkaufe 1x im Hofladen",
+      "coins": 165,
+      "xp": 110,
+      "conditions": [
+        {
+          "kind": "stat",
+          "stat": "ordersDone",
+          "goal": 3
+        },
+        {
+          "kind": "stat",
+          "stat": "standSales",
+          "goal": 1
+        }
+      ]
+    }
+  ],
+  "storage": {
+    "silo": {
+      "baseCapacity": 50,
+      "stepCapacity": 25,
+      "maxCapacity": 300,
+      "baseCost": 80,
+      "costStep": 65
+    },
+    "barn": {
+      "baseCapacity": 50,
+      "stepCapacity": 25,
+      "maxCapacity": 300,
+      "baseCost": 80,
+      "costStep": 65
+    }
+  },
+  "orders": {
+    "slots": 4,
+    "minLines": 1,
+    "maxLines": 3,
+    "coinFactor": 1.42,
+    "xpFactor": 1.35,
+    "refillSeconds": 90
+  },
+  "stand": {
+    "slots": 6,
+    "sellSeconds": 45,
+    "maxPriceFactor": 1.5
+  },
+  "villagerOffers": {
+    "intervalSeconds": 32,
+    "lifetimeSeconds": 180,
+    "priceFactor": 1.22
+  },
+  "mastery": [
+    {
+      "at": 0,
+      "stars": 0,
+      "speedMult": 1
+    },
+    {
+      "at": 3,
+      "stars": 1,
+      "speedMult": 0.94
+    },
+    {
+      "at": 9,
+      "stars": 2,
+      "speedMult": 0.88
+    },
+    {
+      "at": 18,
+      "stars": 3,
+      "speedMult": 0.8
+    }
+  ],
+  "footprints": {
+    "chalet": {
+      "w": 2,
+      "h": 2
+    },
+    "christmasTree": {
+      "w": 2,
+      "h": 2
+    },
+    "wishlistBoard": {
+      "w": 1,
+      "h": 1
+    },
+    "sleigh": {
+      "w": 1,
+      "h": 1
+    },
+    "mailbox": {
+      "w": 1,
+      "h": 1
+    },
+    "dailyChest": {
+      "w": 1,
+      "h": 1
+    },
+    "field": {
+      "w": 1,
+      "h": 1
+    },
+    "animal": {
+      "w": 1,
+      "h": 1
+    },
+    "deco": {
+      "w": 1,
+      "h": 1
+    },
+    "station": {
+      "w": 2,
+      "h": 2
+    }
+  },
+  "field": {
+    "cost": 25,
+    "costStep": 15,
+    "maxCount": 24,
+    "unlockLevel": 1
+  },
+  "daily": {
+    "baseCoins": 30,
+    "streakCoins": 10,
+    "maxStreakBonus": 7
+  },
+  "start": {
+    "coins": 145,
+    "inventory": {
+      "wheat": 4,
+      "berries": 2,
+      "egg": 2
+    },
+    "objects": [
+      {
+        "kind": "prop",
+        "type": "chalet",
+        "id": "chalet",
+        "gx": 4,
+        "gy": 3
+      },
+      {
+        "kind": "prop",
+        "type": "christmasTree",
+        "id": "christmasTree",
+        "gx": 8,
+        "gy": 3
+      },
+      {
+        "kind": "prop",
+        "type": "wishlistBoard",
+        "id": "wishlistBoard",
+        "gx": 10,
+        "gy": 5
+      },
+      {
+        "kind": "prop",
+        "type": "sleigh",
+        "id": "sleigh",
+        "gx": 11,
+        "gy": 5
+      },
+      {
+        "kind": "prop",
+        "type": "mailbox",
+        "id": "mailbox",
+        "gx": 3,
+        "gy": 5
+      },
+      {
+        "kind": "prop",
+        "type": "dailyChest",
+        "id": "dailyChest",
+        "gx": 11,
+        "gy": 11
+      },
+      {
+        "kind": "station",
+        "type": "bakery",
+        "id": "st_bakery",
+        "gx": 3,
+        "gy": 8
+      },
+      {
+        "kind": "field",
+        "type": "field",
+        "id": "f_1",
+        "gx": 6,
+        "gy": 8,
+        "crop": "wheat",
+        "ripe": true
+      },
+      {
+        "kind": "field",
+        "type": "field",
+        "id": "f_2",
+        "gx": 7,
+        "gy": 8,
+        "crop": "wheat",
+        "ripe": true
+      },
+      {
+        "kind": "field",
+        "type": "field",
+        "id": "f_3",
+        "gx": 6,
+        "gy": 9,
+        "crop": "wheat",
+        "ripe": true
+      },
+      {
+        "kind": "field",
+        "type": "field",
+        "id": "f_4",
+        "gx": 7,
+        "gy": 9,
+        "crop": "wheat",
+        "ripe": true
+      },
+      {
+        "kind": "animal",
+        "type": "chicken",
+        "id": "a_1",
+        "gx": 9,
+        "gy": 8,
+        "nick": "Flöckchen",
+        "ready": true
+      },
+      {
+        "kind": "deco",
+        "type": "lantern",
+        "id": "d_1",
+        "gx": 3,
+        "gy": 7
+      },
+      {
+        "kind": "deco",
+        "type": "lantern",
+        "id": "d_2",
+        "gx": 10,
+        "gy": 7
+      },
+      {
+        "kind": "deco",
+        "type": "snowman",
+        "id": "d_3",
+        "gx": 7,
+        "gy": 5
+      }
+    ]
+  },
+  "market": {
+    "sellFactor": 0.3
+  }
+}
