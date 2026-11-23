@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Claude (Kern-Umbau). Gemini pausiert seit 23.11.2026 (bestätigt).
+- Niemand. Probeausschnitt eingebaut + live (Claude 23.11. 18:45). Rohbögen lokal in `art_src/probe_raw/` (nicht im Repo). Vergleich: `docs/qa/probe/vergleich_vorher_nachher.jpg`, Vorher im Spiel mit `?probe=0`. Offen: Hannes wählt Stall-Variante (`docs/qa/probe/stall_auswahl.jpg`, eingebaut = 1).
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -20,6 +20,8 @@
 6. Stufe 6–30 (Hannes 23.11.): Baumaterial ab Stufe 6 für Lager- und Landausbau. Neue Systeme: Bergbahn-Lieferungen, Eisfischen, Schneestollen (Mine), Weihnachtsmarkt-Fest. Inhalte jetzt mit Platzhalter-Bildern einbauen, echte Grafik am Schluss.
 
 9. **Hay Day ist der Maßstab für alles** (Hannes 23.11. abends): Bei jeder Frage und jedem Detail (Karte, Boden, Wege, Felder, Erweitern, Buttons, Schrift, Schatten, Spielgefühl) zuerst nachsehen, wie Hay Day es macht, Bild daneben legen, dann umsetzen. Weihnachten bleibt das Thema, Grafiken eigene (nichts kopieren).
+
+10. **Grafik-Probeausschnitt jetzt** (Hannes 23.11. spät, ersetzt „Grafik erst ganz zum Schluss“ teilweise): kleiner Hofkern in fertiger Qualität (Boden, Weg, Wildnis, Feld/Weizen, Huhn/Stall, HUD), um Machbarkeit zu prüfen. Danach Inhalte im selben Stil.
 
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof). `src/gameData.js` ist nur noch ein Adapter für die alte Oberfläche.

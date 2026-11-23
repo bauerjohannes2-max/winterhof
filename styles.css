@@ -1340,3 +1340,30 @@ button.btn-green:disabled, button.btn-wood:disabled, button.btn-gold:disabled, b
   box-shadow: inset 0 3px 0 rgba(255,255,255,0.5), 0 4px 0 var(--hd-edge) !important;
   color: var(--hd-edge) !important;
 }
+
+/* ===== Grafik-Probeausschnitt 23.11.: gemalte Leisten (Gemini), abschaltbar mit ?probe=0 ===== */
+html:not(.probe-off) .village-meta {
+  border-style: solid;
+  border-width: 22px 16px 10px 30px;
+  border-image: url('./assets/sprites/probe/hud_bar_top.webp') 70 60 40 120 fill / 22px 16px 10px 30px;
+  padding: 0 6px 2px 0;
+  margin-left: -10px;
+  min-width: 150px;
+  background: none !important;
+}
+html:not(.probe-off) .village-meta .village-name { margin-top: -14px; }
+html:not(.probe-off) .coin-pill {
+  background: none !important;
+  border-style: solid !important;
+  border-width: 12px 22px 10px 22px !important;
+  border-color: transparent !important;
+  border-image: url('./assets/sprites/probe/hud_pill.webp') 70 110 60 110 fill / 12px 22px 10px 22px !important;
+  box-shadow: none !important;
+  height: 48px;
+  padding: 0 0 0 4px !important;
+  color: #6B3A16 !important;
+  text-shadow: 0 1px 0 #FFF7E0 !important;
+}
+html:not(.probe-off) .medallion-btn .m-svg {
+  background: url('./assets/sprites/probe/hud_badge.webp') center 62% / 92% auto no-repeat;
+}

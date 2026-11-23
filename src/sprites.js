@@ -19,6 +19,18 @@ const TERRAIN_TEXTURES = [
   { key: 'terrain_cobble', path: './assets/terrain/cobble_road.webp' }
 ];
 
+// Grafik-Probeausschnitt (23.11.): fertige Teile aus assets/sprites/probe/, Schlüssel = probe_<name>.
+// Abschalten zum Vergleich (Vorher): ?probe=0
+export const PROBE_ON = typeof location === 'undefined' || new URLSearchParams(location.search).get('probe') !== '0';
+const PROBE_SPRITES = [
+  'ground_snow', 'ground_wild', 'path_dirt',
+  'wild_cluster_1', 'wild_cluster_2', 'wild_cluster_3', 'wild_cluster_4', 'wild_cluster_5', 'wild_cluster_6',
+  'field_soil', 'field_sprout', 'field_half', 'field_ripe',
+  'coop', 'chicken_1', 'chicken_2', 'chicken_3', 'chicken_4'
+];
+if (!PROBE_ON && typeof document !== 'undefined') document.documentElement.classList.add('probe-off');
+for (const n of PROBE_ON ? PROBE_SPRITES : []) TERRAIN_TEXTURES.push({ key: 'probe_' + n, path: `./assets/sprites/probe/${n}.webp` });
+
 // Painterly 2.5D Winter Props (soft warm borders matching the 3D WebP palette)
 const VECTOR_SPRITES_SVG = {
   treasure_chest: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 170">

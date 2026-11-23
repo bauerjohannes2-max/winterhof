@@ -3,7 +3,7 @@
 // 100% Derived from WorldGrid (Single Source of Truth) + Optional Debug-Grid
 // Zero Random Ellipses · Zero Fence-in-Water · Crisp Grounded Foundations
 // ============================================================================
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Matrix, Sprite, Texture, TilingSprite } from 'pixi.js';
 import { TERRAIN, SURFACE, PLAYABLE_MIN, PLAYABLE_MAX } from './worldGrid.js';
 
 function isoTilePoly(gridToWorld, gx, gy, pad = 0) {
@@ -31,8 +31,29 @@ export class TerrainLayer {
 
     // 1. Boden wie bei Hay Day: eine ruhige, gemalte Fläche ohne Kachelmuster,
     //    Wege direkt hineingemalt (weiche Ränder, Fahrspuren) statt harter Pflasterkacheln.
+    // Probe 23.11.: gemalte, nahtlose Schnee-Textur (Gemini) unter dem Boden-Canvas
+    const snowTex = textures.get('probe_ground_snow');
+    this.probe = !!snowTex;
+    if (snowTex) {
+      const ts = new TilingSprite({ texture: snowTex, width: 5200, height: 2900 });
+      ts.x = -2600; ts.y = -900;
+      ts.tileScale.set(0.62); // 1024 px ≈ 635 Weltpunkte ≈ 5,5 Kacheln je Wiederholung
+      this.container.addChild(ts);
+      this.groundTiling = ts;
+    }
     this.ground = this._paintGround();
     this.container.addChild(this.ground);
+    const dirtTex = this.probe ? textures.get('probe_path_dirt') : null;
+    if (dirtTex) {
+      // Probe: Weg in voller Auflösung mit gemalter Erde-Textur (Canvas liefert nur den weichen Saum)
+      const rg = new Graphics();
+      for (const t of worldGrid.roadTiles) {
+        rg.poly(isoTilePoly(gridToWorld, t.gx, t.gy, 0.005))
+          .fill({ texture: dirtTex, textureSpace: 'global', matrix: new Matrix().scale(0.5, 0.5), color: 0xffffff });
+      }
+      this.container.addChild(rg);
+      this.roadGfx = rg;
+    }
     this.roadContainer = new Container();
 
     // 4. Ackerfelder: flach, exakt auf dem Raster, aneinanderliegend wie ein Feld (Hay Day)
@@ -79,7 +100,9 @@ export class TerrainLayer {
     let seed = 1224;
     const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
-    // Grundton: frischer Schnee, ganz leicht blau
+    const probe = this.probe;
+    // Grundton: frischer Schnee, ganz leicht blau (Probe: Textur liegt darunter, Canvas bleibt durchsichtig)
+    if (!probe) {
     ctx.fillStyle = '#EDF3F9';
     ctx.fillRect(0, 0, cw, ch);
     // Große, weiche Licht- und Schattenwolken (wie Wiesenflecken bei Hay Day, sehr dezent)
@@ -102,6 +125,20 @@ export class TerrainLayer {
       ctx.fillStyle = bright ? 'rgba(255,255,255,0.75)' : 'rgba(170,192,218,0.22)';
       ctx.fillRect(x, y, 1 + rnd() * 2.5, 1);
     }
+    } else {
+      // Nur sanfte, große Lichtflecken über der Textur (warmes Sonnenlicht, kühle Mulden)
+      for (let i = 0; i < 60; i++) {
+        const [x, y] = P(X0 + rnd() * W, Y0 + rnd() * H);
+        const r = (200 + rnd() * 420) * K;
+        const light = rnd() < 0.6;
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, light ? 'rgba(255,246,226,0.22)' : 'rgba(150,180,220,0.16)');
+        gr.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    const dirtImg = probe ? this.textures.get('probe_path_dirt')?.source?.resource : null;
 
     // Wege: weich gemalter, festgetretener Schneeweg (Hay-Day-Feldweg im Winter)
     const tiles = this.grid.roadTiles;
@@ -125,20 +162,29 @@ export class TerrainLayer {
     // Wegfläche: warmes, festgefahrenes Erdbraun mit Schnee (Hay-Day-Feldweg im Winter)
     ctx.filter = `blur(${Math.max(1, Math.round(2 * K))}px)`;
     ctx.fillStyle = '#C79A6B';
-    polyPath(0.0);
-    ctx.fill();
+    if (!probe) { polyPath(0.0); ctx.fill(); }
+    if (false && dirtImg) {
+      // Gemalte Weg-Textur (Erde, Matschschnee, Steinchen) in die Wegform
+      ctx.filter = 'none';
+      const pat = ctx.createPattern(dirtImg, 'repeat');
+      if (pat) {
+        pat.setTransform(new DOMMatrix().scale(0.2)); // 512 px ≈ 2 Kacheln
+        ctx.fillStyle = pat;
+        polyPath(-0.02);
+        ctx.fill();
+      }
+    }
     ctx.filter = 'none';
     const lg = ctx.createLinearGradient(0, 0, 0, ch);
     lg.addColorStop(0, 'rgba(255,236,205,0.25)'); lg.addColorStop(1, 'rgba(255,236,205,0.1)');
     ctx.fillStyle = lg;
-    polyPath(-0.12);
-    ctx.fill();
+    if (!probe) { polyPath(-0.12); ctx.fill(); }
     ctx.restore();
     // Fahrspuren entlang des Hauptwegs (Reihe gy = 6)
     ctx.save();
     ctx.filter = `blur(${Math.max(1, Math.round(2 * K))}px)`;
     ctx.lineCap = 'round';
-    const mainRow = tiles.filter((t) => t.gy === 6);
+    const mainRow = probe ? [] : tiles.filter((t) => t.gy === 6);
     if (mainRow.length) {
       const xs = mainRow.map((t) => t.gx);
       const minX = Math.min(...xs), maxX = Math.max(...xs) + 1;
@@ -151,7 +197,7 @@ export class TerrainLayer {
       }
     }
     // Schneereste und Kiesel auf dem Weg
-    for (const t of tiles) {
+    for (const t of probe ? [] : tiles) {
       for (let i = 0; i < 7; i++) {
         const w = g2w(t.gx + 0.1 + rnd() * 0.8, t.gy + 0.1 + rnd() * 0.8);
         const [x, y] = P(w.x, w.y);
@@ -187,6 +233,7 @@ export class TerrainLayer {
     const g = this.fieldGfx;
     const g2w = this.gridToWorld;
     g.clear();
+    if (this.probe && this.textures.get('probe_field_soil')) return; // Probe: Feld-Bild kommt aus world.js
     const has = new Set(fields.map((f) => `${f.gx},${f.gy}`));
     // 1) Kante/Sockel aller Felder zuerst (Erde ragt 6 px aus dem Schnee)
     for (const f of fields) {

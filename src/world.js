@@ -3,7 +3,7 @@
 // Single-Source-of-Truth WorldGrid · 12-Rule Spatial Validator · A* Villagers
 // Aligned Bridge · Grounded Isometric Footprints · Zero-GC Pools · Zero Emojis
 // ============================================================================
-import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
+import { Application, Container, Graphics, Matrix, Sprite, Text, TextStyle } from 'pixi.js';
 import { viewSize, elementCenter } from './viewport.js';
 import content from './content/winterhof.json';
 import { LAND_ZONES, ITEMS, ANIMALS, getLevelInfo, getStationMastery } from './gameData.js';
@@ -692,6 +692,25 @@ export class WinterWorld {
       this._wildNodes.push(wrap);
     };
 
+    // Probe: Wildnis-Gruppe (Bild deckt 2x2 Kacheln, Rautenmitte ~1/4 Bildbreite über Unterkante)
+    const addCluster = (n, gx, gy, sizeK, flip) => {
+      const t = this.textures.get('probe_wild_cluster_' + n);
+      if (!t) return;
+      const wp = gridToWorld(gx, gy);
+      const tw = t.orig?.width || t.width, th = t.orig?.height || t.height;
+      const w = TILE_W * 2 * sizeK, hgt = w * th / tw;
+      const sp = new Sprite(t);
+      sp.anchor.set(0.5, 1 - (tw * 0.25) / th);
+      sp.width = w;
+      sp.height = hgt;
+      if (flip) sp.scale.x *= -1;
+      sp.x = wp.x;
+      sp.y = wp.y;
+      sp.zIndex = wp.y;
+      this.entityStage.addChild(sp);
+      this._wildNodes.push(sp);
+    };
+
     const drawn = new Set();
     for (const z of LAND_ZONES) {
       if (unlocked.has(z.id)) continue;
@@ -699,11 +718,38 @@ export class WinterWorld {
       // Nahe Flächen (bis Stufe 6) nur locker bewachsen, damit der Start-Hof Luft hat (Hay Day)
       const near = z.unlockLevel <= 6;
       // unberührter Tiefschnee, eine Spur kühler als der Hof
+      const wildTex = this.textures.get('probe_ground_wild');
+      if (wildTex) {
+        // Probe 23.11.: gemalter Wildnis-Boden (dunkler, Gras/Moos unter Schnee)
+        g.poly(isoRectPoly(gridToWorld, b.x0, b.y0, b.x1 + 1, b.y1 + 1))
+          .fill({ texture: wildTex, textureSpace: 'global', matrix: new Matrix().scale(0.62, 0.62), color: 0xffffff, alpha: 1 });
+      } else {
       g.poly(isoRectPoly(gridToWorld, b.x0 + 0.04, b.y0 + 0.04, b.x1 + 0.96, b.y1 + 0.96))
         .fill({ color: 0xc9d8ea, alpha: 0.5 });
+      }
       let h = 0;
       for (const z2 of z.id) h = (h * 31 + z2.charCodeAt(0)) >>> 0;
       const rnd = makeSeededRand(h);
+
+      if (this.textures.get('probe_wild_cluster_1')) {
+        // Probe: dichte Wildnis aus GRUPPEN (je 2x2 Kacheln), nah am Hof lockerer
+        for (let y = b.y0; y <= b.y1; y += 2) {
+          for (let x = b.x0; x <= b.x1; x += 2) {
+            const r = rnd(), pick = 1 + Math.floor(rnd() * 6), flip = rnd() < 0.5;
+            const jx = (rnd() - 0.5) * 0.3, jy = (rnd() - 0.5) * 0.3;
+            if (r > (near ? 0.45 : 0.85)) continue;
+            let blocked = false;
+            for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) if (isRoad(x + dx, y + dy) || x + dx > b.x1 || y + dy > b.y1) blocked = true;
+            if (blocked) {
+              // Einzelkachel: kleine Gruppe (Steinhaufen/Stumpf) passt auch neben den Weg
+              if (!isRoad(x, y) && r < 0.5) addCluster(3 + Math.floor(rnd() * 3), x + 0.5, y + 0.5, 0.55, flip);
+              continue;
+            }
+            addCluster(pick, x + 1 + jx, y + 1 + jy, near ? 0.8 : 0.9 + rnd() * 0.15, flip);
+          }
+        }
+        continue;
+      }
 
       // Wildnis: je Kachel mit fester Wahrscheinlichkeit ein Objekt, nie auf dem Weg
       for (let y = b.y0; y <= b.y1; y++) {
@@ -721,6 +767,7 @@ export class WinterWorld {
     }
 
     // Grenze gesperrter Flächen: EINE saubere Schneewall-Kante (nur wo die Zone wechselt, nie über den Weg)
+    const probeWild = !!this.textures.get('probe_ground_wild');
     const zoneAt = (x, y) => this.grid.getTile(x, y)?.zone;
     const lockedZ = (zid) => LAND_ZONES.some((z) => z.id === zid && !unlocked.has(z.id));
     const segs = [];
@@ -731,7 +778,7 @@ export class WinterWorld {
         for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
           const nz = zoneAt(x + dx, y + dy);
           if (nz === z.id) continue;
-          if (nz && lockedZ(nz) && (dx < 0 || dy < 0)) continue; // gemeinsame Kante nur einmal
+          if (nz && lockedZ(nz) && (probeWild || dx < 0 || dy < 0)) continue; // gemeinsame Kante nur einmal (Probe: gar nicht)
           if (isRoad(x, y) || isRoad(x + dx, y + dy)) continue;
           if (dx === 1) segs.push([x + 1, y, x + 1, y + 1]);
           else if (dx === -1) segs.push([x, y, x, y + 1]);
@@ -747,6 +794,13 @@ export class WinterWorld {
       }
       g.stroke({ color, width: w, alpha, cap: 'round', join: 'round' });
     };
+    if (this.textures.get('probe_ground_wild')) {
+      // Probe: weiche Schneewehe statt harter Linie (sonst wirkt es wie Rasterlinien)
+      line(26, 0x52749c, 0.08, 9);
+      line(20, 0xffffff, 0.28, 0);
+      line(10, 0xffffff, 0.35, -1);
+      return;
+    }
     line(9, 0x7f98b6, 0.28, 4);
     line(7, 0xffffff, 0.95, 0);
     line(2.5, 0xc9d8e8, 0.9, 2.5);
@@ -1064,6 +1118,32 @@ export class WinterWorld {
     for (const f of state.fields || []) {
       const fp = gridToWorld(f.gx + 0.5, f.gy + 0.5);
       // Ackerfläche selbst malt terrainLayer (flach, exakt im Raster)
+      if (this.textures.get('probe_field_soil')) {
+        // Probe 23.11.: fertig gemaltes Feld in 4 Stufen (leer / Keim / halb / reif), Erde + Pflanze in einem Bild
+        let stage = 'soil', pct = 0, ripe = false;
+        if (f.cropId && ITEMS[f.cropId]) {
+          const crop = ITEMS[f.cropId];
+          pct = Math.max(0, Math.min(1, (nowMs - (f.plantedAt || 0)) / 1000 / (crop.growTime || 60)));
+          ripe = pct >= 1;
+          stage = ripe ? 'ripe' : pct >= 0.45 ? 'half' : 'sprout';
+        }
+        const tk = 'probe_field_' + stage;
+        const tex = this.textures.get(tk);
+        const th = tex ? (tex.orig?.height || tex.height) : 245;
+        const tw = tex ? (tex.orig?.width || tex.width) : 400;
+        // Bildmaße: Breite 400 = Feld inkl. Schneerand; Rautenmitte 145 px über Unterkante
+        const scale = (TILE_W * 1.1) / tw;
+        const sway = ripe ? Math.sin(sec * 2.1 + f.gx * 1.3 + f.gy * 0.9) * 0.006 : 0;
+        placeEntity(`pfield_${f.id}`, tk, fp.x, fp.y, TILE_W * 1.1, th * scale, {
+          bounceId: f.id,
+          zIndex: fp.y - (stage === 'soil' || stage === 'sprout' ? 60 : 0),
+          anchorY: 1 - (145 * tw / 400) / th,
+          rot: sway,
+          shadow: false,
+          fitWidth: true
+        });
+        continue;
+      }
 
       if (f.cropId && ITEMS[f.cropId]) {
         const crop = ITEMS[f.cropId];
@@ -1106,20 +1186,34 @@ export class WinterWorld {
     // ---- F. Animals in Cozy Straw-and-Timber Pens (1x1 Exact Tile Center) ----
     for (const an of state.animals || []) {
       const baseP = gridToWorld(an.gx + 0.5, an.gy + 0.5);
+      const probeCoop = an.type === 'chicken' && this.textures.get('probe_coop');
+      if (probeCoop) {
+        // Probe 23.11.: Hühnerstall statt Strohgatter, Huhn läuft davor
+        placeEntity(`coop_${an.id}`, 'probe_coop', baseP.x + 6, baseP.y - 10, 0, TILE_W * 1.25, {
+          zIndex: baseP.y - 12, anchorY: 0.9, shadowW: 0.9, shadowH: 0.22, shadowAlpha: 0.45
+        });
+      } else {
       const pen = this._acquireAnimalPen(an.id);
       pen.container.x = baseP.x;
       pen.container.y = baseP.y + 2;
+      }
 
       const mot = this.getAnimalMotion(an);
       const ap = gridToWorld(an.gx + 0.5 + mot.ox, an.gy + 0.5 + mot.oy);
       const def = ANIMALS[an.type];
-      const texKey = spriteOf('animals', an.type, 'animal_chicken');
-      const sz = heightFor(texKey, 'animal');
+      let texKey = spriteOf('animals', an.type, 'animal_chicken');
+      if (probeCoop) {
+        // 4 Posen: stehen, picken, sitzen, freuen (bereit)
+        const pose = an.state === 'ready' ? 4 : (Math.floor(sec / 2.4 + an.gx * 1.7) % 3) + 1;
+        texKey = 'probe_chicken_' + pose;
+      }
+      const sz = probeCoop ? TILE_W * 0.42 : heightFor(texKey, 'animal');
       const hop = Math.abs(Math.sin(mot.phase)) * 3.0;
 
-      placeEntity(`an_${an.id}`, texKey, ap.x, ap.y - hop, sz, sz, {
+      const fy = probeCoop ? 18 : 0; // Probe: Huhn läuft vor dem Stall
+      placeEntity(`an_${an.id}`, texKey, ap.x, ap.y - hop + fy, sz, sz, {
         bounceId: an.id,
-        zIndex: ap.y + 6,
+        zIndex: ap.y + 6 + fy,
         flipX: mot.facing < 0,
         shadowW: 0.66,
         shadowH: 0.24,
