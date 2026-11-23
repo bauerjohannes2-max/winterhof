@@ -11,8 +11,11 @@ function tryCmd(s: GameState, cmd: Command, now: number): GameState {
   return r.ok ? r.state : s;
 }
 
-function botStep(s0: GameState, now: number): GameState {
+function botStep(s0: GameState, now: number, sessionStart = false): GameState {
   let s = advanceTime(s0, now).state;
+  // 0. Lager zuerst ausbauen (mit Material), Land freischalten
+  for (const kind of ['barn', 'silo'] as const) if (storageFree(s, kind) < 15) s = tryCmd(s, { type: 'upgradeStorage', storage: kind }, now);
+  for (const z of CONTENT.landZones) if (s.coins > z.cost + 150) s = tryCmd(s, { type: 'unlockZone', zoneId: z.id }, now);
   // 1. ernten, abholen
   for (const o of s.objects) {
     if (o.kind === 'field' && isFieldReady(o, now)) s = tryCmd(s, { type: 'harvest', fieldId: o.id }, now);
@@ -20,8 +23,9 @@ function botStep(s0: GameState, now: number): GameState {
     if (o.kind === 'station') for (let i = 0; i < 6; i++) s = tryCmd(s, { type: 'collectProduct', stationId: o.id }, now);
     if (o.kind === 'station' && o.wrapped) s = tryCmd(s, { type: 'unwrapStation', stationId: o.id }, now);
   }
-  // 2. Aufträge erfüllen
+  // 2. Aufträge erfüllen; zu Sitzungsbeginn einen unerfüllbaren ablehnen (wie ein echter Spieler)
   for (const o of [...s.orders]) s = tryCmd(s, { type: 'fulfillOrder', orderId: o.id }, now);
+  if (sessionStart && s.orders.length > 0) s = tryCmd(s, { type: 'skipOrder', orderId: s.orders[0]!.id }, now);
   // 3. Tiere füttern, pflanzen (Weizen + was Aufträge brauchen)
   for (const o of s.objects) if (o.kind === 'animal' && o.state === 'hungry') s = tryCmd(s, { type: 'feedAnimal', animalId: o.id }, now);
   const wanted = s.orders.flatMap((o) => o.lines.map((l) => l.item)).filter((i) => CONTENT.items[i]?.category === 'crop' && CONTENT.items[i]!.unlockLevel <= s.level);
@@ -44,7 +48,7 @@ function botStep(s0: GameState, now: number): GameState {
   // 6. investieren: Gebäude, Tiere, Felder, Lager
   for (const [id, def] of Object.entries(CONTENT.stations)) {
     if (s.level >= def.unlockLevel && !s.objects.some((o) => o.type === id) && s.coins >= def.cost) {
-      for (let gy = 2; gy <= 11; gy++) for (let gx = 2; gx <= 10; gx++) {
+      for (let gy = 0; gy <= 13; gy++) for (let gx = 0; gx <= 16; gx++) {
         if (!s.objects.some((o) => o.type === id) && canPlace(s, gx, gy, 2, 2).ok) s = tryCmd(s, { type: 'buyStation', stationType: id, gx, gy }, now);
       }
     }
@@ -73,7 +77,7 @@ describe('Wirtschaft (7-Tage-Bot)', () => {
     for (let day = 0; day < 7; day++) {
       for (const startHour of [7, 13, 19]) {
         for (let m = 0; m <= 20; m += 1) {
-          s = botStep(s, T0 + day * 86_400_000 + (startHour - 7) * 3600_000 + m * 60_000);
+          s = botStep(s, T0 + day * 86_400_000 + (startHour - 7) * 3600_000 + m * 60_000, m === 0);
         }
       }
       levelByDay.push(s.level);

@@ -447,6 +447,278 @@
       "color": "#65A30D",
       "desc": "Alte Karte des Tals – zeigt, wo das neue Grundstück liegt.",
       "storage": "barn"
+    },
+    "apples": {
+      "id": "apples",
+      "name": "Rotbäckchen-Äpfel",
+      "category": "crop",
+      "growTime": 720,
+      "seedCost": 38,
+      "sellPrice": 115,
+      "xp": 15,
+      "unlockLevel": 6,
+      "color": "#DC2626",
+      "desc": "Knackige rote Winteräpfel – für Bratäpfel und Apfelpunsch.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "almonds": {
+      "id": "almonds",
+      "name": "Mandeln",
+      "category": "crop",
+      "growTime": 900,
+      "seedCost": 45,
+      "sellPrice": 135,
+      "xp": 18,
+      "unlockLevel": 8,
+      "color": "#D6A77A",
+      "desc": "Süße Mandeln für gebrannte Mandeln und Marzipan.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "fir_greens": {
+      "id": "fir_greens",
+      "name": "Tannengrün",
+      "category": "crop",
+      "growTime": 1080,
+      "seedCost": 50,
+      "sellPrice": 150,
+      "xp": 20,
+      "unlockLevel": 10,
+      "color": "#15803D",
+      "desc": "Duftende Tannenzweige für Adventskränze.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "walnuts": {
+      "id": "walnuts",
+      "name": "Walnüsse",
+      "category": "crop",
+      "growTime": 1320,
+      "seedCost": 56,
+      "sellPrice": 170,
+      "xp": 23,
+      "unlockLevel": 12,
+      "color": "#92400E",
+      "desc": "Harte Walnüsse für Spielzeug und Nussknacker.",
+      "storage": "silo",
+      "harvestYield": 2
+    },
+    "firewood": {
+      "id": "firewood",
+      "name": "Brennholz",
+      "category": "animal",
+      "sellPrice": 62,
+      "xp": 8,
+      "unlockLevel": 7,
+      "color": "#A16207",
+      "desc": "Trockenes Holz, das der Esel aus dem Wald holt – heizt Öfen und wird zu Spielzeug.",
+      "storage": "barn"
+    },
+    "letter": {
+      "id": "letter",
+      "name": "Eulenbrief",
+      "category": "animal",
+      "sellPrice": 80,
+      "xp": 10,
+      "unlockLevel": 11,
+      "color": "#F5F5F4",
+      "desc": "Ein Brief, den die Schneeeule aus dem Dorf bringt.",
+      "storage": "barn"
+    },
+    "baked_apple": {
+      "id": "baked_apple",
+      "name": "Bratapfel",
+      "category": "crafted",
+      "station": "apple_stand",
+      "craftTime": 300,
+      "ingredients": {
+        "apples": 1,
+        "cinnamon": 1,
+        "firewood": 1
+      },
+      "sellPrice": 349,
+      "xp": 35,
+      "unlockLevel": 7,
+      "color": "#B91C1C",
+      "desc": "Ofenwarmer Bratapfel mit Zimt.",
+      "storage": "barn"
+    },
+    "apple_punch": {
+      "id": "apple_punch",
+      "name": "Apfelpunsch",
+      "category": "crafted",
+      "station": "apple_stand",
+      "craftTime": 360,
+      "ingredients": {
+        "apples": 2,
+        "berries": 1,
+        "firewood": 1
+      },
+      "sellPrice": 436,
+      "xp": 44,
+      "unlockLevel": 7,
+      "color": "#EA580C",
+      "desc": "Heißer Apfelpunsch ohne Alkohol, mit Winterbeeren.",
+      "storage": "barn"
+    },
+    "candied_almonds": {
+      "id": "candied_almonds",
+      "name": "Gebrannte Mandeln",
+      "category": "crafted",
+      "station": "almond_hut",
+      "craftTime": 420,
+      "ingredients": {
+        "almonds": 2,
+        "candycane": 1,
+        "firewood": 1
+      },
+      "sellPrice": 591,
+      "xp": 59,
+      "unlockLevel": 8,
+      "color": "#B45309",
+      "desc": "Knusprig karamellisiert, wie vom Weihnachtsmarkt.",
+      "storage": "barn"
+    },
+    "marzipan": {
+      "id": "marzipan",
+      "name": "Marzipankartoffeln",
+      "category": "crafted",
+      "station": "almond_hut",
+      "craftTime": 480,
+      "ingredients": {
+        "almonds": 2,
+        "cocoa": 1
+      },
+      "sellPrice": 453,
+      "xp": 45,
+      "unlockLevel": 9,
+      "color": "#A16207",
+      "desc": "Marzipan in Kakao gerollt.",
+      "storage": "barn"
+    },
+    "advent_wreath": {
+      "id": "advent_wreath",
+      "name": "Adventskranz",
+      "category": "crafted",
+      "station": "wreath_shop",
+      "craftTime": 600,
+      "ingredients": {
+        "fir_greens": 3,
+        "berries": 2,
+        "cinnamon": 1
+      },
+      "sellPrice": 781,
+      "xp": 78,
+      "unlockLevel": 10,
+      "color": "#166534",
+      "desc": "Grüner Kranz mit Beeren und Zimtstangen.",
+      "storage": "barn"
+    },
+    "door_wreath": {
+      "id": "door_wreath",
+      "name": "Türkranz",
+      "category": "crafted",
+      "station": "wreath_shop",
+      "craftTime": 540,
+      "ingredients": {
+        "fir_greens": 2,
+        "wool": 1,
+        "apples": 1
+      },
+      "sellPrice": 655,
+      "xp": 66,
+      "unlockLevel": 10,
+      "color": "#15803D",
+      "desc": "Kranz mit Wollschleife und rotem Apfel für die Haustür.",
+      "storage": "barn"
+    },
+    "wishlist": {
+      "id": "wishlist",
+      "name": "Wunschzettel",
+      "category": "crafted",
+      "station": "wichtel_post",
+      "craftTime": 420,
+      "ingredients": {
+        "letter": 1,
+        "candycane": 1
+      },
+      "sellPrice": 264,
+      "xp": 26,
+      "unlockLevel": 11,
+      "color": "#FDE68A",
+      "desc": "Ein Wunschzettel mit Zuckerstangen-Siegel.",
+      "storage": "barn"
+    },
+    "xmas_card": {
+      "id": "xmas_card",
+      "name": "Weihnachtskarte",
+      "category": "crafted",
+      "station": "wichtel_post",
+      "craftTime": 480,
+      "ingredients": {
+        "letter": 2,
+        "fir_greens": 1
+      },
+      "sellPrice": 443,
+      "xp": 44,
+      "unlockLevel": 11,
+      "color": "#DC2626",
+      "desc": "Karte mit gepresstem Tannenzweig.",
+      "storage": "barn"
+    },
+    "rocking_horse": {
+      "id": "rocking_horse",
+      "name": "Schaukelpferd",
+      "category": "crafted",
+      "station": "toy_workshop",
+      "craftTime": 720,
+      "ingredients": {
+        "firewood": 3,
+        "wool": 1
+      },
+      "sellPrice": 372,
+      "xp": 37,
+      "unlockLevel": 12,
+      "color": "#C2410C",
+      "desc": "Holz-Schaukelpferd mit Wollmähne.",
+      "storage": "barn"
+    },
+    "toy_train": {
+      "id": "toy_train",
+      "name": "Holzeisenbahn",
+      "category": "crafted",
+      "station": "toy_workshop",
+      "craftTime": 840,
+      "ingredients": {
+        "firewood": 2,
+        "walnuts": 2,
+        "cocoa": 1
+      },
+      "sellPrice": 736,
+      "xp": 74,
+      "unlockLevel": 12,
+      "color": "#1D4ED8",
+      "desc": "Kleine Eisenbahn aus Walnussholz.",
+      "storage": "barn"
+    },
+    "nutcracker": {
+      "id": "nutcracker",
+      "name": "Nussknacker",
+      "category": "crafted",
+      "station": "toy_workshop",
+      "craftTime": 900,
+      "ingredients": {
+        "walnuts": 3,
+        "firewood": 2,
+        "candycane": 1
+      },
+      "sellPrice": 1024,
+      "xp": 102,
+      "unlockLevel": 12,
+      "color": "#991B1B",
+      "desc": "Bunter Nussknacker – knackt echte Walnüsse.",
+      "storage": "barn"
     }
   },
   "cropIds": [
@@ -455,7 +727,11 @@
     "matcha",
     "cocoa",
     "cinnamon",
-    "candycane"
+    "candycane",
+    "apples",
+    "almonds",
+    "fir_greens",
+    "walnuts"
   ],
   "animals": {
     "chicken": {
@@ -502,6 +778,36 @@
       "maxCount": 3,
       "soundPitch": 0.9,
       "desc": "Schenkt weiche Kuschelwolle für die Geschenkewerkstatt (5 Min.)."
+    },
+    "donkey": {
+      "id": "donkey",
+      "name": "Krippen-Esel",
+      "defaultNick": "Benno",
+      "sprite": "animal_donkey",
+      "feedItem": "wheat",
+      "feedQty": 2,
+      "produceItem": "firewood",
+      "produceTime": 360,
+      "cost": 420,
+      "unlockLevel": 7,
+      "maxCount": 3,
+      "soundPitch": 0.8,
+      "desc": "Trägt Brennholz aus dem Wald herbei (6 Min.)."
+    },
+    "owl": {
+      "id": "owl",
+      "name": "Schneeeule",
+      "defaultNick": "Fiona",
+      "sprite": "animal_owl",
+      "feedItem": "berries",
+      "feedQty": 2,
+      "produceItem": "letter",
+      "produceTime": 480,
+      "cost": 650,
+      "unlockLevel": 11,
+      "maxCount": 3,
+      "soundPitch": 1.4,
+      "desc": "Fliegt ins Dorf und bringt Briefe für die Wichtelpost (8 Min.)."
     }
   },
   "stations": {
@@ -631,6 +937,147 @@
       "desc": "Werkstatt für Winter-Strickschals, Plätzchendosen und Festtagskörbe.",
       "queueSlots": 3,
       "readySlots": 6
+    },
+    "apple_stand": {
+      "id": "apple_stand",
+      "name": "Bratapfel-Stand",
+      "sprite": "st_apple_stand",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 7,
+      "cost": 420,
+      "recipes": [
+        "baked_apple",
+        "apple_punch"
+      ],
+      "chimneyOffset": {
+        "x": 0.2,
+        "y": -0.7
+      },
+      "glowPoints": [
+        {
+          "x": 0,
+          "y": -0.3,
+          "r": 0.3
+        }
+      ],
+      "queueSlots": 3,
+      "readySlots": 6
+    },
+    "almond_hut": {
+      "id": "almond_hut",
+      "name": "Mandelbude",
+      "sprite": "st_almond_hut",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 8,
+      "cost": 650,
+      "recipes": [
+        "candied_almonds",
+        "marzipan"
+      ],
+      "chimneyOffset": {
+        "x": 0.2,
+        "y": -0.7
+      },
+      "glowPoints": [
+        {
+          "x": 0,
+          "y": -0.3,
+          "r": 0.3
+        }
+      ],
+      "queueSlots": 3,
+      "readySlots": 6
+    },
+    "wreath_shop": {
+      "id": "wreath_shop",
+      "name": "Kranzbinderei",
+      "sprite": "st_wreath_shop",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 10,
+      "cost": 950,
+      "recipes": [
+        "advent_wreath",
+        "door_wreath"
+      ],
+      "chimneyOffset": {
+        "x": 0.2,
+        "y": -0.7
+      },
+      "glowPoints": [
+        {
+          "x": 0,
+          "y": -0.3,
+          "r": 0.3
+        }
+      ],
+      "queueSlots": 3,
+      "readySlots": 6
+    },
+    "wichtel_post": {
+      "id": "wichtel_post",
+      "name": "Wichtelpost",
+      "sprite": "st_wichtel_post",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 11,
+      "cost": 1250,
+      "recipes": [
+        "wishlist",
+        "xmas_card"
+      ],
+      "chimneyOffset": {
+        "x": 0.2,
+        "y": -0.7
+      },
+      "glowPoints": [
+        {
+          "x": 0,
+          "y": -0.3,
+          "r": 0.3
+        }
+      ],
+      "queueSlots": 3,
+      "readySlots": 6
+    },
+    "toy_workshop": {
+      "id": "toy_workshop",
+      "name": "Spielzeugwerkstatt",
+      "sprite": "st_toy_workshop",
+      "footprint": {
+        "w": 2,
+        "h": 2
+      },
+      "unlockLevel": 12,
+      "cost": 1650,
+      "recipes": [
+        "rocking_horse",
+        "toy_train",
+        "nutcracker"
+      ],
+      "chimneyOffset": {
+        "x": 0.2,
+        "y": -0.7
+      },
+      "glowPoints": [
+        {
+          "x": 0,
+          "y": -0.3,
+          "r": 0.3
+        }
+      ],
+      "queueSlots": 3,
+      "readySlots": 6
     }
   },
   "decorations": {
@@ -714,6 +1161,49 @@
         "r": 0.72
       },
       "desc": "Tannenbogen mit warm leuchtender goldener Lichterkette."
+    },
+    "light_reindeer": {
+      "id": "light_reindeer",
+      "name": "Lichter-Rentier",
+      "theme": "Weihnachten",
+      "sprite": "deco_light_reindeer",
+      "cost": 180,
+      "xp": 50,
+      "unlockLevel": 6,
+      "glow": true,
+      "desc": "Rentier aus warmen Lichterketten.",
+      "glowOffset": {
+        "x": 0,
+        "y": -0.5,
+        "r": 0.5
+      }
+    },
+    "big_nutcracker": {
+      "id": "big_nutcracker",
+      "name": "Riesen-Nussknacker",
+      "theme": "Weihnachten",
+      "sprite": "deco_big_nutcracker",
+      "cost": 320,
+      "xp": 80,
+      "unlockLevel": 9,
+      "glow": false,
+      "desc": "Nussknacker, größer als jeder Wichtel."
+    },
+    "gingerbread_gate": {
+      "id": "gingerbread_gate",
+      "name": "Lebkuchen-Tor",
+      "theme": "Weihnachten",
+      "sprite": "deco_gingerbread_gate",
+      "cost": 450,
+      "xp": 110,
+      "unlockLevel": 12,
+      "glow": true,
+      "desc": "Tor aus Lebkuchen mit Zuckerguss-Lichtern.",
+      "glowOffset": {
+        "x": 0,
+        "y": -0.5,
+        "r": 0.5
+      }
     }
   },
   "landZones": [
@@ -849,172 +1339,172 @@
       "xpNeeded": 2070,
       "coinBonus": 40,
       "treeStage": 3,
-      "unlockText": "Freigeschaltet: Baumaterial für Lager und Land, Grundstück Bachwiese."
+      "unlockText": "Freigeschaltet: Baumaterial für Lager und Land, Bachwiese, Rotbäckchen-Äpfel, Lichter-Rentier."
     },
     {
       "level": 7,
       "xpNeeded": 3091,
       "coinBonus": 45,
       "treeStage": 3,
-      "unlockText": "Ehrengast des Alpentals."
+      "unlockText": "Freigeschaltet: Krippen-Esel und Bratapfel-Stand."
     },
     {
       "level": 8,
       "xpNeeded": 4339,
       "coinBonus": 50,
       "treeStage": 3,
-      "unlockText": "Hüter des verschneiten Winterhofs."
+      "unlockText": "Freigeschaltet: Mandeln und Mandelbude."
     },
     {
       "level": 9,
       "xpNeeded": 5820,
       "coinBonus": 55,
       "treeStage": 3,
-      "unlockText": "Meister des Wintertals."
+      "unlockText": "Freigeschaltet: Marzipankartoffeln und Riesen-Nussknacker."
     },
     {
       "level": 10,
       "xpNeeded": 7542,
       "coinBonus": 60,
       "treeStage": 3,
-      "unlockText": "Höchste Stufe auf dem Winterhof erreicht."
+      "unlockText": "Freigeschaltet: Tannengrün und Kranzbinderei."
     },
     {
       "level": 11,
-      "xpNeeded": 9509,
+      "xpNeeded": 10460,
       "coinBonus": 65,
       "treeStage": 3,
-      "unlockText": "Stufe 11 erreicht."
+      "unlockText": "Freigeschaltet: Schneeeule und Wichtelpost."
     },
     {
       "level": 12,
-      "xpNeeded": 11728,
+      "xpNeeded": 14074,
       "coinBonus": 70,
       "treeStage": 3,
-      "unlockText": "Stufe 12 erreicht."
+      "unlockText": "Freigeschaltet: Walnüsse, Spielzeugwerkstatt und Lebkuchen-Tor."
     },
     {
       "level": 13,
-      "xpNeeded": 14202,
+      "xpNeeded": 18463,
       "coinBonus": 75,
       "treeStage": 3,
       "unlockText": "Stufe 13 erreicht."
     },
     {
       "level": 14,
-      "xpNeeded": 16937,
+      "xpNeeded": 23712,
       "coinBonus": 80,
       "treeStage": 3,
       "unlockText": "Stufe 14 erreicht."
     },
     {
       "level": 15,
-      "xpNeeded": 19936,
+      "xpNeeded": 29904,
       "coinBonus": 85,
       "treeStage": 3,
       "unlockText": "Stufe 15 erreicht."
     },
     {
       "level": 16,
-      "xpNeeded": 23203,
+      "xpNeeded": 37125,
       "coinBonus": 90,
       "treeStage": 3,
       "unlockText": "Stufe 16 erreicht."
     },
     {
       "level": 17,
-      "xpNeeded": 26743,
+      "xpNeeded": 45463,
       "coinBonus": 95,
       "treeStage": 3,
       "unlockText": "Stufe 17 erreicht."
     },
     {
       "level": 18,
-      "xpNeeded": 30559,
+      "xpNeeded": 55006,
       "coinBonus": 100,
       "treeStage": 3,
       "unlockText": "Stufe 18 erreicht."
     },
     {
       "level": 19,
-      "xpNeeded": 34654,
+      "xpNeeded": 65843,
       "coinBonus": 105,
       "treeStage": 3,
       "unlockText": "Stufe 19 erreicht."
     },
     {
       "level": 20,
-      "xpNeeded": 39031,
+      "xpNeeded": 78062,
       "coinBonus": 110,
       "treeStage": 3,
       "unlockText": "Stufe 20 erreicht."
     },
     {
       "level": 21,
-      "xpNeeded": 43694,
+      "xpNeeded": 91757,
       "coinBonus": 115,
       "treeStage": 3,
       "unlockText": "Stufe 21 erreicht."
     },
     {
       "level": 22,
-      "xpNeeded": 48644,
+      "xpNeeded": 107017,
       "coinBonus": 120,
       "treeStage": 3,
       "unlockText": "Stufe 22 erreicht."
     },
     {
       "level": 23,
-      "xpNeeded": 53887,
+      "xpNeeded": 123940,
       "coinBonus": 125,
       "treeStage": 3,
       "unlockText": "Stufe 23 erreicht."
     },
     {
       "level": 24,
-      "xpNeeded": 59423,
+      "xpNeeded": 142615,
       "coinBonus": 130,
       "treeStage": 3,
       "unlockText": "Stufe 24 erreicht."
     },
     {
       "level": 25,
-      "xpNeeded": 65255,
+      "xpNeeded": 163138,
       "coinBonus": 135,
       "treeStage": 3,
       "unlockText": "Stufe 25 erreicht."
     },
     {
       "level": 26,
-      "xpNeeded": 71387,
+      "xpNeeded": 185606,
       "coinBonus": 140,
       "treeStage": 3,
       "unlockText": "Stufe 26 erreicht."
     },
     {
       "level": 27,
-      "xpNeeded": 77820,
+      "xpNeeded": 210114,
       "coinBonus": 145,
       "treeStage": 3,
       "unlockText": "Stufe 27 erreicht."
     },
     {
       "level": 28,
-      "xpNeeded": 84557,
+      "xpNeeded": 236760,
       "coinBonus": 150,
       "treeStage": 3,
       "unlockText": "Stufe 28 erreicht."
     },
     {
       "level": 29,
-      "xpNeeded": 91601,
+      "xpNeeded": 265643,
       "coinBonus": 155,
       "treeStage": 3,
       "unlockText": "Stufe 29 erreicht."
     },
     {
       "level": 30,
-      "xpNeeded": 98953,
+      "xpNeeded": 296859,
       "coinBonus": 160,
       "treeStage": 3,
       "unlockText": "Stufe 30 erreicht."
@@ -1304,8 +1794,8 @@
     "slots": 4,
     "minLines": 1,
     "maxLines": 3,
-    "coinFactor": 1.42,
-    "xpFactor": 1.35,
+    "coinFactor": 1.1,
+    "xpFactor": 1.0,
     "refillSeconds": 90
   },
   "stand": {

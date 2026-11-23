@@ -407,3 +407,13 @@ describe('Baumaterial (ab Stufe 6)', () => {
     if (s.villagerOffer) expect(CONTENT.items[s.villagerOffer.item]!.category).not.toBe('material');
   });
 });
+
+describe('Inhaltsplan', () => {
+  it('Jede Stufe 2–12 bringt mindestens 1 Neuheit', () => {
+    const unlocks = [
+      ...Object.values(CONTENT.items), ...Object.values(CONTENT.animals), ...Object.values(CONTENT.stations),
+      ...Object.values(CONTENT.decorations), ...CONTENT.landZones
+    ].map((x) => x.unlockLevel);
+    for (let l = 2; l <= 12; l++) expect(unlocks.includes(l), `Stufe ${l} ohne Neuheit`).toBe(true);
+  });
+});

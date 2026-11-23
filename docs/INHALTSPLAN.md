@@ -73,7 +73,7 @@ Zusätzlich je Stufe 1–2 Weihnachts-Deko (z. B. Riesen-Nussknacker, Lichter-Re
 
 ## Reihenfolge beim Einbau
 1. ~~Baumaterial im Kern + Tests, Bachwiese~~ erledigt 23.11.
-2. Stufe 6–12 als Daten + Bot bis Stufe 12.
+2. ~~Stufe 6–12 als Daten + Bot~~ erledigt 23.11.
 3. Bergbahn-Lieferungen.
 4. Stufe 13–19 + Eisfischen + Schneestollen.
 5. Weihnachtsmarkt-Fest, Stufe 20–30, Karte vergrößern.
