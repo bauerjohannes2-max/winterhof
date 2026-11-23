@@ -407,7 +407,7 @@ function run(c: Ctx, cmd: Command): void {
     }
     case 'moveObject': {
       const o = s.objects.find((x) => x.id === cmd.objectId) ?? fail('not_found', 'Objekt nicht gefunden.');
-      if (o.kind === 'prop' && o.type === 'dailyChest') fail('locked', 'Die Truhe bleibt am Steg.');
+      if (o.kind === 'prop' && o.type === 'dailyChest') fail('locked', 'Die Truhe bleibt am Haupthaus.');
       requirePlace(c, o.kind, o.type, cmd.gx, cmd.gy, o.id);
       o.gx = cmd.gx;
       o.gy = cmd.gy;

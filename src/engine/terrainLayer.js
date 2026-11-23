@@ -6,7 +6,6 @@
 import { Container, Graphics, Sprite, TilingSprite } from 'pixi.js';
 import { LAND_ZONES } from '../gameData.js';
 import { TERRAIN, SURFACE, PLAYABLE_MIN, PLAYABLE_MAX } from './worldGrid.js';
-import { createAlpineWaterLayer } from './waterShader.js';
 
 function isoTilePoly(gridToWorld, gx, gy, pad = 0) {
   const a = gridToWorld(gx - pad, gy - pad);
@@ -69,10 +68,6 @@ export class TerrainLayer {
     this.roadContainer = new Container();
     this._buildGridCobblestoneRoads();
     this.container.addChild(this.roadContainer);
-
-    // 4. Custom GLSL Glacial Alpine Brook & Pond (aligned 1:1 to WorldGrid WATER column gx=14)
-    this.waterLayer = createAlpineWaterLayer(gridToWorld);
-    this.container.addChild(this.waterLayer.container);
 
     // 5. Grounding Base Plates (Footprint Foundations under buildings/landmarks/props)
     this.groundingGfx = new Graphics();
@@ -153,34 +148,8 @@ export class TerrainLayer {
    * so sprites sit firmly PLANTED into the snow (eliminating the "floating sticker" look!).
    */
   _rebuildGroundingPlates() {
-    const g = this.groundingGfx;
-    const g2w = this.gridToWorld;
-    g.clear();
-
-    for (const ent of this.grid.entities.values()) {
-      if (ent.kind === 'building' || ent.kind === 'station') {
-        // Subtle recessed packed-snow & timber-perimeter foundation diamond matching exact 2x2 footprint!
-        const outer = isoRectPoly(g2w, ent.gx - 0.06, ent.gy - 0.06, ent.gx + ent.w + 0.06, ent.gy + ent.h + 0.06);
-        const inner = isoRectPoly(g2w, ent.gx + 0.03, ent.gy + 0.03, ent.gx + ent.w - 0.03, ent.gy + ent.h - 0.03);
-        g.poly(outer).fill({ color: 0x7a99bc, alpha: 0.26 });
-        g.poly(inner).fill({ color: 0xdce9f6, alpha: 0.82 }).stroke({ color: 0xf8fbff, width: 2.2, alpha: 0.92 });
-        // Directional Top-Left cast shadow stretching SE from base foundation
-        const sh = isoRectPoly(g2w, ent.gx + 0.18, ent.gy + 0.14, ent.gx + ent.w + 0.28, ent.gy + ent.h + 0.24);
-        g.poly(sh).fill({ color: 0x3b5c86, alpha: 0.20 });
-      } else if (ent.kind === 'landmark') {
-        // Christmas Tree sits on a crisp 2x2 snow-dusted octagonal stone ring foundation
-        const outer = isoRectPoly(g2w, ent.gx - 0.04, ent.gy - 0.04, ent.gx + ent.w + 0.04, ent.gy + ent.h + 0.04);
-        g.poly(outer).fill({ color: 0x7b98b8, alpha: 0.22 });
-        const cx = g2w(ent.gx + ent.w * 0.5, ent.gy + ent.h * 0.5);
-        g.ellipse(cx.x + 8, cx.y + 8, 92, 46).fill({ color: 0x3b5c86, alpha: 0.22 });
-        g.ellipse(cx.x, cx.y + 2, 86, 43).fill({ color: 0xe6eff8, alpha: 0.78 }).stroke({ color: 0xffffff, width: 2, alpha: 0.88 });
-      } else if (ent.kind === 'prop' || ent.kind === 'deco' || ent.kind === 'chest') {
-        // Subtle packed-snow footprint cushion under smaller props
-        const cx = g2w(ent.gx + 0.5, ent.gy + 0.5);
-        g.ellipse(cx.x + 4, cx.y + 4, 34, 17).fill({ color: 0x45668f, alpha: 0.20 });
-        g.ellipse(cx.x, cx.y + 1, 30, 15).fill({ color: 0xf3f8fe, alpha: 0.55 });
-      }
-    }
+    // Keine Platten/Rauten mehr unter Gebäuden (Hannes 23.11.). Nur der weiche Sprite-Schatten bleibt.
+    this.groundingGfx.clear();
   }
 
   _drawFenceEdge(g, edge) {
@@ -266,7 +235,6 @@ export class TerrainLayer {
   }
 
   update(state, uiState, sec, ev, duskFactor, showDebugGrid = false) {
-    this.waterLayer.update(sec, ev, duskFactor);
 
     const fenceSig = `${this.grid.fenceEdges.length}|${(state.unlockedLands || []).join(',')}`;
     if (fenceSig !== this._lastFenceSig) {
@@ -286,18 +254,19 @@ export class TerrainLayer {
 
     this.renderDebugGrid(showDebugGrid);
 
-    // Subtle lock zone overlay only during place/move modes
+    // Gesperrtes Land immer leicht abgedunkelt (wie bei den großen Aufbauspielen),
+    // beim Bauen/Verschieben etwas deutlicher.
     this.zoneOverlayGfx.clear();
-    if (uiState.mode === 'place' || uiState.mode === 'move') {
+    {
       const unlocked = new Set(state.unlockedLands || []);
+      const building = uiState.mode === 'place' || uiState.mode === 'move';
       const g2w = this.gridToWorld;
       for (const zone of LAND_ZONES) {
         if (unlocked.has(zone.id)) continue;
         const b = zone.bounds;
         this.zoneOverlayGfx
           .poly(isoRectPoly(g2w, b.x0, b.y0, b.x1 + 1, b.y1 + 1))
-          .fill({ color: 0x64748b, alpha: 0.14 })
-          .stroke({ color: 0x94a3b8, width: 1.5, alpha: 0.45 });
+          .fill({ color: 0x46648c, alpha: building ? 0.2 : 0.11 });
       }
     }
 

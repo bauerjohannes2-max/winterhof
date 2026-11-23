@@ -417,3 +417,22 @@ describe('Inhaltsplan', () => {
     for (let l = 2; l <= 12; l++) expect(unlocks.includes(l), `Stufe ${l} ohne Neuheit`).toBe(true);
   });
 });
+
+describe('Kern-Qualität Karte (23.11.)', () => {
+  it('Karte hat kein Wasser, Ostwiese schließt direkt an', () => {
+    const z = CONTENT.landZones.find((x) => x.id === 'bachwiese')!;
+    expect(z.bounds.x0).toBe(14);
+    const s = { ...createNewGame(T0), unlockedZones: ['east_glade', 'bachwiese'] };
+    expect(canPlace(s, 14, 3, 1, 1).ok).toBe(true);
+  });
+
+  it('Truhe zieht in alten Ständen neben das Haupthaus', () => {
+    const s = createNewGame(T0);
+    const chest = s.objects.find((o) => o.type === 'dailyChest')!;
+    expect([chest.gx, chest.gy]).toEqual([6, 3]);
+    const old = { ...s, objects: s.objects.map((o) => (o.type === 'dailyChest' ? { ...o, gx: 11, gy: 11 } : o)) };
+    const loaded = deserialize(JSON.stringify(old), T0).state;
+    const c2 = loaded.objects.find((o) => o.type === 'dailyChest')!;
+    expect([c2.gx, c2.gy]).toEqual([6, 3]);
+  });
+});

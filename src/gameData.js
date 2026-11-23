@@ -26,7 +26,7 @@ export const ACHIEVEMENTS = content.achievements.map((a) => {
 export const CHAPTERS = content.chapters;
 
 export const ALBUM_SECRETS = [
-  { id: 'secret_chest', title: 'Tages-Schatztruhe', desc: 'Öffne die goldene Schatztruhe am Teichsteg.', check: (s) => (s.stats.chestsOpened || 0) > 0 },
+  { id: 'secret_chest', title: 'Tages-Schatztruhe', desc: 'Öffne die goldene Schatztruhe am Haupthaus.', check: (s) => (s.stats.chestsOpened || 0) > 0 },
   { id: 'secret_villager', title: 'Haustür-Handel', desc: 'Erfülle ein persönliches Kaufangebot eines Dorfbewohners.', check: (s) => (s.stats.villagerDeals || 0) > 0 },
   { id: 'secret_land', title: 'Neue Grenzen', desc: 'Erweitere deinen Winterhof um ein neues Grundstück.', check: (s) => (s.stats.landsUnlocked || 0) > 0 },
   { id: 'secret_master', title: 'Meisterbäcker', desc: 'Erreiche mindestens 1 Meisterstern an einem Gebäude.', check: (s) => (s.stations || []).some((st) => (st.craftedCount || 0) >= 3) }

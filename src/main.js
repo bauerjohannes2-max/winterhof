@@ -333,7 +333,7 @@ class WinterhofGame {
           this.world.triggerBounce(ev.fieldId);
           if (p) {
             this.world.spawnBurst(p.x, p.y, crop?.color || '#FDE047', 8, 'star');
-            this.world.spawnFloater(p.x, p.y - 12, `+${ev.qty} ${crop?.name || ''}`, ev.crop, '#FFFDF7');
+            this.world.spawnFloater(p.x, p.y - 12, `+${ev.qty}`, ev.crop, '#FFFDF7');
             this.world.spawnFlyingHudItem(p.x, p.y - 4, ev.crop, 'barn');
           }
           break;
@@ -352,7 +352,7 @@ class WinterhofGame {
           this.world.triggerBounce(ev.animalId);
           if (p) {
             this.world.spawnBurst(p.x, p.y, '#FDE047', 9, 'star');
-            this.world.spawnFloater(p.x, p.y - 10, `+1 ${it?.name || ''}`, ev.item, '#FFFDF7');
+            this.world.spawnFloater(p.x, p.y - 10, '+1', ev.item, '#FFFDF7');
             this.world.spawnFlyingHudItem(p.x, p.y - 2, ev.item, 'barn');
           }
           break;
@@ -394,7 +394,7 @@ class WinterhofGame {
           this.world.triggerBounce(ev.stationId);
           if (p) {
             this.world.spawnBurst(p.x, p.y, '#FDE047', 12, 'star');
-            this.world.spawnFloater(p.x, p.y - 14, `+1 ${it?.name || ''}`, ev.item, '#FFFDF7');
+            this.world.spawnFloater(p.x, p.y - 14, '+1', ev.item, '#FFFDF7');
             this.world.spawnFlyingHudItem(p.x, p.y, ev.item, 'barn');
           }
           break;
@@ -1317,7 +1317,7 @@ class WinterhofGame {
       const p = gridToWorld(z.signPos.gx + 0.5, z.signPos.gy + 0.5);
       candidates.push({
         kind: 'land_sign', entity: z, depth: z.signPos.gx + z.signPos.gy + 0.8,
-        hit: () => Math.abs(wx - p.x) < 52 && wy > p.y - 68 && wy < p.y + 14
+        hit: () => Math.abs(wx - p.x) < 50 && wy > p.y - 72 && wy < p.y + 12
       });
     }
 
@@ -2034,7 +2034,7 @@ class WinterhofGame {
         ${chestReady ? `
           <div class="cozy-card" style="border-color:var(--brass);background:#FFFBF0;justify-content:space-between">
             <div class="card-info">
-              <div class="card-title">Tägliche Schatztruhe am Teichsteg</div>
+              <div class="card-title">Tägliche Schatztruhe am Haupthaus</div>
               <div class="card-sub">Serie: ${this.state.dailyStreak || 0} Tage · Münzen &amp; Vorräte</div>
             </div>
             <button id="btn-claim-chest-modal" class="btn-gold">Öffnen</button>

@@ -101,8 +101,9 @@ export function validateWorld(grid, state, villagers = []) {
       }
     }
   }
-  if (grid.bridgeTiles.length === 0) {
-    errors.push('R5_NO_BRIDGE: World must have an aligned bridge crossing the alpine brook');
+  // Seit 23.11. gibt es kein Wasser und keine Brücke mehr (Hannes). Regel 5b: es darf auch keins geben.
+  if (grid.bridgeTiles.length > 0 || grid.tiles.some((t) => t.terrain === TERRAIN.WATER)) {
+    errors.push('R5_NO_WATER: Karte darf kein Wasser/keine Brücke enthalten');
   }
 
   // Rule 6: Road Connectivity Invariant (BFS from main road must reach every road/plaza/bridge tile)

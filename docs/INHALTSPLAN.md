@@ -25,7 +25,7 @@ Quellen: Zufallsfund beim Ernten/Abholen/Produzieren, Tagestruhe, volle Bergbahn
 ## Neues Land
 | Stufe | Grundstück | Lage |
 |---|---|---|
-| 6 | Bachwiese | östlich vom Bach, über die Brücke (im Spiel) |
+| 6 | Ostwiese | Land im Osten bis zum Waldrand (früher Bachwiese, Bach raus 23.11.) |
 | 10 | Waldsaum | westlich hinter dem Tannenwäldchen |
 | 13 | Seeufer | Ufer am Weiher (Eisfischen) |
 | 16 | Nordhang | unter der Felskante (Stolleneingang) |
@@ -34,7 +34,7 @@ Quellen: Zufallsfund beim Ernten/Abholen/Produzieren, Tagestruhe, volle Bergbahn
 ## Stufen 6–30
 | Stufe | Art | Inhalt |
 |---|---|---|
-| 6 | **System + Land** | Baumaterial, Grundstück Bachwiese · Feld **Rotbäckchen-Äpfel** |
+| 6 | **System + Land** | Baumaterial, Grundstück Ostwiese · Feld **Rotbäckchen-Äpfel** |
 | 7 | Tier + Gebäude | **Krippen-Esel** (holt Brennholz aus dem Wald) · **Bratapfel-Stand**: Bratapfel, Apfelpunsch (mit Brennholz) |
 | 8 | Feld + Gebäude | **Mandeln** · **Mandelbude**: Gebrannte Mandeln, Marzipankartoffeln |
 | 9 | **System + Wahrzeichen** | **Bergbahn-Lieferungen**: Geschenkpakete für das Bergdorf, Gondel mit 6 Kisten |

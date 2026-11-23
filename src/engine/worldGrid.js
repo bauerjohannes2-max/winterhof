@@ -9,7 +9,7 @@ import { LAND_ZONES } from '../gameData.js';
 export const WORLD_MIN = -4;
 export const WORLD_MAX = 19; // 24x24 total valley grid covering playable 0..15 + scenic border
 export const PLAYABLE_MIN = 0;
-export const PLAYABLE_MAX = 13; // 14x14 buildable estate inside brook (x=14) and pond (y=14)
+export const PLAYABLE_MAX = 16; // Hof inkl. Ostwiese (x bis 16), Rand = Waldsaum
 
 export const TERRAIN = {
   SNOW: 'SNOW',
@@ -94,23 +94,7 @@ export class WorldGrid {
       }
     }
 
-    // 2. Carve Glacial Alpine Brook strictly along Column gx = 14 (gy = -4..15)
-    //    and widening smoothly into the Scenic Lakeside Pond along gy = 14..15 (gx = 8..15)
-    //    (ZERO overlap with ANY playable zone or fence!)
-    for (let gy = this.min; gy <= 16; gy++) {
-      const t = this.getTile(14, gy);
-      if (t) t.terrain = TERRAIN.WATER;
-    }
-    for (let gy = 14; gy <= 15; gy++) {
-      for (let gx = 8; gx <= 15; gx++) {
-        const t = this.getTile(gx, gy);
-        if (t) t.terrain = TERRAIN.WATER;
-      }
-    }
-    for (let gx = 6; gx <= 10; gx++) {
-      const t = this.getTile(gx, 16);
-      if (t) t.terrain = TERRAIN.WATER;
-    }
+    // 2. Kein Wasser mehr (Hannes 23.11.: fließendes Wasser raus, keine Brücke).
 
     // 3. Perimeter Cliffs & Forest Rim (strictly outside playable 0..13 & outside road gy = 6)
     for (let gy = this.min; gy <= this.max; gy++) {
@@ -130,12 +114,7 @@ export class WorldGrid {
     for (let gx = this.min; gx <= this.max; gx++) {
       const t = this.getTile(gx, 6);
       if (!t) continue;
-      if (t.terrain === TERRAIN.WATER) {
-        // Road (+gx) crosses Water (+gy) orthogonally -> BRIDGE_X!
-        t.surface = SURFACE.BRIDGE_X;
-      } else {
-        t.surface = SURFACE.ROAD;
-      }
+      t.surface = SURFACE.ROAD;
     }
 
     // Clean Chalet entrance path tile (5, 5) connecting Chalet (4..5, 3..4) -> Main Road (5, 6)

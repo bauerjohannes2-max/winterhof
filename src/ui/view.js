@@ -12,7 +12,8 @@ const PROP_KEYS = {
   christmasTree: 'christmasTree',
   wishlistBoard: 'wishlistBoard',
   sleigh: 'sleighPos',
-  mailbox: 'mailbox'
+  mailbox: 'mailbox',
+  dailyChest: 'dailyChestPos'
 };
 
 function hash(str) {

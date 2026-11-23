@@ -4,7 +4,7 @@
 // gemeldet, nicht still verworfen.
 // ============================================================================
 import { CONTENT } from './content';
-import { validateLayout } from './map';
+import { canPlace, validateLayout } from './map';
 import { SCHEMA_VERSION, createNewGame, emptyStats, levelForXp } from './state';
 import type { GameState, MapObject, StatKey } from './types';
 
@@ -69,7 +69,19 @@ function repair(s: GameState, nowMs: number): GameState {
   out.xp = Math.max(0, Math.floor(Number(out.xp) || 0));
   out.level = Math.max(out.level || 1, levelForXp(out.xp));
   out.clockMaxMs = Math.max(out.clockMaxMs || 0, 0);
+  chestToHome(out);
   return out;
+}
+
+/** Truhe steht fest neben dem Haupthaus (Hannes 23.11.). Alte Stände: umziehen, wenn der Platz frei ist. */
+export function chestToHome(s: GameState): void {
+  const chest = s.objects.find((o) => o.kind === 'prop' && o.type === 'dailyChest');
+  const home = CONTENT.start.objects.find((o) => o.type === 'dailyChest');
+  if (!chest || !home || (chest.gx === home.gx && chest.gy === home.gy)) return;
+  if (canPlace(s, home.gx, home.gy, 1, 1, chest.id).ok) {
+    chest.gx = home.gx;
+    chest.gy = home.gy;
+  }
 }
 
 // ---------------------------------------------------------------- Altformat (v2–v7)

@@ -37,7 +37,9 @@ export function worldToGrid(wx, wy) {
 const ART = content.art.sprites;
 const artH = (key, scale = 1) => (ART[key]?.heightTiles ?? 0.5) * TILE_W * scale;
 
-export const DAILY_CHEST_POS = { gx: 11, gy: 11 };
+// Fallback, falls der Stand keine Truhe hat (Truhe steht fest neben dem Haupthaus)
+export const DAILY_CHEST_POS = { gx: 6, gy: 3 };
+const chestPosOf = (state) => state?.dailyChestPos || DAILY_CHEST_POS;
 
 const VILLAGER_QUOTES = [
   'Es duftet nach frischem Gebäck.',
@@ -47,20 +49,8 @@ const VILLAGER_QUOTES = [
   'Die Laternen leuchten wunderschön.'
 ];
 
-// Strictly valid WorldGrid walkable ROAD / PLAZA / BRIDGE destinations for A* pathfinding
-const ROAD_DESTINATIONS = [
-  { gx: 2, gy: 6 },
-  { gx: 4, gy: 6 },
-  { gx: 4, gy: 7 },
-  { gx: 5, gy: 5 },
-  { gx: 6, gy: 6 },
-  { gx: 8, gy: 5 },
-  { gx: 9, gy: 5 },
-  { gx: 10, gy: 6 },
-  { gx: 12, gy: 6 },
-  { gx: 14, gy: 6 }, // Bridge crossing!
-  { gx: 15, gy: 6 }
-];
+// Fester Kundenplatz: auf dem Weg vor der Wunschtafel (Mitte der Kachel)
+const CUSTOMER_SPOT = { gx: 9.5, gy: 6.5 };
 
 // Bild je Objekt kommt aus den Inhalten (sprite-Feld); fehlt die Datei, liefert sprites.js einen Platzhalter.
 const spriteOf = (table, type, fallback) => content[table]?.[type]?.sprite || fallback;
@@ -149,9 +139,9 @@ export class WinterWorld {
   _initVillagers() {
     // Spawn strictly on center of walkable WorldGrid ROAD / PLAZA tiles!
     const specs = [
-      { id: 'vil_1', name: 'Oma Hilde', sprite: 'alpine_villager', gx: 5.5, gy: 6.5 },
-      { id: 'vil_2', name: 'Bäcker Franz', sprite: 'alpine_villager_green', gx: 8.5, gy: 5.5 },
-      { id: 'vil_3', name: 'Lukas', sprite: 'alpine_villager_navy', gx: 11.5, gy: 6.5 }
+      { id: 'vil_1', name: 'Oma Hilde', sprite: 'alpine_villager', gx: CUSTOMER_SPOT.gx, gy: CUSTOMER_SPOT.gy },
+      { id: 'vil_2', name: 'Bäcker Franz', sprite: 'alpine_villager_green', gx: CUSTOMER_SPOT.gx, gy: CUSTOMER_SPOT.gy },
+      { id: 'vil_3', name: 'Lukas', sprite: 'alpine_villager_navy', gx: CUSTOMER_SPOT.gx, gy: CUSTOMER_SPOT.gy }
     ];
     this.villagers = specs.map((s, idx) => ({
       ...s,
@@ -161,8 +151,8 @@ export class WinterWorld {
       bubble: null,
       bubbleTimer: 0,
       offer: null,
-      facing: 1,
-      stepPhase: idx * 2.1
+      facing: -1,
+      stepPhase: 0
     }));
   }
 
@@ -247,7 +237,6 @@ export class WinterWorld {
     const rand = makeSeededRand(20261224);
     const cliffTex = this.textures.get('alpine_cliff');
     const pineTex = this.textures.get('deco_pine');
-    const bridgeTex = this.textures.get('timber_bridge');
     const shadowTex = this.textures.get('fx_shadow');
 
     const addProp = (tex, gx, gy, w, h, opts = {}) => {
@@ -280,7 +269,7 @@ export class WinterWorld {
       return { wrap, sp, phase: rand() * Math.PI * 2 };
     };
 
-    // 1. Style-C Sculpted Snowy Alpine Cliffs strictly in BORDER ring (outside playable 0..13 & outside brook!)
+    // 1. Felsgrat nur hinten im Norden (Kulisse)
     if (cliffTex) {
       const cliffs = [
         // Northern terraced alpine ridge (gy = -2.2)
@@ -291,15 +280,8 @@ export class WinterWorld {
         { gx: 5.5, gy: -2.3, s: 300, flip: false },
         { gx: 8.2, gy: -2.2, s: 285, flip: true },
         { gx: 10.9, gy: -2.0, s: 290, flip: false },
-        { gx: 13.0, gy: -1.6, s: 255, flip: true },
-        // Eastern cliff ridge beyond Bachwiese (gx >= 20, keeping entire 3D bridge 100% unobstructed!)
-        { gx: 20.0, gy: 0.6, s: 255, flip: false },
-        { gx: 20.6, gy: 3.6, s: 230, flip: true },
-        { gx: 20.8, gy: 10.2, s: 240, flip: false },
-        { gx: 21.2, gy: 15.8, s: 235, flip: true },
-        // Western snow-rock ridge strictly outside west_forest (gx <= -2.4, clear of road gy=6!)
-        { gx: -2.6, gy: 8.6, s: 240, flip: true },
-        { gx: -2.4, gy: 11.8, s: 255, flip: false }
+        { gx: 13.6, gy: -2.2, s: 280, flip: true },
+        { gx: 16.4, gy: -2.0, s: 265, flip: false }
       ];
       for (const c of cliffs) {
         addProp(cliffTex, c.gx, c.gy, c.s, c.s, {
@@ -313,69 +295,54 @@ export class WinterWorld {
       }
     }
 
-    // 2. Varied Multi-Scale Alpine Pine Forest Rim strictly in BORDER zone
+    // 2. Waldsaum als ruhiger Rahmen (Hannes 23.11.: Bäume nur am Rand, nie im Hof).
+    //    Feste, versetzte Reihen statt Zufallsstreuung. Hinten (Nord/West) hoch und dicht,
+    //    vorn (Süd/Ost, unten im Bild) klein, damit nichts den Hof verdeckt.
     if (pineTex) {
       const pineTints = [0xffffff, 0xeef8f2, 0xe3f2ec, 0xf6fbf8];
-      const forestCoords = [];
+      const forest = [];
+      const ROAD_GAP = (gy) => gy > 5.0 && gy < 8.0; // Weg gy = 6 bleibt frei
+      const row = (fixed, from, to, step, axis, scale, offset = 0, gap = false) => {
+        for (let v = from + offset; v <= to; v += step) {
+          if (gap && ROAD_GAP(v)) continue;
+          const j = (rand() - 0.5) * 0.18; // kaum Versatz: wirkt gewachsen, nicht gestreut
+          forest.push(axis === 'x' ? { gx: v + j, gy: fixed, scale } : { gx: fixed, gy: v + j, scale });
+        }
+      };
+      // Hinten Nord (oben im Bild): zwei dichte Reihen vor/hinter den Felsen
+      row(-1.35, -3.5, 17.5, 1.2, 'x', 1.0);
+      row(-3.3, -4, 18, 1.2, 'x', 1.12, 0.6);
+      // Hinten West (oben links): drei Reihen, Weglücke frei
+      row(-1.35, -0.5, 17, 1.2, 'y', 1.0, 0, true);
+      row(-2.7, -1, 17.5, 1.2, 'y', 1.1, 0.6, true);
+      row(-4.0, -1, 18, 1.2, 'y', 1.18, 0.3, true);
+      row(-5.3, -1, 18, 1.2, 'y', 1.2, 0.0); // Weg verschwindet im Wald (keine Lücke)
+      // Vorn Süd (unten links): klein vorne, größer weiter draußen
+      row(15.0, -3, 18.5, 1.05, 'x', 0.56);
+      row(16.2, -3.5, 19, 1.15, 'x', 0.8, 0.5);
+      row(17.5, -4, 19.5, 1.2, 'x', 1.05);
+      // Vorn Ost (unten rechts): gleich aufgebaut, Weglücke frei
+      row(17.9, -1, 14.5, 1.05, 'y', 0.6, 0, true);
+      row(19.1, -1.5, 15.5, 1.15, 'y', 0.85, 0.5, true);
+      row(20.4, -2, 16.5, 1.2, 'y', 1.05, 0, true);
+      row(21.0, 4.6, 8.6, 1.0, 'y', 0.95); // Wegende im Wald
 
-      // Northern forest crown behind cliffs
-      for (let gx = -4; gx <= 16; gx += 1.4) {
-        forestCoords.push({ gx: gx + (rand() - 0.5) * 0.4, gy: -3.2 + (rand() - 0.5) * 0.7 });
-        forestCoords.push({ gx: gx + (rand() - 0.5) * 0.4, gy: -1.6 + (rand() - 0.5) * 0.5 });
-      }
-      // Western forest flank (strictly gx <= -1.6, road gap gy = 4.8..7.6!)
-      for (let gy = -0.5; gy <= 15.5; gy += 1.5) {
-        if (gy > 4.6 && gy < 7.6) continue;
-        forestCoords.push({ gx: -3.4 + (rand() - 0.5) * 0.7, gy: gy + (rand() - 0.5) * 0.4 });
-        forestCoords.push({ gx: -1.6 + (rand() - 0.5) * 0.4, gy: gy + (rand() - 0.5) * 0.4 });
-      }
-      // Eastern forest flank behind Bachwiese (gx >= 17.5, road gap gy = 4.6..7.8!)
-      for (let gy = -1.0; gy <= 14.5; gy += 1.55) {
-        if (gy > 4.6 && gy < 7.8) continue;
-        forestCoords.push({ gx: 17.7 + (rand() - 0.5) * 0.4, gy: gy + (rand() - 0.5) * 0.4 });
-        forestCoords.push({ gx: 19.3 + (rand() - 0.5) * 0.5, gy: gy + (rand() - 0.5) * 0.4 });
-      }
-      // Southern forest frame far outside pond
-      for (let gx = -1.5; gx <= 7.0; gx += 1.7) {
-        forestCoords.push({ gx: gx + (rand() - 0.5) * 0.5, gy: 16.6 + (rand() - 0.5) * 0.6 });
-      }
-
-      for (let i = 0; i < forestCoords.length; i++) {
-        const fc = forestCoords[i];
-        const scale = 0.78 + rand() * 0.44;
+      forest.sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy));
+      for (let i = 0; i < forest.length; i++) {
+        const fc = forest[i];
+        const scale = fc.scale * (0.92 + rand() * 0.16);
         const size = 122 * scale;
         const node = addProp(pineTex, fc.gx, fc.gy, size, size * 1.12, {
           flipX: rand() > 0.5,
           tint: pineTints[i % pineTints.length],
           anchorY: 0.90,
           shadow: true,
-          shadowW: 0.72,
-          shadowH: 0.24,
-          shadowY: 3
+          shadowW: 0.62,
+          shadowH: 0.2,
+          shadowY: 3,
+          shadowAlpha: 0.4
         });
         if (node) this.swayingPines.push(node);
-      }
-    }
-
-    // 3. Mathematically Aligned 3D Timber Bridge driven directly by WorldGrid.bridgeTiles!
-    //    timber_bridge.webp spans bottom-left <-> top-right (+gy) unflipped.
-    //    For SURFACE.BRIDGE_X (road spans NW -> SE along +gx across a +gy stream), flipX = true aligns planks 100%!
-    if (bridgeTex) {
-      for (const bt of this.grid.bridgeTiles) {
-        const cx = bt.gx + 0.5;
-        const cy = bt.gy + 0.5;
-        const wp = gridToWorld(cx, cy);
-        const flipX = bt.surface === SURFACE.BRIDGE_X;
-        addProp(bridgeTex, cx, cy, 176, 152, {
-          flipX,
-          anchorY: 0.62,
-          zIndex: wp.y + 8,
-          shadow: true,
-          shadowW: 0.84,
-          shadowH: 0.26,
-          shadowY: 14,
-          shadowAlpha: 0.48
-        });
       }
     }
   }
@@ -470,6 +437,7 @@ export class WinterWorld {
 
   hitTestVillager(wx, wy) {
     for (const v of this.villagers) {
+      if (!v.offer) continue;
       const p = gridToWorld(v.gx, v.gy);
       if (Math.hypot(wx - p.x, wy - (p.y - 32)) < 38) return v;
     }
@@ -478,7 +446,8 @@ export class WinterWorld {
 
   hitTestDailyChest(wx, wy, chestReady) {
     if (!chestReady) return false;
-    const p = gridToWorld(DAILY_CHEST_POS.gx + 0.5, DAILY_CHEST_POS.gy + 0.5);
+    const cp = this._chestPos || DAILY_CHEST_POS;
+    const p = gridToWorld(cp.gx + 0.5, cp.gy + 0.5);
     return Math.hypot(wx - p.x, wy - (p.y - 18)) < 46;
   }
 
@@ -507,7 +476,7 @@ export class WinterWorld {
     this.elapsedSec += safeDt;
 
     // Keep WorldGrid synchronized with latest state
-    this.grid.syncFromState(state, DAILY_CHEST_POS);
+    this.grid.syncFromState(state, chestPosOf(state));
 
     // Record FPS sample
     this._fpsSamples[this._fpsIdx] = 1 / safeDt;
@@ -565,46 +534,12 @@ export class WinterWorld {
       }
     }
 
-    // A* Road-Locked Alpine Villagers (NEVER walk through buildings, fences, or water!)
+    // Keine herumlaufenden Figuren (Hannes 23.11.), bis es echte Laufanimationen gibt.
+    // Nur wer ein Angebot hat, steht still am festen Kundenplatz vor der Wunschtafel.
     for (const v of this.villagers) {
       if (v.bubbleTimer > 0) {
         v.bubbleTimer -= safeDt;
         if (v.bubbleTimer <= 0) v.bubble = null;
-      }
-      if (v.waitTimer > 0) {
-        v.waitTimer -= safeDt;
-        continue;
-      }
-      if (!v.path || v.path.length === 0) {
-        const dest = ROAD_DESTINATIONS[Math.floor(Math.random() * ROAD_DESTINATIONS.length)];
-        v.path = this.grid.findRoadPath(v.gx, v.gy, dest.gx, dest.gy);
-        if (v.path.length === 0) {
-          v.waitTimer = 1.5;
-          continue;
-        }
-      }
-      const next = v.path[0];
-      const dx = next.gx - v.gx;
-      const dy = next.gy - v.gy;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 0.06) {
-        v.gx = next.gx;
-        v.gy = next.gy;
-        v.path.shift();
-        if (v.path.length === 0) {
-          v.waitTimer = 1.8 + Math.random() * 3.0;
-          if (!v.offer && Math.random() < 0.35) {
-            v.bubble = VILLAGER_QUOTES[Math.floor(Math.random() * VILLAGER_QUOTES.length)];
-            v.bubbleTimer = 4.2;
-          }
-        }
-      } else {
-        const step = Math.min(dist, v.speed * safeDt);
-        v.gx += (dx / dist) * step;
-        v.gy += (dy / dist) * step;
-        const wdx = dx - dy;
-        if (Math.abs(wdx) > 0.01) v.facing = wdx >= 0 ? 1 : -1;
-        v.stepPhase += safeDt * 8.0;
       }
     }
 
@@ -719,50 +654,64 @@ export class WinterWorld {
     return pen;
   }
 
-  _acquireSignNode(zone) {
+  // Schild für gesperrtes Land (Hannes 23.11.): ein klares Holzschild, Schloss + Stufe.
+  // Preis erst beim Antippen. Ist die Stufe erreicht, zeigt es „Erweitern“ in Grün.
+  _acquireSignNode(zone, level) {
+    const open = level >= zone.unlockLevel;
+    const sig = open ? 'open' : 'locked';
     let node = this.signNodes.get(zone.id);
     if (!node) {
       const c = new Container();
       const g = new Graphics();
-
-      g.ellipse(0, 6, 24, 9).fill({ color: 0x3b5984, alpha: 0.34 });
-      g.roundRect(-4.5, -24, 9, 30, 2).fill(0x45200c);
-      g.roundRect(-2.8, -23, 5.6, 28, 1.5).fill(0x9a5525);
-      g.roundRect(-48, -56, 96, 36, 9).fill(0x4a2410).stroke({ color: 0xe4b662, width: 2.2 });
-      g.roundRect(-45, -53, 90, 30, 7).fill(0x693418);
-      g.roundRect(-44, -60, 88, 7, 4).fill(0xf8fbff);
-
-      c.addChild(g);
-
-      const title = new Text({
-        text: `${zone.cost} Münzen`,
+      const label = new Text({
+        text: '',
         style: new TextStyle({
           fontFamily: 'Inter, Segoe UI, system-ui, sans-serif',
-          fontSize: 11.5,
-          fontWeight: '800',
-          fill: 0xfef08a
+          fontSize: 15,
+          fontWeight: '900',
+          fill: 0xfffaf0,
+          stroke: { color: 0x3a1a08, width: 3 }
         })
       });
-      title.anchor.set(0.5);
-      title.y = -43;
-      c.addChild(title);
-
-      const sub = new Text({
-        text: `Ab Level ${zone.unlockLevel}`,
-        style: new TextStyle({
-          fontFamily: 'Inter, Segoe UI, system-ui, sans-serif',
-          fontSize: 9.5,
-          fontWeight: '700',
-          fill: 0xfcf6e8
-        })
-      });
-      sub.anchor.set(0.5);
-      sub.y = -29;
-      c.addChild(sub);
-
+      label.anchor.set(0, 0.5);
+      c.addChild(g, label);
       this.entityStage.addChild(c);
-      node = { container: c, title, sub, used: false };
+      node = { container: c, g, label, sig: '', used: false };
       this.signNodes.set(zone.id, node);
+    }
+    if (node.sig !== sig) {
+      node.sig = sig;
+      const g = node.g;
+      g.clear();
+      const W = 92, H = 34, top = -64;
+      // weicher Kontaktschatten
+      g.ellipse(4, 2, 20, 7).fill({ color: 0x2c4a70, alpha: 0.22 });
+      // Pfosten
+      g.roundRect(-5, top + H - 4, 10, -top - H + 6, 3).fill(0x4a2410);
+      g.roundRect(-2.5, top + H - 3, 4, -top - H + 4, 2).fill(0x9a5a2a);
+      // Brett: dunkle Kontur, harte Unterkante, Holzfläche, Lichtkante oben
+      g.roundRect(-W / 2, top + 3, W, H, 10).fill(0x3a1a08);
+      g.roundRect(-W / 2, top, W, H, 10).fill(0x3a1a08);
+      g.roundRect(-W / 2 + 2.5, top + 2.5, W - 5, H - 6, 8).fill(open ? 0x2f8f4e : 0xa8642e);
+      g.roundRect(-W / 2 + 6, top + 4.5, W - 12, 5, 3).fill({ color: 0xffffff, alpha: 0.28 });
+      // Schneehaube
+      g.roundRect(-W / 2 + 4, top - 4, W - 8, 8, 4).fill(0xf8fbff);
+      // Symbol links: Schloss bzw. Plus
+      const ix = -W / 2 + 19, iy = top + H / 2 - 1;
+      g.circle(ix, iy, 12).fill(0x3a1a08);
+      g.circle(ix, iy, 10).fill(0xfff3d6);
+      if (open) {
+        g.roundRect(ix - 6, iy - 1.8, 12, 3.6, 1.5).fill(0x2f8f4e);
+        g.roundRect(ix - 1.8, iy - 6, 3.6, 12, 1.5).fill(0x2f8f4e);
+      } else {
+        g.arc(ix, iy - 2, 3.6, Math.PI, 0).stroke({ color: 0x5a3214, width: 2.4 });
+        g.roundRect(ix - 5, iy - 2, 10, 8, 2).fill(0x5a3214);
+        g.circle(ix, iy + 1.6, 1.4).fill(0xfff3d6);
+      }
+      node.label.text = open ? 'Erweitern' : `Stufe ${zone.unlockLevel}`;
+      node.label.style.fontSize = open ? 13 : 15;
+      node.label.x = ix + 15;
+      node.label.y = iy;
     }
     node.used = true;
     node.container.visible = true;
@@ -894,11 +843,6 @@ export class WinterWorld {
     this._lastSignBounds.length = 0;
     this._lastBuildingBounds.length = 0;
 
-    // Warm bridge glow reflecting on glacial brook
-    for (const bt of this.grid.bridgeTiles) {
-      const bp = gridToWorld(bt.gx + 0.5, bt.gy + 0.5);
-      this.glowSpots.push({ x: bp.x, y: bp.y - 16, r: 98, tint: 0xffba52, intensity: 0.80 });
-    }
 
     const placeEntity = (key, texKey, x, y, w, h, opts = {}) => {
       const node = this._acquireEntityNode(key, texKey, opts.shadow !== false);
@@ -1099,33 +1043,33 @@ export class WinterWorld {
         const elapsed = (nowMs - (f.plantedAt || 0)) / 1000;
         const pct = Math.max(0, Math.min(1, elapsed / (crop.growTime || 60)));
 
-        if (pct >= 1) {
-          const cropTexKey = `crop_${f.cropId}`;
-          const sway = Math.sin(sec * 2.1 + f.gx * 1.3 + f.gy * 0.9) * 0.018;
-          placeEntity(`crop_${f.id}`, cropTexKey, fp.x, fp.y + 2, 0, heightFor(cropTexKey, 'crop'), {
+        const cropTexKey = `crop_${f.cropId}`;
+        if (pct >= 0.2) {
+          // Wachstum = dieselbe Pflanze, nur kleiner und blasser (klar lesbar: wächst → reif)
+          const ripe = pct >= 1;
+          const grow = ripe ? 1 : 0.42 + 0.4 * ((pct - 0.2) / 0.8);
+          const sway = Math.sin(sec * 2.1 + f.gx * 1.3 + f.gy * 0.9) * (ripe ? 0.018 : 0.008);
+          placeEntity(`crop_${f.id}`, cropTexKey, fp.x, fp.y + 2, 0, heightFor(cropTexKey, 'crop') * grow, {
             bounceId: f.id,
             zIndex: fp.y + 4,
             anchorY: 0.72,
             rot: sway,
+            tint: ripe ? 0xffffff : 0xc9e3b5,
             shadow: false
           });
         } else {
+          // Frisch gesät: ordentliche Saatreihen in Kachelrichtung
           const cg = this._acquireCropGfx(`sprout_${f.id}`);
           cg.clear();
           cg.x = fp.x;
           cg.y = fp.y;
           cg.zIndex = fp.y + 2;
-          const rows = [[-22, -6], [0, -10], [22, -4], [-14, 6], [10, 6]];
-          for (const [ox, oy] of rows) {
-            if (pct < 0.25) {
-              cg.ellipse(ox, oy, 4, 2.2).fill(0x8c5a2b);
-            } else if (pct < 0.65) {
-              cg.moveTo(ox, oy).lineTo(ox - 3, oy - 9).stroke({ color: 0x4ade80, width: 2.2, cap: 'round' });
-              cg.moveTo(ox, oy).lineTo(ox + 3, oy - 8).stroke({ color: 0x22c55e, width: 2.2, cap: 'round' });
-            } else {
-              cg.moveTo(ox, oy).lineTo(ox - 4, oy - 15).stroke({ color: 0x16a34a, width: 2.8, cap: 'round' });
-              cg.moveTo(ox, oy).lineTo(ox + 4, oy - 14).stroke({ color: 0x22c55e, width: 2.8, cap: 'round' });
-              cg.circle(ox, oy - 15, 3.2).fill(parseInt((crop.color || '#F5B82E').replace('#', ''), 16) || 0xf5b82e);
+          for (let r = -1; r <= 1; r++) {
+            for (let k = -1; k <= 1; k++) {
+              const ox = (r - k) * 15;
+              const oy = (r + k) * 7.5 - 2;
+              cg.ellipse(ox, oy, 3.2, 1.8).fill(0x5a3a1c);
+              cg.circle(ox, oy - 2.4, 1.9).fill(0x7cc46a);
             }
           }
         }
@@ -1185,7 +1129,8 @@ export class WinterWorld {
     }
 
     // ---- H. Lakeside Daily Treasure Chest (1x1 Exact Tile Center) ----
-    const chPos = gridToWorld(DAILY_CHEST_POS.gx + 0.5, DAILY_CHEST_POS.gy + 0.5);
+    this._chestPos = chestPosOf(state);
+    const chPos = gridToWorld(this._chestPos.gx + 0.5, this._chestPos.gy + 0.5);
     const chestReady = Boolean(uiState.dailyChestReady);
     placeEntity('daily_chest', 'treasure_chest', chPos.x, chPos.y + 6, 0, artH('treasure_chest'), {
       zIndex: chPos.y + 6,
@@ -1201,36 +1146,23 @@ export class WinterWorld {
       });
     }
 
-    // ---- I. A* Road-Locked 3D Alpine Villagers ----
+    // ---- I. Kunde mit Angebot (steht still, keine Laufanimation) ----
     for (const v of this.villagers) {
+      if (!v.offer) continue;
       const vp = gridToWorld(v.gx, v.gy);
-      const walking = v.waitTimer <= 0 && v.path && v.path.length > 0;
-      const strideBob = walking ? Math.abs(Math.sin(v.stepPhase)) * 3.6 : 0;
-      const tilt = walking ? Math.sin(v.stepPhase) * 0.045 : 0;
-
-      placeEntity(`vil_${v.id}`, v.sprite, vp.x, vp.y - strideBob, 0, artH(v.sprite), {
+      placeEntity(`vil_${v.id}`, v.sprite, vp.x, vp.y, 0, artH(v.sprite), {
         zIndex: vp.y + 10,
         anchorY: 0.92,
         flipX: v.facing < 0,
-        rot: tilt,
-        shadowW: 0.78,
-        shadowH: 0.22,
-        shadowY: strideBob + 2
+        shadowW: 0.6,
+        shadowH: 0.18,
+        shadowAlpha: 0.32
       });
-
-      if (v.offer) {
-        this._drawBubbleBadge(`vil_o_${v.id}`, vp.x, vp.y - 78 + Math.sin(sec * 4) * 3, `${v.offer.price}`, v.offer.itemId, {
-          bg: 0xfef3c7,
-          stroke: 0xd97706,
-          textColor: 0x78350f
-        });
-      } else if (v.bubble) {
-        this._drawBubbleBadge(`vil_b_${v.id}`, vp.x, vp.y - 78, v.bubble, null, {
-          bg: 0xfffdf7,
-          stroke: 0x7c451f,
-          textColor: 0x2e190c
-        });
-      }
+      this._drawBubbleBadge(`vil_o_${v.id}`, vp.x, vp.y - 78 + Math.sin(sec * 4) * 3, `${v.offer.price}`, v.offer.itemId, {
+        bg: 0xfef3c7,
+        stroke: 0xd97706,
+        textColor: 0x78350f
+      });
     }
 
     // ---- J. Unobstructed Carved Wooden Land Expansion Signposts (1x1 Exact Tile Center) ----
@@ -1238,16 +1170,16 @@ export class WinterWorld {
     for (const zone of LAND_ZONES) {
       if (unlocked.has(zone.id)) continue;
       const sp = gridToWorld(zone.signPos.gx + 0.5, zone.signPos.gy + 0.5);
-      const sign = this._acquireSignNode(zone);
+      const sign = this._acquireSignNode(zone, lvInfo.level);
       sign.container.x = sp.x;
       sign.container.y = sp.y + 4;
       sign.container.zIndex = sp.y + 10;
       this._lastSignBounds.push({
         id: zone.id,
-        x0: sp.x - 48,
-        y0: sp.y - 56,
-        x1: sp.x + 48,
-        y1: sp.y + 10
+        x0: sp.x - 46,
+        y0: sp.y - 66,
+        x1: sp.x + 46,
+        y1: sp.y + 4
       });
     }
 
@@ -1277,7 +1209,7 @@ export class WinterWorld {
   }
 
   validateState(state) {
-    this.grid.syncFromState(state, DAILY_CHEST_POS);
+    this.grid.syncFromState(state, chestPosOf(state));
     return validateWorld(this.grid, state, this.villagers);
   }
 

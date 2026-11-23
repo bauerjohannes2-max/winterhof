@@ -1131,3 +1131,130 @@ body.is-portrait #app {
   .medallion-btn.primary { width: 56px; height: 56px; }
   .village-meta { min-width: 60px; max-width: 92px; }
 }
+
+/* ============================================================================
+   EINHEITLICHES BUTTON-SYSTEM (Kern-Qualität, 23.11.2026)
+   Regeln (Recherche KERN_QUALITAET_PLAN.md, Teil B):
+   - Jeder Button: dunkle Kontur, EINE satte Hauptfarbe, Lichtkante oben, harte Unterkante (3D).
+   - Drücken: Button sinkt um die Unterkante ein. Loslassen: kurzer Feder-Hüpfer.
+   - Drei runde Größen: L (Hauptaktion), M (Dock), S (Werkzeug). Beschriftung immer gleiche Plakette.
+   ============================================================================ */
+:root {
+  --btn-edge: #3A1B0A;
+  --btn-depth: 4px;
+  --btn-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --btn-L: 64px;
+  --btn-M: 54px;
+  --btn-S: 42px;
+  --btn-cream: #FFF3D6;
+  --btn-cream-dark: #D9B47A;
+  --btn-wood: #8A4D24;
+  --btn-wood-dark: #4A2410;
+  --btn-gold: #F7B92F;
+  --btn-gold-dark: #B06A0C;
+  --btn-green: #2E9A55;
+  --btn-green-dark: #17592F;
+  --btn-red: #D23A32;
+  --btn-red-dark: #7E1A16;
+}
+
+.medallion-btn, .circle-util-btn, .scythe-btn, .modal-close, .zoom-btn,
+.coin-pill, .level-crest-btn, .chapter-chip,
+.btn-green, .btn-red, .btn-gold, .btn-wood, .banner-store, .banner-close {
+  border: 2.5px solid var(--btn-edge) !important;
+  transition: transform 0.18s var(--btn-spring), box-shadow 0.12s ease, filter 0.12s ease !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Runde Knöpfe: Größen */
+.medallion-btn { width: var(--btn-M) !important; height: var(--btn-M) !important; }
+.medallion-btn.primary { width: var(--btn-L) !important; height: var(--btn-L) !important; }
+.medallion-btn.compact, .circle-util-btn, .scythe-btn, .zoom-btn { width: var(--btn-S) !important; height: var(--btn-S) !important; }
+.modal-close { width: 36px !important; height: 36px !important; }
+
+/* Farben: je Rolle EINE Hauptfarbe */
+.medallion-btn {
+  background: radial-gradient(circle at 50% 30%, #FFFDF5 0%, var(--btn-cream) 55%, #F1D9A6 100%) !important;
+  color: var(--btn-edge) !important;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.85), inset 0 -3px 0 rgba(160, 110, 50, 0.25),
+    0 var(--btn-depth) 0 var(--btn-cream-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 8px 16px rgba(20, 30, 50, 0.28) !important;
+}
+.medallion-btn.primary {
+  background: radial-gradient(circle at 50% 30%, #FFE79A 0%, var(--btn-gold) 60%, #E59A1A 100%) !important;
+  box-shadow: inset 0 3px 0 rgba(255, 250, 220, 0.8), inset 0 -3px 0 rgba(150, 80, 0, 0.3),
+    0 var(--btn-depth) 0 var(--btn-gold-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 8px 16px rgba(20, 30, 50, 0.3) !important;
+}
+.medallion-btn.compact, .circle-util-btn, .coin-pill, .level-crest-btn, .btn-wood {
+  background: linear-gradient(180deg, #A35D2E 0%, var(--btn-wood) 55%, #6E391B 100%) !important;
+  color: #FFFDF7 !important;
+  box-shadow: inset 0 2px 0 rgba(255, 220, 170, 0.45),
+    0 var(--btn-depth) 0 var(--btn-wood-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.28) !important;
+}
+.scythe-btn, .btn-gold, .banner-store {
+  background: linear-gradient(180deg, #FFD266 0%, var(--btn-gold) 55%, #E2961B 100%) !important;
+  color: var(--btn-edge) !important;
+  box-shadow: inset 0 2px 0 rgba(255, 250, 220, 0.7),
+    0 var(--btn-depth) 0 var(--btn-gold-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.25) !important;
+}
+.btn-green {
+  background: linear-gradient(180deg, #49B86E 0%, var(--btn-green) 55%, #23803F 100%) !important;
+  color: #FFFDF7 !important;
+  box-shadow: inset 0 2px 0 rgba(220, 255, 220, 0.45),
+    0 var(--btn-depth) 0 var(--btn-green-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.25) !important;
+}
+.btn-red, .modal-close, .banner-close {
+  background: linear-gradient(180deg, #EA5A4F 0%, var(--btn-red) 55%, #B02A23 100%) !important;
+  color: #FFFDF7 !important;
+  box-shadow: inset 0 2px 0 rgba(255, 210, 200, 0.45),
+    0 var(--btn-depth) 0 var(--btn-red-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.25) !important;
+}
+.zoom-btn, .chapter-chip {
+  background: linear-gradient(180deg, #FFFDF5 0%, var(--btn-cream) 100%) !important;
+  color: var(--btn-edge) !important;
+  box-shadow: inset 0 2px 0 #FFFFFF,
+    0 var(--btn-depth) 0 var(--btn-cream-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.22) !important;
+}
+.medallion-btn.active {
+  background: radial-gradient(circle at 50% 30%, #D9F7E2 0%, #7BD39A 60%, var(--btn-green) 100%) !important;
+}
+
+/* Text-Knöpfe: gleiche Rundung und Schrift */
+.btn-green, .btn-red, .btn-gold, .btn-wood, .banner-store, .banner-close {
+  border-radius: 14px !important;
+  padding: 8px 14px !important;
+  font-weight: 900 !important;
+  font-size: 13px !important;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+.btn-gold, .banner-store, .scythe-btn { text-shadow: none; }
+
+/* Druckgefühl: einsinken, dann federnd zurück */
+.medallion-btn:active, .circle-util-btn:active, .scythe-btn:active, .modal-close:active, .zoom-btn:active,
+.coin-pill:active, .level-crest-btn:active, .chapter-chip:active,
+.btn-green:active, .btn-red:active, .btn-gold:active, .btn-wood:active, .banner-store:active, .banner-close:active {
+  transform: translateY(var(--btn-depth)) scale(0.97) !important;
+  transition: transform 0.05s ease-out, box-shadow 0.05s ease-out !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 0 0 var(--btn-edge), 0 1px 0 var(--btn-edge), 0 2px 6px rgba(20, 30, 50, 0.25) !important;
+}
+@media (hover: hover) {
+  .medallion-btn:hover, .circle-util-btn:hover, .scythe-btn:hover, .zoom-btn:hover,
+  .btn-green:hover, .btn-red:hover, .btn-gold:hover, .btn-wood:hover { filter: brightness(1.06); }
+}
+
+/* Beschriftungs-Plakette: gleich für alle Dock-Knöpfe */
+.m-label {
+  bottom: -9px !important;
+  padding: 2px 8px !important;
+  background: var(--btn-edge) !important;
+  border: 1.5px solid #F7D9A0 !important;
+  font-size: 9.5px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35) !important;
+}
+.medallion-badge, .scythe-count {
+  border: 2px solid #FFFDF7 !important;
+  box-shadow: 0 2px 0 var(--btn-edge) !important;
+}

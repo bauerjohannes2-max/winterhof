@@ -941,6 +941,7 @@
     "apple_stand": {
       "id": "apple_stand",
       "name": "Bratapfel-Stand",
+      "desc": "Duftende Bratäpfel und heißer Apfelpunsch.",
       "sprite": "st_apple_stand",
       "footprint": {
         "w": 2,
@@ -969,6 +970,7 @@
     "almond_hut": {
       "id": "almond_hut",
       "name": "Mandelbude",
+      "desc": "Gebrannte Mandeln und feines Marzipan.",
       "sprite": "st_almond_hut",
       "footprint": {
         "w": 2,
@@ -997,6 +999,7 @@
     "wreath_shop": {
       "id": "wreath_shop",
       "name": "Kranzbinderei",
+      "desc": "Bindet Adventskränze und Türkränze aus Tannengrün.",
       "sprite": "st_wreath_shop",
       "footprint": {
         "w": 2,
@@ -1025,6 +1028,7 @@
     "wichtel_post": {
       "id": "wichtel_post",
       "name": "Wichtelpost",
+      "desc": "Wunschzettel und Weihnachtskarten für das ganze Tal.",
       "sprite": "st_wichtel_post",
       "footprint": {
         "w": 2,
@@ -1053,6 +1057,7 @@
     "toy_workshop": {
       "id": "toy_workshop",
       "name": "Spielzeugwerkstatt",
+      "desc": "Schaukelpferd, Holzeisenbahn und Nussknacker.",
       "sprite": "st_toy_workshop",
       "footprint": {
         "w": 2,
@@ -1226,8 +1231,8 @@
     },
     {
       "id": "south_meadow",
-      "name": "Teichwiese",
-      "desc": "Öffnet die sonnige Südwiese (10×2 Felder) oberhalb des gefrorenen Alpenteichs.",
+      "name": "Südwiese",
+      "desc": "Öffnet die sonnige Südwiese (10×2 Felder) am Waldrand.",
       "bounds": {
         "x0": 2,
         "y0": 12,
@@ -1244,7 +1249,7 @@
     {
       "id": "east_glade",
       "name": "Schlittenlichtung",
-      "desc": "Schaltet die östliche Lichtung (2×10 Felder) direkt am Gebirgsbach frei.",
+      "desc": "Schaltet die östliche Lichtung (2×10 Felder) frei.",
       "bounds": {
         "x0": 12,
         "y0": 2,
@@ -1277,10 +1282,10 @@
     },
     {
       "id": "bachwiese",
-      "name": "Bachwiese",
-      "desc": "Land östlich vom Bach, über die Brücke (2×13 Felder).",
+      "name": "Ostwiese",
+      "desc": "Weites Land im Osten bis zum Waldrand (3×13 Felder).",
       "bounds": {
-        "x0": 15,
+        "x0": 14,
         "y0": 0,
         "x1": 16,
         "y1": 12
@@ -1339,7 +1344,7 @@
       "xpNeeded": 2070,
       "coinBonus": 40,
       "treeStage": 3,
-      "unlockText": "Freigeschaltet: Baumaterial für Lager und Land, Bachwiese, Rotbäckchen-Äpfel, Lichter-Rentier."
+      "unlockText": "Freigeschaltet: Baumaterial für Lager und Land, Ostwiese, Rotbäckchen-Äpfel, Lichter-Rentier."
     },
     {
       "level": 7,
@@ -1930,8 +1935,8 @@
         "kind": "prop",
         "type": "dailyChest",
         "id": "dailyChest",
-        "gx": 11,
-        "gy": 11
+        "gx": 6,
+        "gy": 3
       },
       {
         "kind": "station",
