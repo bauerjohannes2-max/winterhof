@@ -39,7 +39,8 @@ Mitnehmen aus Runde 3 (Tag `v9-flickwerk`): Weg als eine weiche Fläche mit Saum
 - Vergleichsbilder neu erzeugen nur nach Abnahme durch Hannes: `node ./node_modules/@playwright/test/cli.js test --update-snapshots`.
 
 ## Jeder Baustein (Abnahme-Ablauf)
-1. Ziel in 1 Satz.
+Verbindlich nach `QUALITAETS_LEITFADEN.md` §2–3 (kritisch prüfen vorher, ehrlich prüfen nachher).
+1. Ziel in 1 Satz, beste Lösung mit verworfener Alternative und Quellen.
 2. Vergleich Hay Day + Clash of Clans (nur im Browser ansehen, nie ins Repo), Beobachtung in `VORBILD_ANALYSE.md`.
 3. Umsetzen, eigener kleiner Commit.
 4. Grün: Typprüfung, Tests, Build, E2E; neue Rechenteile mit eigenen Tests.
@@ -50,7 +51,7 @@ Mitnehmen aus Runde 3 (Tag `v9-flickwerk`): Weg als eine weiche Fläche mit Saum
 | Nr. | Baustein | Abnahmekriterium |
 |---|---|---|
 | 0 ✅ | **Grafik-Technik festlegen** (`docs/GRAFIK_TECHNIK.md`) | abgenommen Hannes 24.11. |
-| 1 | **Werkzeuge** | TypeScript streng für `src/render/`, ESLint mit Import-Grenzen (Gegenprobe: verbotene Importe werden erkannt), Playwright mit Bildvergleich (installierter Chrome, Gegenprobe: leichte Farbänderung wird erkannt); alles mit einem Befehl `npm run check` grün. Bild-Pipeline verschoben nach Baustein 3 (erst dort wird ein Bild geladen) |
+| 1 ✅ | **Werkzeuge** (abgenommen Hannes 24.11.) | TypeScript streng für `src/render/`, ESLint mit Import-Grenzen (Gegenprobe: verbotene Importe werden erkannt), Playwright mit Bildvergleich (installierter Chrome, Gegenprobe: leichte Farbänderung wird erkannt); alles mit einem Befehl `npm run check` grün. Bild-Pipeline verschoben nach Baustein 3 (erst dort wird ein Bild geladen) |
 | 2 | **Karte als Daten** | Gelände, Zonen, Wege, Waldrand in `winterhof.json`; `core/map.ts` ohne Import aus `engine/` oder `gameData.js`; Tests: Karte gültig, alter Spielstand passt weiter (keine Objekte auf Weg/Wald) |
 | 3 | **Technik-Gerüst** `src/render/` + `neu.html` + Bild-Pipeline (AssetPack → Atlas, Manifest) | Leere Szene startet in Chrome, iOS Safari, Samsung Internet; Ebenen in fester Reihenfolge per Test geprüft; ≥ 55 Bilder/s am Handy |
 | 4 | **Raster + Kamera** | Umrechnung Raster ↔ Bild mit Tests; Wischen und Zoomen (2 Finger, Mausrad) weich mit Grenzen und Nachlauf; Hilfsraster ein-/ausblendbar |

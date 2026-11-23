@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Neustart: Baustein 0 abgenommen (Hannes 24.11.), Baustein 1 Werkzeuge fertig, wartet auf Hannes (Claude 24.11.). Prüfen: `npm run check`. Danach Baustein 2 Karte als Daten.
+- Niemand. Neustart: Baustein 0 abgenommen (Hannes 24.11.), Baustein 1 Werkzeuge abgenommen (Hannes 24.11.). Prüfen: `npm run check`. Danach Baustein 2 Karte als Daten.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -26,6 +26,8 @@
 11. **Erst perfektionieren, nichts Neues** (Hannes 23.11. abends): Bestehendes auf Hay-Day-/Clash-of-Clans-Niveau bringen, vor allem Übergänge (Objekt↔Boden, Weg↔Schnee, Feld↔Boden, Hof↔Wildnis); „vieles wirkt lose“. Vorher echte Screenshots beider Spiele im Detail analysieren (nie ins Repo).
 
 12. **Neustart „langsam und richtig“** (Hannes 23.11. spät): Kein Flicken mehr. Von vorn, ein Baustein nach dem anderen, jeder fertig und von Hannes abgenommen, bevor der nächste kommt. Erst technisches Fundament, dann Grafik Stück für Stück. Vorbild Hay Day + Clash of Clans bis ins Detail. Schritt 0: Bestandsaufnahme, Hannes entscheidet „Kern behalten, Darstellung neu“ (Empfehlung) oder „alles neu“. Alter Stand bleibt als Tag `v9-flickwerk`. **Hannes 23.11.: Kern behalten, Darstellung neu.** Plan: `docs/NEUSTART_PLAN.md` (wartet auf Abnahme).
+
+13. **Bestes Spiel, keine Abkürzungen** (Hannes 24.11.): Ziel ist mindestens das Niveau von Hay Day und Clash of Clans, wo möglich besser. Keine Umwege, Abkürzungen oder Pflaster, auch nicht auf Hannes' eigene Bitte: Claude widerspricht, nennt den besten Weg, und eine Ausnahme gibt es nur nach ausdrücklicher Entscheidung von Hannes (hier eintragen). Jedes Vorgehen wird kritisch geprüft, mit Vorbildern und seriösen Quellen. Verbindlich: `docs/QUALITAETS_LEITFADEN.md`, `CLAUDE.md` im Projekt.
 
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof). `src/gameData.js` ist nur noch ein Adapter für die alte Oberfläche.
