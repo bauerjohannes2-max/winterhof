@@ -28,7 +28,13 @@ export interface ContentPack {
   field: { cost: number; costStep: number; maxCount: number; unlockLevel: number };
   market: { sellFactor: number };
   daily: { baseCoins: number; streakCoins: number; maxStreakBonus: number };
-  map: { starterBounds: { x0: number; y0: number; x1: number; y1: number } };
+  map: {
+    origin: { gx: number; gy: number };
+    legend: { terrain: Record<string, string>; surface: Record<string, string> };
+    starterBounds: { x0: number; y0: number; x1: number; y1: number };
+    terrain: string[];
+    surface: string[];
+  };
   start: {
     coins: number;
     inventory: Record<string, number>;

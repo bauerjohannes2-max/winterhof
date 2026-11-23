@@ -1,12 +1,106 @@
 {
   "version": 1,
   "map": {
+    "note": "Karte in Ebenen wie im Tiled-Format: je Ebene eine Zeile pro gy (von oben = kleinstes gy), ein Zeichen pro gx. Zeichen siehe legend. Zonen (Grundstücke) kommen aus starterBounds + landZones.",
+    "origin": {
+      "gx": -10,
+      "gy": -10
+    },
+    "legend": {
+      "terrain": {
+        ".": "snow",
+        "F": "forest"
+      },
+      "surface": {
+        ".": "none",
+        "R": "road",
+        "P": "plaza"
+      }
+    },
     "starterBounds": {
       "x0": 2,
       "y0": 2,
       "x1": 11,
       "y1": 11
-    }
+    },
+    "terrain": [
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      ".....................................",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFF.........................FFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    ],
+    "surface": [
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      "...............R..PP.................",
+      "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+      "..............R......................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      ".....................................",
+      "....................................."
+    ]
   },
   "items": {
     "wheat": {

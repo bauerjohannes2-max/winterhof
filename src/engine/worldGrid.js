@@ -4,10 +4,13 @@
 // Guarantees mathematically: Zero fence-in-water, Zero building-on-fence/road,
 // Exact bridge orientation, Connected autotiled roads, Road-locked A* villagers
 // ============================================================================
-import { LAND_ZONES } from '../gameData.js';
+import { terrainMap } from '../core';
 
-export const WORLD_MIN = -10;
-export const WORLD_MAX = 26; // Hof + 4 Kacheln Erweiterungsring + Waldrahmen (Hay-Day-Größe)
+// Karte kommt seit Baustein 2 aus dem Logik-Kern (winterhof.json → map). Diese Datei ist alte Darstellung
+// und fällt mit Baustein 14 weg.
+const CORE_MAP = terrainMap();
+export const WORLD_MIN = CORE_MAP.minGx;
+export const WORLD_MAX = CORE_MAP.maxGx;
 export const PLAYABLE_MIN = -4;
 export const PLAYABLE_MAX = 20; // Hof inkl. aller Erweiterungen, außen Waldrahmen
 
@@ -78,48 +81,16 @@ export class WorldGrid {
       }
     }
 
-    // 1. Assign Playable Estate Zones (0..13 x 0..13) — 100% inside the riverbanks!
-    for (let gy = 2; gy <= 11; gy++) {
-      for (let gx = 2; gx <= 11; gx++) {
-        this.getTile(gx, gy).zone = ZONE.STARTER;
-      }
-    }
-    for (const z of LAND_ZONES) {
-      const b = z.bounds;
-      for (let gy = b.y0; gy <= b.y1; gy++) {
-        for (let gx = b.x0; gx <= b.x1; gx++) {
-          const t = this.getTile(gx, gy);
-          if (t) t.zone = z.id;
-        }
-      }
-    }
-
-    // 2. Kein Wasser mehr (Hannes 23.11.: fließendes Wasser raus, keine Brücke).
-
-    // 3. Perimeter Cliffs & Forest Rim (strictly outside playable 0..13 & outside road gy = 6)
-    for (let gy = this.min; gy <= this.max; gy++) {
-      for (let gx = this.min; gx <= this.max; gx++) {
-        const t = this.getTile(gx, gy);
-        if (!t || t.zone !== ZONE.BORDER || t.terrain === TERRAIN.WATER) continue;
-        if (gy === 6) continue; // Keep horizon-to-horizon village road clear!
-        if (gy <= -5 || gy >= 18 || gx >= 21 || gx <= -5) t.terrain = TERRAIN.FOREST;
-      }
-    }
-
-    // 4. Grid-Locked Cobblestone Village Road (Row gy = 6, NW -> SE) + Clean Entrance Spurs + Tree Plaza
-    for (let gx = this.min; gx <= this.max; gx++) {
-      const t = this.getTile(gx, 6);
+    // Gelände, Wege und Zonen 1:1 aus der Kern-Karte.
+    const T = { snow: TERRAIN.SNOW, forest: TERRAIN.FOREST };
+    const S = { none: SURFACE.NONE, road: SURFACE.ROAD, plaza: SURFACE.PLAZA };
+    for (const ct of CORE_MAP.tiles) {
+      const t = this.getTile(ct.gx, ct.gy);
       if (!t) continue;
-      t.surface = SURFACE.ROAD;
+      t.terrain = T[ct.terrain];
+      t.surface = S[ct.surface];
+      t.zone = ct.zone;
     }
-
-    // Clean Chalet entrance path tile (5, 5) connecting Chalet (4..5, 3..4) -> Main Road (5, 6)
-    this.getTile(5, 5).surface = SURFACE.ROAD;
-    // Clean Bakery doorstep tile (4, 7) connecting Main Road (4, 6) -> Bakery (3..4, 8..9)
-    this.getTile(4, 7).surface = SURFACE.ROAD;
-    // Clean 2x1 Christmas Tree Plaza tiles (8, 5) & (9, 5) connecting Tree (8..9, 3..4) -> Main Road (8..9, 6)
-    this.getTile(8, 5).surface = SURFACE.PLAZA;
-    this.getTile(9, 5).surface = SURFACE.PLAZA;
 
     // Cache road & bridge tile lists
     this.roadTiles = [];

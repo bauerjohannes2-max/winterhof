@@ -52,7 +52,7 @@ Verbindlich nach `QUALITAETS_LEITFADEN.md` §2–3 (kritisch prüfen vorher, ehr
 |---|---|---|
 | 0 ✅ | **Grafik-Technik festlegen** (`docs/GRAFIK_TECHNIK.md`) | abgenommen Hannes 24.11. |
 | 1 ✅ | **Werkzeuge** (abgenommen Hannes 24.11.) | TypeScript streng für `src/render/`, ESLint mit Import-Grenzen (Gegenprobe: verbotene Importe werden erkannt), Playwright mit Bildvergleich (installierter Chrome, Gegenprobe: leichte Farbänderung wird erkannt); alles mit einem Befehl `npm run check` grün. Bild-Pipeline verschoben nach Baustein 3 (erst dort wird ein Bild geladen) |
-| 2 | **Karte als Daten** | Gelände, Zonen, Wege, Waldrand in `winterhof.json`; `core/map.ts` ohne Import aus `engine/` oder `gameData.js`; Tests: Karte gültig, alter Spielstand passt weiter (keine Objekte auf Weg/Wald) |
+| 2 | **Karte als Daten** (fertig 24.11., wartet auf Abnahme; Bild `docs/qa/neustart/b02_karte.png`, Format wie Tiled-Ebenen) | Gelände, Zonen, Wege, Waldrand in `winterhof.json`; `core/map.ts` ohne Import aus `engine/` oder `gameData.js`; Tests: Karte gültig, alter Spielstand passt weiter (keine Objekte auf Weg/Wald) |
 | 3 | **Technik-Gerüst** `src/render/` + `neu.html` + Bild-Pipeline (AssetPack → Atlas, Manifest) | Leere Szene startet in Chrome, iOS Safari, Samsung Internet; Ebenen in fester Reihenfolge per Test geprüft; ≥ 55 Bilder/s am Handy |
 | 4 | **Raster + Kamera** | Umrechnung Raster ↔ Bild mit Tests; Wischen und Zoomen (2 Finger, Mausrad) weich mit Grenzen und Nachlauf; Hilfsraster ein-/ausblendbar |
 | 5 | **Grundboden** Schnee (Hof) + Wildnis (außen) | Nahtlos ohne sichtbare Wiederholung; Hofrand als Farbstufe mit Schattenstreifen, keine Linie, kein weißer Rand |
@@ -65,5 +65,7 @@ Verbindlich nach `QUALITAETS_LEITFADEN.md` §2–3 (kritisch prüfen vorher, ehr
 | 12 | **Antippen, Platzieren, Verschieben** | Treffer genau auf Bildform, Vorschau grün/rot aus dem Kern, Verschieben speichert |
 | 13 | **HUD + Buttons** (Hay-Day-Maßstab) | Münzen, Stufe, Lager, Haupt-Buttons neu; daumengroß, lesbar am Handy quer; Menüs weiter erreichbar |
 | 14 | **Umschalten + Aufräumen** | `index.html` nutzt die neue Darstellung; `world.js`, `engine/*`, `view.js`, `sprites.js`, `gameData.js`, Probe-Bilder gelöscht; E2E in GitHub-Prüfung; danach live |
+
+**Offen aus Baustein 2 (ehrlicher Befund):** Das Kartenlayout selbst ist noch nicht auf Hay-Day-Niveau: eine schnurgerade Straße quer durch alles und ein rechteckiger Waldrand. Die Gestaltung wird in Baustein 5 (Hofrand) und 6 (Wege) mit Vorbild-Vergleich neu entworfen. Seit Baustein 2 ist das nur noch eine Datenänderung.
 
 Danach: Menüs Stück für Stück, dann neue Inhalte, dann Gemini-Grafikrunde.

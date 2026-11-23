@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Neustart: Baustein 0 abgenommen (Hannes 24.11.), Baustein 1 Werkzeuge abgenommen (Hannes 24.11.). Prüfen: `npm run check`. Danach Baustein 2 Karte als Daten.
+- Niemand. Neustart: Baustein 0 abgenommen (Hannes 24.11.), Baustein 1 Werkzeuge abgenommen (Hannes 24.11.), Baustein 2 Karte als Daten fertig, wartet auf Hannes (Claude 24.11.). Prüfen: `npm run check`. Danach Baustein 2 Karte als Daten.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -35,6 +35,7 @@
   - `commands.ts` – jede Aktion als Befehl, `advanceTime` für Zeit-/Offline-Fortschritt
   - `save.ts` – Speicherstand v8, Migration aus v2–v7 ohne Fortschrittsverlust, Sicherungskopie
   - `session.ts` – hält den Stand, `dispatch`, `tick`, gedrosseltes Speichern
+  - `terrain.ts` – Karte (Gelände, Wege, Zonen) aus `winterhof.json → map`, Ebenen als Zeilen wie Tiled (Baustein 2)
   - `map.ts` – Platzierung aus Gelände + Objektliste
 - `src/main.js` – Oberfläche: ändert den Stand nie selbst. Klick → `act(Befehl)`, Kern-Ereignis → `onEvents` (Animation, Ton, Hinweis). Zeit: `session.tick()` 1×/s.
 - `src/ui/view.js` – Übergang: rechnet Kern-Stand in die Form um, die `world.js` liest (fällt mit Schritt 2 weg).
