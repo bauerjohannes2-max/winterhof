@@ -3,7 +3,7 @@ import path from 'node:path';
 import { defineConfig } from 'vite';
 
 function copyStaticFilesPlugin() {
-  const staticEntries = ['assets', 'manifest.json', 'sw.js', '.nojekyll'];
+  const staticEntries = ['assets', 'manifest.json', '.nojekyll'];
   function copyRecursive(src, dst) {
     const stat = fs.statSync(src);
     if (stat.isDirectory()) {

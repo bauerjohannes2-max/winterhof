@@ -32,8 +32,11 @@ jobs:
         with:
           path: dist
 
+  # Live eingefroren (Entscheidung 15, Hannes 24.11.2026): Prüfung bei jedem Push,
+  # Hochladen nur von Hand (Actions → Run workflow), erst wenn die neue Darstellung spielbar ist.
   deploy:
     needs: build
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Neustart: Baustein 0 abgenommen (Hannes 24.11.), Baustein 1 Werkzeuge abgenommen (Hannes 24.11.), Baustein 2 Karte als Daten fertig (Technik), Konzept neu entschieden (Entscheidung 14). Nächstes: Baustein 2b Karten-Konzept, zuerst offene Rückfragen aus KARTEN_KONZEPT.md stellen. Prüfen: `npm run check`. Danach Baustein 2 Karte als Daten.
+- Claude (24.11.): Baustein 2b Karten-Konzept im Kern. Rückfragen erledigt (Entscheidung 15, `KARTEN_KONZEPT.md`), alte Oberfläche gelöscht. Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -31,17 +31,18 @@
 
 14. **Karten-Konzept wie Hay Day + viel nachfragen** (Hannes 24.11.): feste Zufahrt statt Straße quer durch, Wege legt der Spieler, Land kaufen + Hindernisse mit Werkzeugen räumen, Tannen ausgraben statt fällen, keine Grundstücksnamen, Alpental mit Bergen/See, Start klein. Details `docs/KARTEN_KONZEPT.md`. Claude fragt Hannes bei jeder Konzeptfrage interaktiv (Auswahl mit Empfehlung).
 
+15. **Karten-Details + alte Oberfläche weg** (Hannes 24.11., Rückfragen Runde 2–4, je Empfehlung): Landstücke 5×5 im Tal 30×30, Hindernisse ab Start, Landkauf ab Stufe 3, nur Schneewehen wachsen nach, Werkzeuge per Fund + Sofortkauf, Startpaket Schaufel + Spitzhacke, Hindernisse klein 1×1 / groß 2×2, Räumen gibt XP + Fundchance, See rechts ab Stufe 13, Zufahrt zum Hofplatz mit festen Stationen (Chalet frei), Start Mitte eher vorn, 3 + 3 Wegplatten, Land-Material Grundbrief/Holzhammer/Grenzpflock. **Alte Oberfläche gelöscht, Live-Seite eingefroren** (Hochladen nur von Hand, erst wenn die neue Darstellung spielbar ist). Details `docs/KARTEN_KONZEPT.md`.
+
 ## Architektur ab v8
-- `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof). `src/gameData.js` ist nur noch ein Adapter für die alte Oberfläche.
+- `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof, Karte, Landstücke, Hindernisse, Werkzeuge).
 - `src/core/` – Logik-Kern in TypeScript, ohne DOM/Pixi/Audio:
   - `commands.ts` – jede Aktion als Befehl, `advanceTime` für Zeit-/Offline-Fortschritt
   - `save.ts` – Speicherstand v8, Migration aus v2–v7 ohne Fortschrittsverlust, Sicherungskopie
   - `session.ts` – hält den Stand, `dispatch`, `tick`, gedrosseltes Speichern
   - `terrain.ts` – Karte (Gelände, Wege, Zonen) aus `winterhof.json → map`, Ebenen als Zeilen wie Tiled (Baustein 2)
   - `map.ts` – Platzierung aus Gelände + Objektliste
-- `src/main.js` – Oberfläche: ändert den Stand nie selbst. Klick → `act(Befehl)`, Kern-Ereignis → `onEvents` (Animation, Ton, Hinweis). Zeit: `session.tick()` 1×/s.
-- `src/ui/view.js` – Übergang: rechnet Kern-Stand in die Form um, die `world.js` liest (fällt mit Schritt 2 weg).
-- Browser-Test: `npm run build` + `node scripts/e2e_test.mjs` (Spielablauf über Befehle, Speichern/Neuladen).
+- `src/render/` – neue Darstellung (Einstieg `index.html`), liest nur den Kern und schickt Befehle. Alte Oberfläche (`main.js`, `world.js`, `engine/`) gelöscht 24.11. (Tag `v9-flickwerk`).
+- Browser-Test: Playwright mit Bildvergleich (`tests/browser/`).
 - `tests/core/` – 38 Tests inkl. 7-Tage-Wirtschafts-Bot. `npm test`, `npm run typecheck`.
 
 ## Wirtschaft (erste Kalibrierung)
