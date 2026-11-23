@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Probeausschnitt eingebaut + live (Claude 23.11. 18:45). Rohbögen lokal in `art_src/probe_raw/` (nicht im Repo). Vergleich: `docs/qa/probe/vergleich_vorher_nachher.jpg`, Vorher im Spiel mit `?probe=0`.
+- Niemand. Probeausschnitt Runde 2 live (Claude 23.11. 19:00: Acker zusammenhängend, Stall 1,6 + Huhn 0,52 Kacheln, Hof-Details, Wildnis-Rand als Schneehaufen; Vergleich `docs/qa/probe/vergleich_runde2.jpg`). Offen: echtes Hay-Day-Vergleichsbild (nur lokal, nie ins Repo). Rohbögen lokal in `art_src/probe_raw/` (nicht im Repo). Vergleich: `docs/qa/probe/vergleich_vorher_nachher.jpg`, Vorher im Spiel mit `?probe=0`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).

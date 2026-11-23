@@ -795,10 +795,23 @@ export class WinterWorld {
       g.stroke({ color, width: w, alpha, cap: 'round', join: 'round' });
     };
     if (this.textures.get('probe_ground_wild')) {
-      // Probe: weiche Schneewehe statt harter Linie (sonst wirkt es wie Rasterlinien)
-      line(26, 0x52749c, 0.08, 9);
-      line(20, 0xffffff, 0.28, 0);
-      line(10, 0xffffff, 0.35, -1);
+      // Probe: Schneewehe aus unregelmäßigen Haufen statt Linie (Hay Day: Wildnisrand ist organisch, nie gerade)
+      const lumps = [];
+      for (const [x0, y0, x1, y1] of segs) {
+        let hs = ((x0 * 92821) ^ (y0 * 68917) ^ (x1 * 7919) ^ (y1 * 104729)) >>> 0;
+        const r = () => { hs = (hs * 1664525 + 1013904223) >>> 0; return hs / 4294967296; };
+        const n = 7;
+        for (let i = 0; i < n; i++) {
+          const t = (i + r()) / n;
+          const off = (r() - 0.5) * 0.4; // quer zur Kante, mal rein, mal raus
+          const gx = x0 + (x1 - x0) * t + (y0 === y1 ? 0 : off), gy = y0 + (y1 - y0) * t + (x0 === x1 ? 0 : off);
+          const p = gridToWorld(gx, gy);
+          lumps.push({ x: p.x, y: p.y, w: 12 + r() * 26, hgt: 0.3 + r() * 0.16 });
+        }
+      }
+      for (const l of lumps) g.ellipse(l.x + 6, l.y + 6, l.w * 1.15, l.w * l.hgt).fill({ color: 0x45648a, alpha: 0.10 });
+      for (const l of lumps) g.ellipse(l.x + 2, l.y + 2, l.w, l.w * l.hgt).fill({ color: 0xc9d7e8, alpha: 0.9 });
+      for (const l of lumps) g.ellipse(l.x - l.w * 0.08, l.y - l.w * 0.04, l.w * 0.92, l.w * l.hgt * 0.85).fill({ color: 0xf6f9fd, alpha: 1 });
       return;
     }
     line(9, 0x7f98b6, 0.28, 4);
@@ -953,6 +966,15 @@ export class WinterWorld {
       node.sp.rotation = opts.rot || 0;
       node.sp.alpha = opts.alpha ?? 1;
       node.sp.tint = opts.tint ?? 0xffffff;
+      // Optional zuschneiden (z. B. Feld exakt auf die Kachel, damit Nachbarfelder ein Acker werden)
+      const clipSig = opts.clip ? opts.clip.join(',') : '';
+      if (clipSig !== (node.clipSig || '')) {
+        node.clipSig = clipSig;
+        if (!node.clip) { node.clip = new Graphics(); node.wrap.addChild(node.clip); }
+        node.clip.clear();
+        if (opts.clip) { node.clip.poly(opts.clip).fill(0xffffff); node.sp.mask = node.clip; node.clip.visible = true; }
+        else { node.sp.mask = null; node.clip.visible = false; }
+      }
       if (node.shadow) {
         node.shadow.visible = opts.shadow !== false;
         node.shadow.width = w * (opts.shadowW ?? 0.72);
@@ -1132,15 +1154,22 @@ export class WinterWorld {
         const th = tex ? (tex.orig?.height || tex.height) : 245;
         const tw = tex ? (tex.orig?.width || tex.width) : 400;
         // Bildmaße: Breite 400 = Feld inkl. Schneerand; Rautenmitte 145 px über Unterkante
-        const scale = (TILE_W * 1.1) / tw;
-        const sway = ripe ? Math.sin(sec * 2.1 + f.gx * 1.3 + f.gy * 0.9) * 0.006 : 0;
-        placeEntity(`pfield_${f.id}`, tk, fp.x, fp.y, TILE_W * 1.1, th * scale, {
+        // Hay Day: Nachbarfelder bilden EINEN Acker. Bild so groß, dass die innere Erde die Kachel füllt,
+        // dann exakt auf die Kachel zuschneiden (Schneerand weg); den Außenrand malt terrainLayer.
+        const FW = TILE_W * 1.3;
+        const scale = FW / tw;
+        const low = stage === 'soil' || stage === 'sprout';
+        const hw = TILE_W / 2, hh = TILE_H / 2;
+        const clip = low
+          ? [-hw, 0, 0, -hh, hw, 0, 0, hh]
+          : [-hw, 0, -hw * 0.55, -hh * 0.45, -hw * 0.55, -TILE_H * 3, hw * 0.55, -TILE_H * 3, hw * 0.55, -hh * 0.45, hw, 0, 0, hh];
+        placeEntity(`pfield_${f.id}`, tk, fp.x, fp.y, FW, th * scale, {
           bounceId: f.id,
-          zIndex: fp.y - (stage === 'soil' || stage === 'sprout' ? 60 : 0),
+          zIndex: fp.y - (low ? 60 : 0),
           anchorY: 1 - (145 * tw / 400) / th,
-          rot: sway,
           shadow: false,
-          fitWidth: true
+          fitWidth: true,
+          clip
         });
         continue;
       }
@@ -1189,7 +1218,7 @@ export class WinterWorld {
       const probeCoop = an.type === 'chicken' && this.textures.get('probe_coop');
       if (probeCoop) {
         // Probe 23.11.: Hühnerstall statt Strohgatter, Huhn läuft davor
-        placeEntity(`coop_${an.id}`, 'probe_coop', baseP.x + 6, baseP.y - 10, 0, TILE_W * 1.25, {
+        placeEntity(`coop_${an.id}`, 'probe_coop', baseP.x + 4, baseP.y - 8, 0, TILE_W * 1.6, {
           zIndex: baseP.y - 12, anchorY: 0.9, shadowW: 0.9, shadowH: 0.22, shadowAlpha: 0.45
         });
       } else {
@@ -1207,11 +1236,12 @@ export class WinterWorld {
         const pose = an.state === 'ready' ? 4 : (Math.floor(sec / 2.4 + an.gx * 1.7) % 3) + 1;
         texKey = 'probe_chicken_' + pose;
       }
-      const sz = probeCoop ? TILE_W * 0.42 : heightFor(texKey, 'animal');
+      const sz = probeCoop ? TILE_W * 0.52 : heightFor(texKey, 'animal');
       const hop = Math.abs(Math.sin(mot.phase)) * 3.0;
 
-      const fy = probeCoop ? 18 : 0; // Probe: Huhn läuft vor dem Stall
-      placeEntity(`an_${an.id}`, texKey, ap.x, ap.y - hop + fy, sz, sz, {
+      const fy = probeCoop ? 30 : 0; // Probe: Huhn läuft vor dem Stall (rechts vorn, nicht vor der Tür)
+      const fx = probeCoop ? 30 : 0;
+      placeEntity(`an_${an.id}`, texKey, ap.x + fx, ap.y - hop + fy, sz, sz, {
         bounceId: an.id,
         zIndex: ap.y + 6 + fy,
         flipX: mot.facing < 0,

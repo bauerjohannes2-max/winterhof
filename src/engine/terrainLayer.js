@@ -39,6 +39,7 @@ export class TerrainLayer {
       ts.x = -2600; ts.y = -900;
       ts.tileScale.set(0.62); // 1024 px ≈ 635 Weltpunkte ≈ 5,5 Kacheln je Wiederholung
       this.container.addChild(ts);
+      ts.tint = 0xe8eef6; // Hof-Schnee eine Spur gedämpfter (blendete zu hell)
       this.groundTiling = ts;
     }
     this.ground = this._paintGround();
@@ -233,8 +234,41 @@ export class TerrainLayer {
     const g = this.fieldGfx;
     const g2w = this.gridToWorld;
     g.clear();
-    if (this.probe && this.textures.get('probe_field_soil')) return; // Probe: Feld-Bild kommt aus world.js
     const has = new Set(fields.map((f) => `${f.gx},${f.gy}`));
+    if (this.probe && this.textures.get('probe_field_soil')) {
+      // Probe: Feld-Bilder (world.js) sind exakt auf die Kachel geschnitten. Hier nur der gemeinsame
+      // Rand des ganzen Ackers: Schneewall außen, Erdkante vorn, Erde als Lückenfüller (Hay Day: ein Acker).
+      const outer = [];
+      for (const f of fields) {
+        const { gx: x, gy: y } = f;
+        if (!has.has(`${x},${y - 1}`)) outer.push([x, y, x + 1, y, 'b']);
+        if (!has.has(`${x - 1},${y}`)) outer.push([x, y, x, y + 1, 'b']);
+        if (!has.has(`${x},${y + 1}`)) outer.push([x, y + 1, x + 1, y + 1, 'f']);
+        if (!has.has(`${x + 1},${y}`)) outer.push([x + 1, y, x + 1, y + 1, 'f']);
+      }
+      const seg = (w, color, alpha, oy, only) => {
+        for (const [x0, y0, x1, y1, k] of outer) {
+          if (only && k !== only) continue;
+          const a = g2w(x0, y0), b = g2w(x1, y1);
+          g.moveTo(a.x, a.y + oy).lineTo(b.x, b.y + oy);
+        }
+        g.stroke({ color, width: w, alpha, cap: 'round', join: 'round' });
+      };
+      // weicher Schatten + aufgeworfener Schnee rund um den Acker
+      seg(30, 0x45648a, 0.10, 8);
+      seg(22, 0xf4f8fc, 0.95, 1);
+      seg(12, 0xffffff, 1, -1);
+      // Erde (füllt Fugen zwischen den Bildern)
+      for (const f of fields) g.poly(isoTilePoly(g2w, f.gx, f.gy, 0)).fill(0x5a3826);
+      // Erdkante vorn (Acker liegt leicht erhöht)
+      const D = 7;
+      for (const [x0, y0, x1, y1, k] of outer) {
+        if (k !== 'f') continue;
+        const a = g2w(x0, y0), b = g2w(x1, y1);
+        g.poly([a.x, a.y, b.x, b.y, b.x, b.y + D, a.x, a.y + D]).fill(x0 === x1 ? 0x3e2516 : 0x4c2e1c);
+      }
+      return;
+    }
     // 1) Kante/Sockel aller Felder zuerst (Erde ragt 6 px aus dem Schnee)
     for (const f of fields) {
       const i = 0.03;
@@ -267,6 +301,66 @@ export class TerrainLayer {
   _rebuildGroundingPlates() {
     // Keine Platten/Rauten mehr unter Gebäuden (Hannes 23.11.). Nur der weiche Sprite-Schatten bleibt.
     this.groundingGfx.clear();
+    if (this.probe) this._paintYardDetails(this.groundingGfx);
+  }
+
+  /** Probe: Hof-Boden lebendig wie bei Hay Day (dort Gras/Blumen/Steine) – im Winter: Mulden, Grashalme,
+   *  Steine, Zweige, Fußspuren. Nur auf freien, offenen Kacheln, fest per Kachel-Zufall (kein Flackern). */
+  _paintYardDetails(g) {
+    const g2w = this.gridToWorld;
+    const unlocked = this._unlocked || new Set();
+    const t0 = this.grid;
+    for (let gy = t0.min; gy <= t0.max; gy++) {
+      for (let gx = t0.min; gx <= t0.max; gx++) {
+        if (!t0.isTileBuildable(gx, gy, unlocked)) continue;
+        let h = ((gx * 73856093) ^ (gy * 19349663)) >>> 0;
+        const r = () => { h = (h * 1664525 + 1013904223) >>> 0; return h / 4294967296; };
+        const at = (u, v) => g2w(gx + u, gy + v);
+        // kühle Mulde (bricht die helle Fläche, sehr weich)
+        if (r() < 0.55) {
+          const c = at(0.25 + r() * 0.5, 0.25 + r() * 0.5), rx = 26 + r() * 30;
+          for (let k = 0; k < 4; k++) g.ellipse(c.x, c.y, rx * (1 - k * 0.2), rx * 0.42 * (1 - k * 0.2)).fill({ color: 0x8fa9c9, alpha: 0.05 });
+        }
+        const kind = r();
+        const c = at(0.25 + r() * 0.5, 0.25 + r() * 0.5);
+        if (kind < 0.30) {
+          // Grashalme ragen aus dem Schnee (trockenes Wintergras)
+          const n = 4 + Math.floor(r() * 4);
+          g.ellipse(c.x + 1, c.y + 1.5, 9, 3).fill({ color: 0x5f7fa6, alpha: 0.16 });
+          for (let i = 0; i < n; i++) {
+            const bx = c.x + (i - n / 2) * 2.2, len = 7 + r() * 7, lean = (r() - 0.5) * 7;
+            g.moveTo(bx, c.y).quadraticCurveTo(bx + lean * 0.3, c.y - len * 0.6, bx + lean, c.y - len)
+              .stroke({ color: i % 2 ? 0x8a8a46 : 0x6c7a3a, width: 1.6, cap: 'round' });
+          }
+          g.ellipse(c.x, c.y + 0.5, 7, 2.4).fill(0xf7fbff);
+        } else if (kind < 0.44) {
+          // Stein mit Schneehaube
+          const w = 7 + r() * 5;
+          g.ellipse(c.x + 3, c.y + 2.5, w * 1.2, w * 0.45).fill({ color: 0x45648a, alpha: 0.18 });
+          g.ellipse(c.x, c.y - w * 0.25, w, w * 0.62).fill(0x7d8794);
+          g.ellipse(c.x + w * 0.2, c.y - w * 0.12, w * 0.75, w * 0.42).fill(0x646d79);
+          g.ellipse(c.x - w * 0.12, c.y - w * 0.62, w * 0.72, w * 0.3).fill(0xfbfdff);
+        } else if (kind < 0.62) {
+          // kleine Schneewehe mit Schatten
+          const w = 12 + r() * 12;
+          g.ellipse(c.x + 4, c.y + 3, w * 1.1, w * 0.36).fill({ color: 0x5f7fa6, alpha: 0.16 });
+          g.ellipse(c.x, c.y, w, w * 0.4).fill(0xf4f8fc);
+          g.ellipse(c.x - w * 0.25, c.y - w * 0.12, w * 0.55, w * 0.2).fill(0xffffff);
+        } else if (kind < 0.72) {
+          // Fußspuren quer über die Kachel (Tiere/Wichtel)
+          const a = at(0.1, 0.2 + r() * 0.6), b = at(0.9, 0.2 + r() * 0.6);
+          for (let i = 0; i < 6; i++) {
+            const t = (i + 0.5) / 6, side = i % 2 ? 2.5 : -2.5;
+            g.ellipse(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t + side, 2.6, 1.4).fill({ color: 0x7d97ba, alpha: 0.38 });
+          }
+        } else if (kind < 0.78) {
+          // Zweig im Schnee
+          const l = 10 + r() * 6;
+          g.moveTo(c.x - l, c.y + 2).lineTo(c.x + l, c.y - 2).stroke({ color: 0x5a3a22, width: 1.8, cap: 'round' });
+          g.moveTo(c.x - 2, c.y + 0.4).lineTo(c.x + 3, c.y - 5).stroke({ color: 0x5a3a22, width: 1.3, cap: 'round' });
+        }
+      }
+    }
   }
 
   _drawFenceEdge(g, edge) {
@@ -364,7 +458,8 @@ export class TerrainLayer {
     }
 
     // Rebuild grounding plates whenever entity count/positions change
-    let groundSig = '';
+    this._unlocked = new Set(state.unlockedLands || []);
+    let groundSig = (state.unlockedLands || []).join(',') + '|';
     for (const ent of this.grid.entities.values()) {
       groundSig += `${ent.id}:${ent.gx},${ent.gy};`;
     }
