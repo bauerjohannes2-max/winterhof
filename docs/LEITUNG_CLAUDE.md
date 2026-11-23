@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Probeausschnitt eingebaut + live (Claude 23.11. 18:45). Rohbögen lokal in `art_src/probe_raw/` (nicht im Repo). Vergleich: `docs/qa/probe/vergleich_vorher_nachher.jpg`, Vorher im Spiel mit `?probe=0`. Offen: Hannes wählt Stall-Variante (`docs/qa/probe/stall_auswahl.jpg`, eingebaut = 1).
+- Niemand. Probeausschnitt eingebaut + live (Claude 23.11. 18:45). Rohbögen lokal in `art_src/probe_raw/` (nicht im Repo). Vergleich: `docs/qa/probe/vergleich_vorher_nachher.jpg`, Vorher im Spiel mit `?probe=0`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -53,3 +53,4 @@
 3. ~~Inhaltsplan Stufe 6–30~~ steht in `docs/INHALTSPLAN.md` (23.11.). ~~Baumaterial im Kern~~ erledigt 23.11.: 6 Materialien (Lager + Land), Zufallsfund ab Stufe 6, Lagerausbau ab Stufe 6 mit Material, Grundstück Bachwiese (Ostufer, Felsen/Wald dafür nach Osten verschoben). ~~Stufe 6–12 als Daten~~ erledigt 23.11. (4 Feldfrüchte, Esel, Schneeeule, 5 Gebäude, 11 Rezepte, 3 Deko; Platzhalter-Bilder). Wirtschaft neu justiert: Aufträge ×1,1 Münzen/×1,0 XP, XP-Kurve ab Stufe 10 steiler; Bot lehnt je Sitzung 1 Auftrag ab, baut Lager/Land aus → Tag 1 Stufe 6, Tag 7 Stufe 16, 26.000 Münzen (Münz-Senken fehlen noch). **Neu (Hannes 23.11. abends): Kern-Qualität zuerst**, Bergbahn pausiert. Arbeitsplan: `docs/KERN_QUALITAET_PLAN.md` (Bach/Brücke raus, Bäume/Schilder/Häuser/Felder/Truhe/Figuren/Buttons sauber, Spielgefühl; immer sehr kritisch, Best Practices recherchieren, Screenshot vorher/nachher).
 4. Danach Gemini-Aufträge für Animationen (Tiere, Gebäude).
 5. Ganz zum Schluss: Grafik-Runde „mutiger“ (STIL_REGELN §6a).
+- Hühnerstall = Variante 1 (Hannes 23.11. 18:50).
