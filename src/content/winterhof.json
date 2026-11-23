@@ -1522,6 +1522,14 @@
       {
         "smaller": "alpine_villager",
         "larger": "deco_lantern"
+      },
+      {
+        "smaller": "crop_wheat",
+        "larger": "alpine_villager"
+      },
+      {
+        "smaller": "winter_chalet",
+        "larger": "christmas_tree"
       }
     ],
     "minSourcePxPerWorldPx": 1.6,
@@ -1583,7 +1591,7 @@
           "w": 2,
           "h": 2
         },
-        "heightTiles": 1.776,
+        "heightTiles": 2.2,
         "anchorY": 0.86
       },
       "wishlist_board": {
@@ -1663,7 +1671,7 @@
           "w": 1,
           "h": 1
         },
-        "heightTiles": 0.448,
+        "heightTiles": 0.36,
         "anchorY": 0.88
       },
       "animal_sheep": {
@@ -1673,7 +1681,7 @@
           "w": 1,
           "h": 1
         },
-        "heightTiles": 0.552,
+        "heightTiles": 0.48,
         "anchorY": 0.88
       },
       "animal_reindeer": {
@@ -1723,7 +1731,7 @@
           "w": 1,
           "h": 1
         },
-        "heightTiles": 0.724,
+        "heightTiles": 0.55,
         "anchorY": 0.72
       },
       "crop_berries": {
@@ -1733,7 +1741,7 @@
           "w": 1,
           "h": 1
         },
-        "heightTiles": 0.724,
+        "heightTiles": 0.55,
         "anchorY": 0.72
       },
       "crop_matcha": {
@@ -1743,7 +1751,7 @@
           "w": 1,
           "h": 1
         },
-        "heightTiles": 0.724,
+        "heightTiles": 0.55,
         "anchorY": 0.72
       },
       "snow_field_plot": {
