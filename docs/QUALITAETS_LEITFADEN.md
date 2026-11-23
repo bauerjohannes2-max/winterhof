@@ -14,7 +14,9 @@ Bevor ein Baustein oder eine wichtige Entscheidung beginnt, beantwortet Claude s
 2. **Wie machen es Hay Day und Clash of Clans?** Im Browser ansehen (Wikis, Videos), Beobachtung in `VORBILD_ANALYSE.md`. Nichts kopieren.
 3. **Was sagen seriöse Quellen?** Siehe §4. Bei Technik immer die offizielle Doku der aktuellen Version.
 4. **Ursache statt Symptom:** Ist das Fundament richtig? Wenn nicht, zuerst das Fundament reparieren, nie drumherum bauen.
-5. **Was kann schiefgehen?** Auf welchen Handys, bei welchem Spielstand, offline, nach einem Update?
+5. **Stimmt das Konzept, nicht nur die Technik?** Würde Hay Day/Clash es überhaupt so machen? (Lehre aus Baustein 2: technisch sauber, aber die Straße quer durch die Karte war konzeptionell falsch.)
+6. **Hannes fragen:** Jede Konzept- und Gestaltungsfrage als interaktive Auswahlfrage mit Empfehlung, gern mehrere Runden. Lieber eine Frage zu viel als eine Annahme.
+7. **Was kann schiefgehen?** Auf welchen Handys, bei welchem Spielstand, offline, nach einem Update?
 
 ## 3. Nach jedem Schritt: ehrlich prüfen
 - Alle Prüfungen grün (`npm run check`). **Nie einen Test abschwächen oder ein Vergleichsbild erneuern, nur damit es grün wird.** Vergleichsbilder werden nur nach Hannes' Abnahme erneuert.

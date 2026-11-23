@@ -53,10 +53,11 @@ Verbindlich nach `QUALITAETS_LEITFADEN.md` §2–3 (kritisch prüfen vorher, ehr
 | 0 ✅ | **Grafik-Technik festlegen** (`docs/GRAFIK_TECHNIK.md`) | abgenommen Hannes 24.11. |
 | 1 ✅ | **Werkzeuge** (abgenommen Hannes 24.11.) | TypeScript streng für `src/render/`, ESLint mit Import-Grenzen (Gegenprobe: verbotene Importe werden erkannt), Playwright mit Bildvergleich (installierter Chrome, Gegenprobe: leichte Farbänderung wird erkannt); alles mit einem Befehl `npm run check` grün. Bild-Pipeline verschoben nach Baustein 3 (erst dort wird ein Bild geladen) |
 | 2 | **Karte als Daten** (fertig 24.11., wartet auf Abnahme; Bild `docs/qa/neustart/b02_karte.png`, Format wie Tiled-Ebenen) | Gelände, Zonen, Wege, Waldrand in `winterhof.json`; `core/map.ts` ohne Import aus `engine/` oder `gameData.js`; Tests: Karte gültig, alter Spielstand passt weiter (keine Objekte auf Weg/Wald) |
+| 2b | **Karten-Konzept im Kern** (`KARTEN_KONZEPT.md`) | Zuerst offene Rückfragen an Hannes. Dann: Zufahrt statt Straße, Alpental (Berge, See), Landstücke ohne Namen, Hindernisse + Werkzeuge + Tannen ausgraben als Befehle mit Tests, Migration ohne Fortschrittsverlust, Wirtschafts-Bot grün, Kartenbild abgenommen |
 | 3 | **Technik-Gerüst** `src/render/` + `neu.html` + Bild-Pipeline (AssetPack → Atlas, Manifest) | Leere Szene startet in Chrome, iOS Safari, Samsung Internet; Ebenen in fester Reihenfolge per Test geprüft; ≥ 55 Bilder/s am Handy |
 | 4 | **Raster + Kamera** | Umrechnung Raster ↔ Bild mit Tests; Wischen und Zoomen (2 Finger, Mausrad) weich mit Grenzen und Nachlauf; Hilfsraster ein-/ausblendbar |
 | 5 | **Grundboden** Schnee (Hof) + Wildnis (außen) | Nahtlos ohne sichtbare Wiederholung; Hofrand als Farbstufe mit Schattenstreifen, keine Linie, kein weißer Rand |
-| 6 | **Wege** | Eine durchgehende Fläche aus den Kartendaten, runde Kurven und Kreuzungen, Saum innen, Schneeklumpen auf der Kante, keine Kachel-Treppen |
+| 6 | **Wege** (Zufahrt + Wegplatten des Spielers) | Eine durchgehende Fläche aus Zufahrt und gelegten Wegplatten, runde Kurven und Kreuzungen, Saum innen, Schneeklumpen auf der Kante, keine Kachel-Treppen |
 | 7 | **Standflächen + Kontaktschatten** (generisch) | Jedes Objekt bekommt aus der JSON Standfläche + weichen Schatten nach unten rechts; mit Testklötzen geprüft |
 | 8 | **Ein Gebäude perfekt verankert** (Chalet) | Bodenpunkt exakt, nichts schwebt, Vorplatz läuft weich in den Schnee, Schneewehe, Trittspur; `pruefe_assets.py` GRÜN; Hannes: „steht fest“ |
 | 9 | **Felder** | Erhöhte Wülste, 4 Wachstumsstufen, Ernte-Wischgeste schickt Befehle; kein Leuchtrand |
@@ -66,6 +67,6 @@ Verbindlich nach `QUALITAETS_LEITFADEN.md` §2–3 (kritisch prüfen vorher, ehr
 | 13 | **HUD + Buttons** (Hay-Day-Maßstab) | Münzen, Stufe, Lager, Haupt-Buttons neu; daumengroß, lesbar am Handy quer; Menüs weiter erreichbar |
 | 14 | **Umschalten + Aufräumen** | `index.html` nutzt die neue Darstellung; `world.js`, `engine/*`, `view.js`, `sprites.js`, `gameData.js`, Probe-Bilder gelöscht; E2E in GitHub-Prüfung; danach live |
 
-**Offen aus Baustein 2 (ehrlicher Befund):** Das Kartenlayout selbst ist noch nicht auf Hay-Day-Niveau: eine schnurgerade Straße quer durch alles und ein rechteckiger Waldrand. Die Gestaltung wird in Baustein 5 (Hofrand) und 6 (Wege) mit Vorbild-Vergleich neu entworfen. Seit Baustein 2 ist das nur noch eine Datenänderung.
+**Befund Baustein 2:** Das Kartenkonzept (Straße quer durch, benannte Rechteck-Grundstücke, Wald-Rahmen) war nicht Hay-Day-Niveau. Hannes hat es am 24.11. neu entschieden (Entscheidung 14), Umsetzung in Baustein 2b.
 
 Danach: Menüs Stück für Stück, dann neue Inhalte, dann Gemini-Grafikrunde.
