@@ -570,6 +570,42 @@ export class WinterWorld {
     }
   }
 
+  /** Schneewehen an den beiden vorderen Wandkanten (Hay Day: Dinge am Fuß verdecken die Bildkante).
+   *  Ecken dichter, Mitte frei (dort liegt meist die Tür). Nur neu zeichnen, wenn sich etwas ändert. */
+  _drawFootDrift(node, key, sw, bottom, n, inset) {
+    const sig = `${Math.round(sw)},${Math.round(bottom)},${n},${inset}`;
+    if (!node.front) { node.front = new Graphics(); node.wrap.addChild(node.front); }
+    node.front.visible = true;
+    if (node.frontSig === sig) return;
+    node.frontSig = sig;
+    const g = node.front;
+    g.clear();
+    let h = 0;
+    for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const r = () => { h = (h * 1664525 + 1013904223) >>> 0; return h / 4294967296; };
+    // Bildunterkante = vordere Ecke der Grundfläche; Seitenecken im Iso-Gefälle 2:1 nach oben
+    const hw = sw * inset, by = bottom - 3;
+    const L = [-hw, by - hw * 0.5], B = [0, by], R = [hw, by - hw * 0.5];
+    const lumps = [];
+    const size = Math.min(1.4, Math.max(0.6, n * 0.75));
+    for (const [P, Q] of [[L, B], [B, R]]) {
+      const cnt = Math.round(3 + n * 2);
+      for (let i = 0; i < cnt; i++) {
+        let t = (i + 0.2 + r() * 0.6) / cnt;
+        if (t > 0.3 && t < 0.72 && n >= 1.5) continue; // Türbereich frei
+        const w = (5 + r() * 7) * size * (Math.abs(t - 0.5) > 0.35 ? 1.25 : 0.9);
+        lumps.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t + 1, w]);
+      }
+    }
+    lumps.push([B[0], B[1] + 1, 9 * size]);
+    lumps.sort((a, b) => a[1] - b[1]);
+    for (const [x, y, w] of lumps) g.ellipse(x + w * 0.3, y + w * 0.22, w * 1.1, w * 0.42).fill({ color: 0x3d5a80, alpha: 0.16 });
+    for (const [x, y, w] of lumps) {
+      g.ellipse(x, y, w, w * 0.48).fill(0xdbe5f0);
+      g.ellipse(x - w * 0.2, y - w * 0.14, w * 0.7, w * 0.32).fill(0xf8fbfe);
+    }
+  }
+
   _acquireEntityNode(key, textureKey, hasShadow = true) {
     let node = this.entityNodes.get(key);
     const tex = this.textures.get(textureKey);
@@ -780,10 +816,10 @@ export class WinterWorld {
           if (nz === z.id) continue;
           if (nz && lockedZ(nz) && (probeWild || dx < 0 || dy < 0)) continue; // gemeinsame Kante nur einmal (Probe: gar nicht)
           if (isRoad(x, y) || isRoad(x + dx, y + dy)) continue;
-          if (dx === 1) segs.push([x + 1, y, x + 1, y + 1]);
-          else if (dx === -1) segs.push([x, y, x, y + 1]);
-          else if (dy === 1) segs.push([x, y + 1, x + 1, y + 1]);
-          else segs.push([x, y, x + 1, y]);
+          if (dx === 1) segs.push([x + 1, y, x + 1, y + 1, dx, dy]);
+          else if (dx === -1) segs.push([x, y, x, y + 1, dx, dy]);
+          else if (dy === 1) segs.push([x, y + 1, x + 1, y + 1, dx, dy]);
+          else segs.push([x, y, x + 1, y, dx, dy]);
         }
       }
     }
@@ -796,22 +832,38 @@ export class WinterWorld {
     };
     if (this.textures.get('probe_ground_wild')) {
       // Probe: Schneewehe aus unregelmäßigen Haufen statt Linie (Hay Day: Wildnisrand ist organisch, nie gerade)
-      const lumps = [];
-      for (const [x0, y0, x1, y1] of segs) {
-        let hs = ((x0 * 92821) ^ (y0 * 68917) ^ (x1 * 7919) ^ (y1 * 104729)) >>> 0;
-        const r = () => { hs = (hs * 1664525 + 1013904223) >>> 0; return hs / 4294967296; };
-        const n = 7;
-        for (let i = 0; i < n; i++) {
-          const t = (i + r()) / n;
-          const off = (r() - 0.5) * 0.4; // quer zur Kante, mal rein, mal raus
-          const gx = x0 + (x1 - x0) * t + (y0 === y1 ? 0 : off), gy = y0 + (y1 - y0) * t + (x0 === x1 ? 0 : off);
-          const p = gridToWorld(gx, gy);
-          lumps.push({ x: p.x, y: p.y, w: 12 + r() * 26, hgt: 0.3 + r() * 0.16 });
+      // Clash: Grenze = Farbstufe mit Schatten zur Hofseite, kein heller Aufkleber-Rand.
+      // 1) weicher Schattenstreifen auf der Hofseite (Wildnis/Wall wirft Schatten nach innen)
+      for (const [x0, y0, x1, y1, dx, dy] of segs) {
+        for (const d of [0.3, 0.2, 0.11]) {
+          const a = gridToWorld(x0, y0), b = gridToWorld(x1, y1);
+          const c = gridToWorld(x1 + dx * d, y1 + dy * d), e = gridToWorld(x0 + dx * d, y0 + dy * d);
+          g.poly([a.x, a.y, b.x, b.y, c.x, c.y, e.x, e.y]).fill({ color: 0x2c4466, alpha: 0.045 });
         }
       }
-      for (const l of lumps) g.ellipse(l.x + 6, l.y + 6, l.w * 1.15, l.w * l.hgt).fill({ color: 0x45648a, alpha: 0.10 });
-      for (const l of lumps) g.ellipse(l.x + 2, l.y + 2, l.w, l.w * l.hgt).fill({ color: 0xc9d7e8, alpha: 0.9 });
-      for (const l of lumps) g.ellipse(l.x - l.w * 0.08, l.y - l.w * 0.04, l.w * 0.92, l.w * l.hgt * 0.85).fill({ color: 0xf6f9fd, alpha: 1 });
+      // 2) Schneewall aus Haufen: Größe und Abstand unregelmäßig, mal Lücke, mal große Wehe
+      const lumps = [];
+      for (const [x0, y0, x1, y1, dx, dy] of segs) {
+        let hs = ((x0 * 92821) ^ (y0 * 68917) ^ (x1 * 7919) ^ (y1 * 104729)) >>> 0;
+        const r = () => { hs = (hs * 1664525 + 1013904223) >>> 0; return hs / 4294967296; };
+        const n = 10;
+        for (let i = 0; i < n; i++) {
+          if (r() < 0.07) continue; // seltene Lücke
+          const t = (i + r() * 0.8) / n;
+          const off = -0.05 + (r() - 0.5) * 0.12; // zusammenhängender Wall, leicht gewellt
+          const gx = x0 + (x1 - x0) * t + dx * off, gy = y0 + (y1 - y0) * t + dy * off;
+          const p = gridToWorld(gx, gy);
+          const big = r() < 0.14;
+          lumps.push({ x: p.x, y: p.y, w: big ? 28 + r() * 14 : 14 + r() * 11, hgt: 0.36 + r() * 0.1 });
+        }
+      }
+      lumps.sort((a, b) => a.y - b.y);
+      for (const l of lumps) g.ellipse(l.x + l.w * 0.3, l.y + l.w * 0.22, l.w * 1.12, l.w * l.hgt * 1.1).fill({ color: 0x2c4466, alpha: 0.13 });
+      for (const l of lumps) {
+        g.ellipse(l.x, l.y, l.w, l.w * l.hgt).fill(0xcfdbe8);
+        g.ellipse(l.x - l.w * 0.16, l.y - l.w * l.hgt * 0.22, l.w * 0.74, l.w * l.hgt * 0.62).fill(0xeef3f9);
+        g.ellipse(l.x - l.w * 0.3, l.y - l.w * l.hgt * 0.4, l.w * 0.32, l.w * l.hgt * 0.24).fill({ color: 0xffffff, alpha: 0.85 });
+      }
       return;
     }
     line(9, 0x7f98b6, 0.28, 4);
@@ -944,8 +996,11 @@ export class WinterWorld {
     this._lastBuildingBounds.length = 0;
 
 
+    const feet = [];
     const placeEntity = (key, texKey, x, y, w, h, opts = {}) => {
       const node = this._acquireEntityNode(key, texKey, opts.shadow !== false);
+      if (opts.foot) feet.push(opts.foot); // Standfläche (Boden, malt terrainLayer)
+      else if (node.front) node.front.visible = false;
       const bounce = opts.bounceId ? this._getBounceScale(opts.bounceId, now) : 1;
       node.wrap.x = x;
       node.wrap.y = y;
@@ -982,6 +1037,11 @@ export class WinterWorld {
         node.shadow.y = opts.shadowY ?? 3;
         node.shadow.alpha = opts.shadowAlpha ?? 0.58;
       }
+      if (opts.foot) {
+        // Schneewehen an der echten Unterkante des Bilds (V-Form der Iso-Grundfläche), über dem Bild
+        const ay = node.sp.anchor.y;
+        this._drawFootDrift(node, key, Math.abs(node.sp.width), Math.abs(node.sp.height) * (1 - ay), opts.foot.n, opts.foot.inset ?? 0.36);
+      }
       if (opts.trackBuilding) {
         this._lastBuildingBounds.push({
           id: key,
@@ -1008,7 +1068,8 @@ export class WinterWorld {
       anchorY: 0.86,
       shadowW: 0.84,
       shadowH: 0.28,
-      trackBuilding: true
+      trackBuilding: true,
+      foot: { cx: chP.x, cy: chP.y, n: 2 }
     });
     this.glowSpots.push({ x: chP.x - 28, y: chP.y - 24, r: 92, tint: 0xffc45c, intensity: 0.88 });
     this.glowSpots.push({ x: chP.x + 36, y: chP.y - 32, r: 96, tint: 0xffba50, intensity: 0.90 });
@@ -1023,7 +1084,8 @@ export class WinterWorld {
       anchorY: 0.86,
       shadowW: 0.78,
       shadowH: 0.24,
-      trackBuilding: true
+      trackBuilding: true,
+      foot: { cx: trP.x, cy: trP.y, n: 2, inset: 0.5 }
     });
     this.glowSpots.push({ x: trP.x, y: trP.y - 62 * treeGrowth, r: 126, tint: 0xffd166, intensity: 0.95 });
 
@@ -1031,7 +1093,8 @@ export class WinterWorld {
     const wbP = gridToWorld(state.wishlistBoard.gx + 0.5, state.wishlistBoard.gy + 0.5);
     placeEntity('wishlistBoard', 'wishlist_board', wbP.x, wbP.y + 12, 0, artH('wishlist_board'), {
       bounceId: 'wishlistBoard',
-      zIndex: wbP.y + 12
+      zIndex: wbP.y + 12,
+      foot: { cx: wbP.x, cy: wbP.y, n: 1 }
     });
     const readyOrders = (state.orders || []).filter((o) =>
       Object.entries(o.req || {}).every(([id, q]) => (state.inventory[id] || 0) >= q)
@@ -1047,7 +1110,8 @@ export class WinterWorld {
     const mbP = gridToWorld(state.mailbox.gx + 0.5, state.mailbox.gy + 0.5);
     placeEntity('mailbox', 'gift_mailbox', mbP.x, mbP.y + 10, 0, artH('gift_mailbox'), {
       bounceId: 'mailbox',
-      zIndex: mbP.y + 10
+      zIndex: mbP.y + 10,
+      foot: { cx: mbP.x, cy: mbP.y, n: 0.7, inset: 0.4 }
     });
 
     if (!this.sleighFlight) {
@@ -1056,7 +1120,8 @@ export class WinterWorld {
         bounceId: 'sleigh',
         zIndex: slP.y + 14,
         shadowW: 0.80,
-        shadowH: 0.25
+        shadowH: 0.25,
+        foot: { cx: slP.x, cy: slP.y, n: 0.7, inset: 0.3 }
       });
     } else {
       const t = this.sleighFlight.t / this.sleighFlight.dur;
@@ -1081,7 +1146,8 @@ export class WinterWorld {
         placeEntity(`st_${st.id}`, texKey, sp.x, sp.y + 30, 0, size * 0.7, {
           bounceId: st.id,
           zIndex: sp.y + 30,
-          tint: 0xd9c7a8
+          tint: 0xd9c7a8,
+          foot: { cx: sp.x, cy: sp.y, n: 2 }
         });
         this._drawBubbleBadge(`wrap_${st.id}`, sp.x, sp.y - 84 + Math.sin(sec * 4) * 4, 'AUSPACKEN', null, {
           bg: 0xb42324,
@@ -1095,7 +1161,8 @@ export class WinterWorld {
           anchorY: 0.86,
           shadowW: 0.80,
           shadowH: 0.26,
-          trackBuilding: true
+          trackBuilding: true,
+          foot: { cx: sp.x, cy: sp.y, n: 2 }
         });
         const working = st.queue && st.queue.length > 0;
         this.glowSpots.push({
@@ -1219,7 +1286,8 @@ export class WinterWorld {
       if (probeCoop) {
         // Probe 23.11.: Hühnerstall statt Strohgatter, Huhn läuft davor
         placeEntity(`coop_${an.id}`, 'probe_coop', baseP.x + 4, baseP.y - 8, 0, TILE_W * 1.6, {
-          zIndex: baseP.y - 12, anchorY: 0.9, shadowW: 0.9, shadowH: 0.22, shadowAlpha: 0.45
+          zIndex: baseP.y - 12, anchorY: 0.9, shadowW: 0.9, shadowH: 0.22, shadowAlpha: 0.45,
+          foot: { cx: baseP.x + 4, cy: baseP.y - 20, n: 1.2, inset: 0.5 }
         });
       } else {
       const pen = this._acquireAnimalPen(an.id);
@@ -1272,7 +1340,8 @@ export class WinterWorld {
         bounceId: d.id,
         zIndex: dp.y + 8,
         shadowW: 0.68,
-        shadowH: 0.24
+        shadowH: 0.24,
+        foot: { cx: dp.x, cy: dp.y, n: 0.7, inset: 0.4 }
       });
       if (content.decorations[d.type]?.glow) {
         this.glowSpots.push({ x: dp.x, y: dp.y - 34, r: 108, tint: 0xffc04d, intensity: 0.96 });
@@ -1286,7 +1355,8 @@ export class WinterWorld {
     placeEntity('daily_chest', 'treasure_chest', chPos.x, chPos.y + 6, 0, artH('treasure_chest'), {
       zIndex: chPos.y + 6,
       alpha: chestReady ? 1 : 0.72,
-      tint: chestReady ? 0xffffff : 0xcbd5e1
+      tint: chestReady ? 0xffffff : 0xcbd5e1,
+      foot: { cx: chPos.x, cy: chPos.y, n: 0.8, inset: 0.45 }
     });
     if (chestReady) {
       this.glowSpots.push({ x: chPos.x, y: chPos.y - 14, r: 78, tint: 0xfde047, intensity: 0.86 });
@@ -1331,6 +1401,7 @@ export class WinterWorld {
       });
     }
 
+    this.terrainLayer.paintFootings(feet);
     for (const n of this.entityNodes.values()) if (!n.used) n.wrap.visible = false;
     for (const b of this.bubbleNodes.values()) if (!b.used) b.container.visible = false;
     for (const p of this.penNodes.values()) if (!p.used) p.container.visible = false;

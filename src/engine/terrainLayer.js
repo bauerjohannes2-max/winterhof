@@ -39,23 +39,24 @@ export class TerrainLayer {
       ts.x = -2600; ts.y = -900;
       ts.tileScale.set(0.62); // 1024 px ≈ 635 Weltpunkte ≈ 5,5 Kacheln je Wiederholung
       this.container.addChild(ts);
-      ts.tint = 0xe8eef6; // Hof-Schnee eine Spur gedämpfter (blendete zu hell)
+      ts.tint = 0xdde6f0; // Hof-Schnee gedämpfter (blendete zu hell, Hannes 23.11.)
       this.groundTiling = ts;
     }
     this.ground = this._paintGround();
     this.container.addChild(this.ground);
     const dirtTex = this.probe ? textures.get('probe_path_dirt') : null;
     if (dirtTex) {
-      // Probe: Weg in voller Auflösung mit gemalter Erde-Textur (Canvas liefert nur den weichen Saum)
-      const rg = new Graphics();
-      for (const t of worldGrid.roadTiles) {
-        rg.poly(isoTilePoly(gridToWorld, t.gx, t.gy, 0.005))
-          .fill({ texture: dirtTex, textureSpace: 'global', matrix: new Matrix().scale(0.5, 0.5), color: 0xffffff });
-      }
-      this.container.addChild(rg);
-      this.roadGfx = rg;
+      // Weg wie bei Hay Day: weiche, runde Form statt Kachel-Treppen, dunkler Saum innen,
+      // Schneeklumpen auf der Kante (Übergang Weg↔Schnee, Entscheidung 11)
+      const road = this._paintRoad(dirtTex);
+      if (road) { this.container.addChild(road); this.roadGfx = road; }
     }
     this.roadContainer = new Container();
+
+    // 3b. Standflächen unter Gebäuden/Objekten (Clash: dunklere Bodenfläche je Grundfläche, weicher Rand)
+    this.footGfx = new Graphics();
+    this.container.addChild(this.footGfx);
+    this._footSig = '';
 
     // 4. Ackerfelder: flach, exakt auf dem Raster, aneinanderliegend wie ein Feld (Hay Day)
     this.fieldGfx = new Graphics();
@@ -155,11 +156,11 @@ export class TerrainLayer {
       }
     };
     ctx.save();
-    // Rand: weicher, dunklerer Saum (Weg liegt leicht vertieft im Schnee)
+    // Rand: weicher, dunklerer Saum (Weg liegt leicht vertieft im Schnee); Probe: macht _paintRoad
     ctx.filter = `blur(${Math.max(2, Math.round(6 * K))}px)`;
     ctx.fillStyle = 'rgba(122,86,56,0.75)';
     polyPath(0.08);
-    ctx.fill();
+    if (!probe) ctx.fill();
     // Wegfläche: warmes, festgefahrenes Erdbraun mit Schnee (Hay-Day-Feldweg im Winter)
     ctx.filter = `blur(${Math.max(1, Math.round(2 * K))}px)`;
     ctx.fillStyle = '#C79A6B';
@@ -217,6 +218,217 @@ export class TerrainLayer {
     return sp;
   }
 
+  /** Weg als ein gemaltes Bild: Kachelform weich gerundet (Maske, unscharf, Schwelle mit Rauschen),
+   *  Erde-Textur, dunkler Innensaum (hinten stärker = Schatten des Schneewalls), Schneeklumpen auf der Kante. */
+  _paintRoad(dirtTex) {
+    const g2w = this.gridToWorld;
+    const tiles = this.grid.roadTiles.filter((t) => t.surface !== SURFACE.BRIDGE_X && t.surface !== SURFACE.BRIDGE_Y);
+    if (!tiles.length) return null;
+    let X0 = Infinity, Y0 = Infinity, X1 = -Infinity, Y1 = -Infinity;
+    for (const t of tiles) {
+      const p = isoTilePoly(g2w, t.gx, t.gy, 0);
+      for (let i = 0; i < 8; i += 2) {
+        X0 = Math.min(X0, p[i]); X1 = Math.max(X1, p[i]);
+        Y0 = Math.min(Y0, p[i + 1]); Y1 = Math.max(Y1, p[i + 1]);
+      }
+    }
+    const M = 60;
+    X0 -= M; Y0 -= M; X1 += M; Y1 += M;
+    const W = X1 - X0, H = Y1 - Y0;
+    const K = Math.min(1.3, 4000 / Math.max(W, H)); // Bildpunkte je Weltpunkt (scharfe Kante)
+    const cw = Math.round(W * K), ch = Math.round(H * K);
+
+    // 1) Maske in grober Auflösung, weichgezeichnet (eigener Kastenfilter: läuft auch in Safari)
+    const KM = 0.25;
+    const mw = Math.ceil(W * KM) + 1, mh = Math.ceil(H * KM) + 1;
+    const mc = document.createElement('canvas');
+    mc.width = mw; mc.height = mh;
+    const mctx = mc.getContext('2d');
+    mctx.fillStyle = '#fff';
+    for (const t of tiles) {
+      const p = isoTilePoly(g2w, t.gx, t.gy, 0.01);
+      mctx.beginPath();
+      for (let i = 0; i < 8; i += 2) {
+        const x = (p[i] - X0) * KM, y = (p[i + 1] - Y0) * KM;
+        if (i === 0) mctx.moveTo(x, y); else mctx.lineTo(x, y);
+      }
+      mctx.closePath();
+      mctx.fill();
+    }
+    const md = mctx.getImageData(0, 0, mw, mh).data;
+    let v = new Float32Array(mw * mh);
+    for (let i = 0; i < v.length; i++) v[i] = md[i * 4 + 3] / 255;
+    const R = Math.max(1, Math.round(13 * KM)); // ~13 Weltpunkte je Durchgang, 3 Durchgänge ≈ runde Ecken
+    const tmp = new Float32Array(v.length);
+    for (let pass = 0; pass < 3; pass++) {
+      for (let y = 0; y < mh; y++) {
+        let s = 0;
+        for (let x = -R; x <= R; x++) s += v[y * mw + Math.min(mw - 1, Math.max(0, x))];
+        for (let x = 0; x < mw; x++) {
+          tmp[y * mw + x] = s / (2 * R + 1);
+          s += v[y * mw + Math.min(mw - 1, x + R + 1)] - v[y * mw + Math.max(0, x - R)];
+        }
+      }
+      for (let x = 0; x < mw; x++) {
+        let s = 0;
+        for (let y = -R; y <= R; y++) s += tmp[Math.min(mh - 1, Math.max(0, y)) * mw + x];
+        for (let y = 0; y < mh; y++) {
+          v[y * mw + x] = s / (2 * R + 1);
+          s += tmp[Math.min(mh - 1, y + R + 1) * mw + x] - tmp[Math.max(0, y - R) * mw + x];
+        }
+      }
+    }
+    const sampleV = (wx, wy) => {
+      const fx = (wx - X0) * KM, fy = (wy - Y0) * KM;
+      const x0 = Math.max(0, Math.min(mw - 2, Math.floor(fx))), y0 = Math.max(0, Math.min(mh - 2, Math.floor(fy)));
+      const tx = Math.min(1, Math.max(0, fx - x0)), ty = Math.min(1, Math.max(0, fy - y0));
+      const a = v[y0 * mw + x0], b = v[y0 * mw + x0 + 1], c = v[(y0 + 1) * mw + x0], d = v[(y0 + 1) * mw + x0 + 1];
+      return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+    };
+    // organische Kante: langsames + feines Rauschen (fest, kein Zufall je Start)
+    const noise = (x, y) =>
+      0.55 * Math.sin(x * 0.031 + Math.sin(y * 0.023) * 2.1) * Math.cos(y * 0.041 - x * 0.012) +
+      0.3 * Math.sin(x * 0.093 + y * 0.071 + Math.sin(x * 0.05) * 1.5) +
+      0.15 * Math.sin(x * 0.21 - y * 0.17);
+    const smooth = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+
+    // 2) Erde-Textur flächig malen
+    const c = document.createElement('canvas');
+    c.width = cw; c.height = ch;
+    const ctx = c.getContext('2d');
+    const img = dirtTex.source?.resource;
+    ctx.fillStyle = '#b98a5c';
+    ctx.fillRect(0, 0, cw, ch);
+    if (img) {
+      const pat = ctx.createPattern(img, 'repeat');
+      if (pat) {
+        const s = (232 / (img.width || 512)) * K; // eine Wiederholung ≈ 2 Kacheln
+        pat.setTransform(new DOMMatrix().translate(-X0 * K, -Y0 * K).scale(s));
+        ctx.fillStyle = pat;
+        ctx.fillRect(0, 0, cw, ch);
+      }
+    }
+    // 3) Form, Saum, Licht je Bildpunkt
+    const id = ctx.getImageData(0, 0, cw, ch);
+    const d = id.data;
+    const edgeA = new Float32Array(cw * ch);
+    const e = 1.5 / KM;
+    for (let py = 0; py < ch; py++) {
+      const wy = Y0 + py / K;
+      for (let px = 0; px < cw; px++) {
+        const wx = X0 + px / K;
+        const vv = sampleV(wx, wy);
+        const i = py * cw + px;
+        if (vv < 0.05) { d[i * 4 + 3] = 0; continue; }
+        const vn = vv + noise(wx, wy) * 0.09;
+        const a = smooth(0.44, 0.52, vn);
+        edgeA[i] = a;
+        if (a <= 0) {
+          // knapp außerhalb: festgetretener, leicht grauer Schnee (weicher Übergang statt Linie)
+          const halo = smooth(0.18, 0.44, vn) * 0.22;
+          d[i * 4] = 104; d[i * 4 + 1] = 124; d[i * 4 + 2] = 150; d[i * 4 + 3] = Math.round(halo * 255);
+          continue;
+        }
+        // Normale der Kante: Steigung der Maske zeigt nach innen
+        const gy = sampleV(wx, wy + e) - sampleV(wx, wy - e);
+        const gx = sampleV(wx + e, wy) - sampleV(wx - e, wy);
+        const gl = Math.hypot(gx, gy) || 1;
+        const back = Math.max(0, (gy / gl) * 0.8 + (gx / gl) * 0.35); // Kante oben/links: Schatten des Schneewalls
+        const rim = 1 - smooth(0.5, 0.86, vn);
+        const dark = rim * (0.22 + 0.3 * back);
+        const lift = (1 - rim) * 0.04; // Wegmitte minimal heller (gewölbt)
+        d[i * 4] = d[i * 4] * (1 - dark) + 70 * dark + 255 * lift;
+        d[i * 4 + 1] = d[i * 4 + 1] * (1 - dark) + 44 * dark + 236 * lift;
+        d[i * 4 + 2] = d[i * 4 + 2] * (1 - dark) + 32 * dark + 205 * lift;
+        d[i * 4 + 3] = Math.round(a * 255);
+      }
+    }
+    ctx.putImageData(id, 0, 0);
+
+    // 4) Schneeklumpen auf der Kante (überlappen Weg und Schnee, brechen die Linie)
+    let seed = 4711;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const step = Math.max(4, Math.round(13 * K));
+    const lumps = [];
+    for (let py = step; py < ch - step; py += step) {
+      for (let px = step; px < cw - step; px += step) {
+        const jx = px + Math.round((rnd() - 0.5) * step), jy = py + Math.round((rnd() - 0.5) * step);
+        const a = edgeA[jy * cw + jx];
+        if (a < 0.15 || a > 0.85 || rnd() > 0.5) continue;
+        lumps.push([jx, jy, (4 + rnd() * 9) * K, 0.42 + rnd() * 0.12]);
+      }
+    }
+    for (const [x, y, r, f] of lumps) {
+      ctx.fillStyle = 'rgba(52,74,104,0.22)';
+      ctx.beginPath(); ctx.ellipse(x + r * 0.35, y + r * 0.3, r * 1.1, r * f * 1.05, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const [x, y, r, f] of lumps) {
+      ctx.fillStyle = '#dbe5f0';
+      ctx.beginPath(); ctx.ellipse(x, y, r, r * f, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f7fafd';
+      ctx.beginPath(); ctx.ellipse(x - r * 0.18, y - r * f * 0.22, r * 0.72, r * f * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    // vereinzelte Schneereste und Kiesel auf dem Weg
+    for (let k = 0; k < tiles.length * 3; k++) {
+      const t = tiles[Math.floor(rnd() * tiles.length)];
+      const w = g2w(t.gx + 0.2 + rnd() * 0.6, t.gy + 0.2 + rnd() * 0.6);
+      const x = (w.x - X0) * K, y = (w.y - Y0) * K;
+      if (edgeA[Math.round(y) * cw + Math.round(x)] < 0.95) continue;
+      if (rnd() < 0.5) {
+        const r = (3 + rnd() * 5) * K;
+        ctx.fillStyle = 'rgba(70,44,30,0.25)';
+        ctx.beginPath(); ctx.ellipse(x + r * 0.2, y + r * 0.25, r * 1.05, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(246,249,252,0.92)';
+        ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.38, 0, 0, Math.PI * 2); ctx.fill();
+      } else {
+        const r = (1.8 + rnd() * 2) * K;
+        ctx.fillStyle = 'rgba(60,40,28,0.35)';
+        ctx.beginPath(); ctx.ellipse(x + r * 0.3, y + r * 0.35, r, r * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#9a8f86';
+        ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    const sp = new Sprite(Texture.from(c));
+    sp.x = X0; sp.y = Y0; sp.width = W; sp.height = H;
+    return sp;
+  }
+
+  /** Standflächen: festgetretener, leicht graublauer Schnee in Größe der Grundfläche (weicher Rand)
+   *  + Kontaktschatten zur Mitte hin. feet: [{ cx, cy, n }] in Weltpunkten, n = Kacheln je Seite. */
+  paintFootings(feet) {
+    const sig = feet.map((f) => `${Math.round(f.cx)},${Math.round(f.cy)},${f.n},${f.k || ''}`).join('|');
+    if (sig === this._footSig) return;
+    this._footSig = sig;
+    const g = this.footGfx;
+    g.clear();
+    if (!this.probe) return;
+    const TW = 116, TH = 58;
+    const diamond = (cx, cy, hw, hh) => [cx - hw, cy, cx, cy - hh, cx + hw, cy, cx, cy + hh];
+    for (const f of feet) {
+      const hw = (f.n * TW) / 2, hh = (f.n * TH) / 2;
+      let h = (Math.round(f.cx) * 92821) ^ (Math.round(f.cy) * 68917);
+      const r = () => { h = (h * 1664525 + 1013904223) >>> 0; return h / 4294967296; };
+      // weicher Rand: viele flache Rauten nach außen schwächer (wirkt wie Verlauf)
+      for (let k = 0; k < 6; k++) {
+        const s = 1.16 - k * 0.07;
+        g.poly(diamond(f.cx, f.cy, hw * s, hh * s)).fill({ color: 0x7590b0, alpha: 0.06 });
+      }
+      // unregelmäßige Trittflecken am Rand (keine gerade Kante)
+      for (let i = 0; i < 4 + f.n * 2; i++) {
+        const a = r() * Math.PI * 2, d = 0.75 + r() * 0.3;
+        const x = f.cx + Math.cos(a) * hw * d, y = f.cy + Math.sin(a) * hh * d;
+        const rx = (10 + r() * 16) * f.n;
+        g.ellipse(x, y, rx, rx * 0.45).fill({ color: 0x7f97b4, alpha: 0.06 });
+      }
+      // Kontaktschatten (Licht oben links → leicht nach rechts unten)
+      for (let k = 0; k < 4; k++) {
+        const s = 0.84 - k * 0.12;
+        g.poly(diamond(f.cx + 4, f.cy + 3, hw * s, hh * s)).fill({ color: 0x1f3655, alpha: 0.07 });
+      }
+    }
+  }
+
   _drawRoadTilePolys(g, pad = 0) {
     const g2w = this.gridToWorld;
     for (const t of this.grid.roadTiles) {
@@ -254,10 +466,10 @@ export class TerrainLayer {
         }
         g.stroke({ color, width: w, alpha, cap: 'round', join: 'round' });
       };
-      // weicher Schatten + aufgeworfener Schnee rund um den Acker
-      seg(30, 0x45648a, 0.10, 8);
-      seg(22, 0xf4f8fc, 0.95, 1);
-      seg(12, 0xffffff, 1, -1);
+      // Hay Day: Acker liegt erhöht, darunter weicher dunkler Schatten auf dem Boden – kein heller Rahmen.
+      seg(34, 0x2c4466, 0.07, 12, 'f');
+      seg(24, 0x2c4466, 0.08, 9, 'f');
+      seg(12, 0x2c4466, 0.10, 4);
       // Erde (füllt Fugen zwischen den Bildern)
       for (const f of fields) g.poly(isoTilePoly(g2w, f.gx, f.gy, 0)).fill(0x5a3826);
       // Erdkante vorn (Acker liegt leicht erhöht)
@@ -266,6 +478,27 @@ export class TerrainLayer {
         if (k !== 'f') continue;
         const a = g2w(x0, y0), b = g2w(x1, y1);
         g.poly([a.x, a.y, b.x, b.y, b.x, b.y + D, a.x, a.y + D]).fill(x0 === x1 ? 0x3e2516 : 0x4c2e1c);
+      }
+      // niedriger, unregelmäßiger Schneewall außen (Klumpen, keine Linie); hinten höher, vorn nur vereinzelt
+      const lumps = [];
+      for (const [x0, y0, x1, y1, k] of outer) {
+        let hs = ((x0 * 7349) ^ (y0 * 91193) ^ (x1 * 3571) ^ (y1 * 50331)) >>> 0;
+        const r = () => { hs = (hs * 1664525 + 1013904223) >>> 0; return hs / 4294967296; };
+        const n = k === 'b' ? 6 : 2;
+        for (let i = 0; i < n; i++) {
+          if (k === 'f' && r() < 0.35) continue; // vorn nur vereinzelt
+          const t = (i + 0.15 + r() * 0.7) / n;
+          const out = k === 'b' ? -(0.05 + r() * 0.06) : 0.08 + r() * 0.05; // nach außen versetzt
+          const gx = x0 + (x1 - x0) * t + (x0 === x1 ? out : 0), gy = y0 + (y1 - y0) * t + (y0 === y1 ? out : 0);
+          const p = g2w(gx, gy);
+          lumps.push([p.x, p.y + (k === 'f' ? D : 0), (k === 'b' ? 9 : 8) + r() * 8]);
+        }
+      }
+      lumps.sort((a, b) => a[1] - b[1]);
+      for (const [x, y, w] of lumps) g.ellipse(x + w * 0.3, y + w * 0.25, w * 1.1, w * 0.42).fill({ color: 0x3d5a80, alpha: 0.16 });
+      for (const [x, y, w] of lumps) {
+        g.ellipse(x, y, w, w * 0.46).fill(0xdbe5f0);
+        g.ellipse(x - w * 0.2, y - w * 0.13, w * 0.7, w * 0.3).fill(0xf8fbfe);
       }
       return;
     }

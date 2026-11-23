@@ -7,9 +7,10 @@
  * - Full Core Gameplay Loop & Save Persistence
  * - Captures Day (Style C) / Golden Dusk (Style B) / Night Bloom / Mobile Landscape screenshots
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -139,6 +140,23 @@ function findBrowser() {
   return 'chromium';
 }
 
+// Edge startet sich unter Windows als eigener Prozess neu: chrome.kill() trifft dann nicht den Browser.
+// Ein übrig gebliebener Browser auf dem Testport hätte den nächsten Lauf mit altem Spielstand gekapert.
+// Darum vor und nach dem Lauf alles beenden, was auf dem Testport lauscht.
+function killTestBrowser() {
+  if (process.platform !== 'win32') return;
+  try {
+    const out = spawnSync('netstat', ['-ano'], { encoding: 'utf8' }).stdout || '';
+    const pids = new Set();
+    for (const line of out.split(/\r?\n/)) {
+      const m = line.trim().split(/\s+/);
+      if (m.length >= 5 && m[1].endsWith(`:${CDP_PORT}`) && /:0$/.test(m[2])) pids.add(m[4]);
+    }
+    for (const pid of pids) spawnSync('taskkill', ['/PID', pid, '/T', '/F'], { stdio: 'ignore' });
+  } catch {}
+}
+killTestBrowser();
+
 const server = await startStaticServer();
 const chrome = spawn(findBrowser(), [
   '--headless=new',
@@ -147,6 +165,8 @@ const chrome = spawn(findBrowser(), [
   '--ignore-gpu-blocklist',
   '--use-gl=angle',
   `--remote-debugging-port=${CDP_PORT}`,
+  // frisches Profil je Lauf: sonst lebt der Spielstand des letzten Laufs weiter
+  `--user-data-dir=${fs.mkdtempSync(path.join(os.tmpdir(), 'winterhof-e2e-'))}`,
   '--window-size=1280,720',
   TARGET_URL
 ], { stdio: 'ignore' });
@@ -391,5 +411,6 @@ try {
   cdp.close();
 } finally {
   chrome.kill();
+  killTestBrowser();
   server.close();
 }
