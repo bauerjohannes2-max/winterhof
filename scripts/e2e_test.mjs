@@ -192,7 +192,7 @@ try {
   `);
   assert(initCheck.renderer.ready === true, `PixiJS v8 engine ready (${initCheck.renderer.rendererType})`);
   assert(String(initCheck.renderer.rendererType).toLowerCase().includes('webgl'), `WebGL GPU renderer active (got ${initCheck.renderer.rendererType})`);
-  assert(initCheck.rotateDisplayInLandscape === 'none', 'Rotate overlay hidden in Landscape');
+  assert(initCheck.hasRotateOverlay === false, 'Kein Querformat-Hinweis im DOM');
   assert(initCheck.hasZoomButtons === false, 'Zero clunky +/- zoom buttons on screen');
   assert(initCheck.modalHidden === true, 'Calm Level-1 start: zero blocking popup');
   assert(initCheck.hasEmojiInHud === false, 'Strict Zero-Emoji Policy passed on initial HUD');
