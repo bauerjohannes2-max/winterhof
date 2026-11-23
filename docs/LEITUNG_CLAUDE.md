@@ -27,7 +27,7 @@
 - `src/main.js` – Oberfläche: ändert den Stand nie selbst. Klick → `act(Befehl)`, Kern-Ereignis → `onEvents` (Animation, Ton, Hinweis). Zeit: `session.tick()` 1×/s.
 - `src/ui/view.js` – Übergang: rechnet Kern-Stand in die Form um, die `world.js` liest (fällt mit Schritt 2 weg).
 - Browser-Test: `npm run build` + `node scripts/e2e_test.mjs` (Spielablauf über Befehle, Speichern/Neuladen).
-- `tests/core/` – 32 Tests inkl. 7-Tage-Wirtschafts-Bot. `npm test`, `npm run typecheck`.
+- `tests/core/` – 37 Tests inkl. 7-Tage-Wirtschafts-Bot. `npm test`, `npm run typecheck`.
 
 ## Wirtschaft (erste Kalibrierung)
 - Ernte gibt 2, Pflanzen kostet 1 aus dem Silo (sonst Münzen).
@@ -44,6 +44,6 @@
 ## Nächste Schritte
 1. ~~Oberfläche auf `GameSession` umstellen~~ erledigt 23.11. (alte Logik gelöscht, E2E grün).
 2. Darstellung datengetrieben: Sprite, Anker und Footprint in die JSON, generische Objekt-Ansicht statt Pixel-Code je Gebäude.
-3. Inhalte für Stufe 6–30 planen (neue Waren, Gebäude, Tiere). Gemini liefert die Grafik dazu.
+3. ~~Inhaltsplan Stufe 6–30~~ steht in `docs/INHALTSPLAN.md` (23.11.). ~~Baumaterial im Kern~~ erledigt 23.11.: 6 Materialien (Lager + Land), Zufallsfund ab Stufe 6, Lagerausbau ab Stufe 6 mit Material, Grundstück Bachwiese (Ostufer, Felsen/Wald dafür nach Osten verschoben). Weiter: Stufe 6–12 Inhalte als Daten, dann Bergbahn-Lieferungen (Reihenfolge im Inhaltsplan). Bot holt sich noch kein Material (Tag 7 jetzt Stufe 14), beim Bot-Ausbau ergänzen.
 4. Danach Gemini-Aufträge für Animationen (Tiere, Gebäude).
 5. Ganz zum Schluss: Grafik-Runde „mutiger“ (STIL_REGELN §6a).

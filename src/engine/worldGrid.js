@@ -118,8 +118,8 @@ export class WorldGrid {
         const t = this.getTile(gx, gy);
         if (!t || t.zone !== ZONE.BORDER || t.terrain === TERRAIN.WATER) continue;
         if (gy === 6) continue; // Keep horizon-to-horizon village road clear!
-        if (gy <= -2 || gx >= 17 || gx <= -3) {
-          t.terrain = (gy === -2 && gx >= -1 && gx <= 13) || (gx === 17 && gy >= 0 && gy <= 12)
+        if (gy <= -2 || gx >= 18 || gx <= -3) {
+          t.terrain = (gy === -2 && gx >= -1 && gx <= 13) || (gx === 18 && gy >= 0 && gy <= 12)
             ? TERRAIN.CLIFF
             : TERRAIN.FOREST;
         }

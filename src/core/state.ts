@@ -4,7 +4,7 @@
 import { CONTENT } from './content';
 import {
   STAT_KEYS, type AnimalObject, type FieldObject, type GameState, type GoalDef, type Condition,
-  type ItemId, type MapObject, type StationObject, type Stats, type StorageKind
+  type Inventory, type ItemId, type MapObject, type StationObject, type Stats, type StorageKind
 } from './types';
 
 export const SCHEMA_VERSION = 8;
@@ -101,6 +101,16 @@ export function storageUpgradeCost(state: GameState, kind: StorageKind): number 
   if (cap >= d.maxCapacity) return null;
   const tier = Math.floor((cap - d.baseCapacity) / d.stepCapacity);
   return d.baseCost + tier * d.costStep;
+}
+
+/** Baumaterial für den nächsten Ausbau (leer, solange die Stufe darunter liegt oder maximal ausgebaut). */
+export function storageUpgradeMaterials(state: GameState, kind: StorageKind): Inventory {
+  const d = CONTENT.storage[kind];
+  const m = CONTENT.materials;
+  if (state.level < (d.materialsFromLevel ?? Infinity) || state.storage[kind] >= d.maxCapacity) return {};
+  const tier = Math.floor((state.storage[kind] - d.baseCapacity) / d.stepCapacity);
+  const qty = 1 + Math.floor(tier / m.storageQtyEvery);
+  return Object.fromEntries(m.storage.map((id) => [id, qty]));
 }
 
 export function fieldReadyAt(f: FieldObject): number | null {

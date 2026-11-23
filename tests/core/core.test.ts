@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONTENT, GameSession, advanceTime, applyCommand, canPlace, createNewGame, deserialize, getObject,
-  isFieldReady, serialize, storageUsed, validateContent, validateLayout, type Command, type GameState
+  isFieldReady, serialize, storageUsed, storageUpgradeMaterials, validateContent, validateLayout, type Command, type GameState
 } from '../../src/core';
 
 const T0 = Date.UTC(2026, 10, 23, 9, 0, 0);
@@ -342,5 +342,68 @@ describe('Winterpost, Dorfbewohner, Tiernamen', () => {
     const s = ok(createNewGame(T0), { type: 'renameAnimal', animalId: 'a_1', nick: '  Gacki<b>  ' });
     expect(getObject(s, 'a_1', 'animal')!.nick).toBe('Gackib');
     expect(err(s, { type: 'renameAnimal', animalId: 'a_1', nick: '   ' })).toBe('invalid');
+  });
+});
+
+describe('Baumaterial (ab Stufe 6)', () => {
+  const lvl6 = (s: GameState): GameState => ({ ...s, level: 6, xp: CONTENT.levels[5]!.xpNeeded, coins: 5000 });
+
+  it('Unter Stufe 6: Lagerausbau nur mit Münzen, kein Zufallszug', () => {
+    const s = { ...createNewGame(T0), coins: 5000 };
+    const r = applyCommand(s, { type: 'harvest', fieldId: 'f_1' }, T0);
+    expect(r.ok && r.state.rngState).toBe(advanceTime(s, T0).state.rngState);
+    expect(storageUpgradeMaterials(s, 'silo')).toEqual({});
+    ok(s, { type: 'upgradeStorage', storage: 'silo' });
+  });
+
+  it('Ab Stufe 6 braucht der Lagerausbau Material und verbraucht es', () => {
+    let s = lvl6(createNewGame(T0));
+    const need = storageUpgradeMaterials(s, 'barn');
+    expect(Object.keys(need).sort()).toEqual([...CONTENT.materials.storage].sort());
+    expect(err(s, { type: 'upgradeStorage', storage: 'barn' })).toBe('missing_items');
+    s = { ...s, inventory: { ...s.inventory, ...need } };
+    const cap = s.storage.barn;
+    s = ok(s, { type: 'upgradeStorage', storage: 'barn' });
+    expect(s.storage.barn).toBe(cap + CONTENT.storage.barn.stepCapacity);
+    for (const id of Object.keys(need)) expect(s.inventory[id] ?? 0).toBe(0);
+  });
+
+  it('Menge je Material steigt mit der Ausbaustufe', () => {
+    const s = lvl6(createNewGame(T0));
+    const every = CONTENT.materials.storageQtyEvery;
+    const big = { ...s, storage: { ...s.storage, silo: CONTENT.storage.silo.baseCapacity + every * CONTENT.storage.silo.stepCapacity } };
+    expect(Object.values(storageUpgradeMaterials(big, 'silo'))[0]).toBe(2);
+  });
+
+  it('Bachwiese: Material nötig, danach bebaubar', () => {
+    let s = lvl6(createNewGame(T0));
+    const z = CONTENT.landZones.find((x) => x.id === 'bachwiese')!;
+    expect(canPlace(s, 15, 3, 1, 1).ok).toBe(false);
+    expect(err(s, { type: 'unlockZone', zoneId: 'bachwiese' })).toBe('missing_items');
+    s = { ...s, inventory: { ...s.inventory, ...z.materials } };
+    s = ok(s, { type: 'unlockZone', zoneId: 'bachwiese' });
+    for (const id of Object.keys(z.materials!)) expect(s.inventory[id] ?? 0).toBe(0);
+    s = ok(s, { type: 'buyField', gx: 15, gy: 3 });
+    expect(validateLayout(s)).toEqual([]);
+  });
+
+  it('Zufallsfund beim Ernten, nie in Aufträgen oder Angeboten', () => {
+    let s = lvl6(createNewGame(T0));
+    let t = T0;
+    let found = 0;
+    for (let i = 0; i < 300; i++) {
+      const r = applyCommand(s, { type: 'harvest', fieldId: 'f_1' }, t);
+      if (!r.ok) throw new Error(r.error.message);
+      found += r.events.filter((e) => e.type === 'materialFound').length;
+      s = ok(r.state, { type: 'plant', fieldId: 'f_1', crop: 'wheat' }, t);
+      s = { ...s, inventory: { ...s.inventory, wheat: 5 } }; // Silo nie voll
+      t += 61_000;
+    }
+    expect(found).toBeGreaterThan(5);
+    expect(found).toBeLessThan(45);
+    const mats = Object.entries(s.inventory).filter(([id]) => CONTENT.items[id]?.category === 'material');
+    expect(mats.reduce((n, [, q]) => n + q, 0)).toBe(found);
+    for (const o of s.orders) for (const l of o.lines) expect(CONTENT.items[l.item]!.category).not.toBe('material');
+    if (s.villagerOffer) expect(CONTENT.items[s.villagerOffer.item]!.category).not.toBe('material');
   });
 });

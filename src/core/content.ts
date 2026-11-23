@@ -4,7 +4,7 @@
 import raw from '../content/winterhof.json';
 import type {
   AnimalDef, DecoDef, Footprint, GoalDef, ItemDef, LandZoneDef, LevelDef,
-  MapObject, OrderRules, StationDef, StorageDef, StorageKind
+  MapObject, MaterialRules, OrderRules, StationDef, StorageDef, StorageKind
 } from './types';
 
 export interface ContentPack {
@@ -19,6 +19,7 @@ export interface ContentPack {
   achievements: GoalDef[];
   chapters: GoalDef[];
   storage: Record<StorageKind, StorageDef>;
+  materials: MaterialRules;
   orders: OrderRules;
   stand: { slots: number; sellSeconds: number; maxPriceFactor: number };
   villagerOffers: { intervalSeconds: number; lifetimeSeconds: number; priceFactor: number };
@@ -54,6 +55,12 @@ export function validateContent(c: ContentPack = CONTENT): string[] {
   }
   for (const [id, s] of Object.entries(c.stations)) {
     for (const r of s.recipes) if (c.items[r]?.station !== id) errs.push(`Station ${id}: Rezept ${r} gehört nicht dazu`);
+  }
+  for (const id of [...c.materials.storage, ...c.materials.land]) {
+    if (c.items[id]?.category !== 'material') errs.push(`Baumaterial ${id} fehlt oder ist kein Material`);
+  }
+  for (const z of c.landZones) for (const id of Object.keys(z.materials ?? {})) {
+    if (c.items[id]?.category !== 'material') errs.push(`Grundstück ${z.id}: Material ${id} unbekannt`);
   }
   for (let i = 1; i < c.levels.length; i++) {
     if (c.levels[i]!.xpNeeded <= c.levels[i - 1]!.xpNeeded) errs.push(`Level ${i + 1}: XP nicht steigend`);

@@ -375,6 +375,78 @@
       "color": "#E63946",
       "desc": "Prachtvoller Weihnachtskorb mit Tiramisu, Punsch und Strickschal.",
       "storage": "barn"
+    },
+    "shingle": {
+      "id": "shingle",
+      "name": "Holzschindel",
+      "category": "material",
+      "materialGroup": "storage",
+      "sellPrice": 40,
+      "xp": 0,
+      "unlockLevel": 6,
+      "color": "#B7793F",
+      "desc": "Gespaltene Lärchenschindel – zum Ausbau von Silo und Scheune.",
+      "storage": "barn"
+    },
+    "clamp": {
+      "id": "clamp",
+      "name": "Eisenklammer",
+      "category": "material",
+      "materialGroup": "storage",
+      "sellPrice": 40,
+      "xp": 0,
+      "unlockLevel": 6,
+      "color": "#64748B",
+      "desc": "Geschmiedete Klammer – hält jeden Lagerausbau zusammen.",
+      "storage": "barn"
+    },
+    "resin": {
+      "id": "resin",
+      "name": "Harzleim",
+      "category": "material",
+      "materialGroup": "storage",
+      "sellPrice": 40,
+      "xp": 0,
+      "unlockLevel": 6,
+      "color": "#D97706",
+      "desc": "Zäher Tannenharz-Leim – dichtet Silo und Scheune gegen Schnee.",
+      "storage": "barn"
+    },
+    "snow_shovel": {
+      "id": "snow_shovel",
+      "name": "Schneeschaufel",
+      "category": "material",
+      "materialGroup": "land",
+      "sellPrice": 40,
+      "xp": 0,
+      "unlockLevel": 6,
+      "color": "#38BDF8",
+      "desc": "Räumt neues Land frei.",
+      "storage": "barn"
+    },
+    "boundary_stake": {
+      "id": "boundary_stake",
+      "name": "Grenzpflock",
+      "category": "material",
+      "materialGroup": "land",
+      "sellPrice": 40,
+      "xp": 0,
+      "unlockLevel": 6,
+      "color": "#9A3412",
+      "desc": "Markiert die Grenzen eines neuen Grundstücks.",
+      "storage": "barn"
+    },
+    "survey_map": {
+      "id": "survey_map",
+      "name": "Flurkarte",
+      "category": "material",
+      "materialGroup": "land",
+      "sellPrice": 40,
+      "xp": 0,
+      "unlockLevel": 6,
+      "color": "#65A30D",
+      "desc": "Alte Karte des Tals – zeigt, wo das neue Grundstück liegt.",
+      "storage": "barn"
     }
   },
   "cropIds": [
@@ -712,6 +784,28 @@
       },
       "cost": 320,
       "unlockLevel": 5
+    },
+    {
+      "id": "bachwiese",
+      "name": "Bachwiese",
+      "desc": "Land östlich vom Bach, über die Brücke (2×13 Felder).",
+      "bounds": {
+        "x0": 15,
+        "y0": 0,
+        "x1": 16,
+        "y1": 12
+      },
+      "signPos": {
+        "gx": 16,
+        "gy": 9
+      },
+      "cost": 600,
+      "unlockLevel": 6,
+      "materials": {
+        "snow_shovel": 1,
+        "boundary_stake": 1,
+        "survey_map": 1
+      }
     }
   ],
   "levels": [
@@ -755,7 +849,7 @@
       "xpNeeded": 2070,
       "coinBonus": 40,
       "treeStage": 3,
-      "unlockText": "Meister der Weihnachtsbäckerei."
+      "unlockText": "Freigeschaltet: Baumaterial für Lager und Land, Grundstück Bachwiese."
     },
     {
       "level": 7,
@@ -1194,14 +1288,16 @@
       "stepCapacity": 25,
       "maxCapacity": 300,
       "baseCost": 80,
-      "costStep": 65
+      "costStep": 65,
+      "materialsFromLevel": 6
     },
     "barn": {
       "baseCapacity": 50,
       "stepCapacity": 25,
       "maxCapacity": 300,
       "baseCost": 80,
-      "costStep": 65
+      "costStep": 65,
+      "materialsFromLevel": 6
     }
   },
   "orders": {
@@ -1766,5 +1862,20 @@
         "fitWidthTiles": 1.02
       }
     }
+  },
+  "materials": {
+    "fromLevel": 6,
+    "dropChance": 0.06,
+    "storage": [
+      "shingle",
+      "clamp",
+      "resin"
+    ],
+    "land": [
+      "snow_shovel",
+      "boundary_stake",
+      "survey_map"
+    ],
+    "storageQtyEvery": 3
   }
 }

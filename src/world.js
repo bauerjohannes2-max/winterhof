@@ -292,11 +292,11 @@ export class WinterWorld {
         { gx: 8.2, gy: -2.2, s: 285, flip: true },
         { gx: 10.9, gy: -2.0, s: 290, flip: false },
         { gx: 13.0, gy: -1.6, s: 255, flip: true },
-        // Eastern cliff ridge strictly beyond brook (gx >= 17.6, keeping entire 3D bridge 100% unobstructed!)
-        { gx: 17.6, gy: 1.0, s: 255, flip: false },
-        { gx: 18.2, gy: 3.6, s: 230, flip: true },
-        { gx: 18.8, gy: 10.2, s: 240, flip: false },
-        { gx: 17.8, gy: 13.2, s: 235, flip: true },
+        // Eastern cliff ridge beyond Bachwiese (gx >= 20, keeping entire 3D bridge 100% unobstructed!)
+        { gx: 20.0, gy: 0.6, s: 255, flip: false },
+        { gx: 20.6, gy: 3.6, s: 230, flip: true },
+        { gx: 20.8, gy: 10.2, s: 240, flip: false },
+        { gx: 21.2, gy: 15.8, s: 235, flip: true },
         // Western snow-rock ridge strictly outside west_forest (gx <= -2.4, clear of road gy=6!)
         { gx: -2.6, gy: 8.6, s: 240, flip: true },
         { gx: -2.4, gy: 11.8, s: 255, flip: false }
@@ -329,11 +329,11 @@ export class WinterWorld {
         forestCoords.push({ gx: -3.4 + (rand() - 0.5) * 0.7, gy: gy + (rand() - 0.5) * 0.4 });
         forestCoords.push({ gx: -1.6 + (rand() - 0.5) * 0.4, gy: gy + (rand() - 0.5) * 0.4 });
       }
-      // Eastern forest flank strictly across the brook (gx >= 16.5, road gap gy = 4.6..7.8!)
+      // Eastern forest flank behind Bachwiese (gx >= 17.5, road gap gy = 4.6..7.8!)
       for (let gy = -1.0; gy <= 14.5; gy += 1.55) {
         if (gy > 4.6 && gy < 7.8) continue;
-        forestCoords.push({ gx: 16.6 + (rand() - 0.5) * 0.6, gy: gy + (rand() - 0.5) * 0.4 });
-        forestCoords.push({ gx: 18.4 + (rand() - 0.5) * 0.7, gy: gy + (rand() - 0.5) * 0.4 });
+        forestCoords.push({ gx: 17.7 + (rand() - 0.5) * 0.4, gy: gy + (rand() - 0.5) * 0.4 });
+        forestCoords.push({ gx: 19.3 + (rand() - 0.5) * 0.5, gy: gy + (rand() - 0.5) * 0.4 });
       }
       // Southern forest frame far outside pond
       for (let gx = -1.5; gx <= 7.0; gx += 1.7) {

@@ -3,7 +3,7 @@ export { CONTENT, validateContent, footprintOf } from './content';
 export { canPlace, validateLayout, buildOccupancy } from './map';
 export {
   SCHEMA_VERSION, createNewGame, levelForXp, levelProgress, storageOf, storageUsed, storageFree,
-  storageUpgradeCost, fieldReadyAt, isFieldReady, masteryOf, craftSeconds, getObject, countObjects,
+  storageUpgradeCost, storageUpgradeMaterials, fieldReadyAt, isFieldReady, masteryOf, craftSeconds, getObject, countObjects,
   goalReady, allGoals, activeChapter, dayKey
 } from './state';
 export { applyCommand, advanceTime, generateOrder } from './commands';

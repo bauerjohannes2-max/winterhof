@@ -8,7 +8,7 @@ import { canPlace } from './map';
 import { nextRandom, pick, randInt } from './rng';
 import {
   allGoals, craftSeconds, dayKey, getObject, goalReady, isFieldReady, levelForXp,
-  storageFree, storageOf, storageUpgradeCost, countObjects
+  storageFree, storageOf, storageUpgradeCost, storageUpgradeMaterials, countObjects
 } from './state';
 import type {
   Command, CommandError, CommandResult, ErrorCode, GameEvent, GameState, Inventory,
@@ -179,7 +179,7 @@ export function advanceTime(state: GameState, nowRaw: number): { state: GameStat
     c.ev.push({ type: 'offerClosed', accepted: false });
   }
   if (!s.villagerOffer && now >= s.nextOfferAt) {
-    const offerable = Object.entries(s.inventory).filter(([id, q]) => q >= 2 && CONTENT.items[id]);
+    const offerable = Object.entries(s.inventory).filter(([id, q]) => q >= 2 && CONTENT.items[id] && CONTENT.items[id]!.category !== 'material');
     if (offerable.length > 0) {
       const [item, have] = pick(s, offerable);
       const qty = Math.max(1, Math.min(have - 1, randInt(s, 1, 3)));
@@ -296,6 +296,7 @@ function run(c: Ctx, cmd: Command): void {
       addXp(c, CONTENT.items[def.produceItem]?.xp ?? 0, a.id);
       stat(c, 'collected');
       c.ev.push({ type: 'animalCollected', animalId: a.id, item: def.produceItem });
+      maybeFindMaterial(c, a.id);
       return;
     }
     case 'petAnimal': {
@@ -331,6 +332,7 @@ function run(c: Ctx, cmd: Command): void {
       stat(c, 'crafted');
       addXp(c, CONTENT.items[item]?.xp ?? 0, st.id);
       c.ev.push({ type: 'productCollected', stationId: st.id, item });
+      maybeFindMaterial(c, st.id);
       tickStation(c, st); // pausierte Produktion läuft weiter
       return;
     }
@@ -479,7 +481,10 @@ function run(c: Ctx, cmd: Command): void {
     }
     case 'upgradeStorage': {
       const cost = storageUpgradeCost(s, cmd.storage) ?? fail('limit', 'Schon maximal ausgebaut.');
+      const mats = storageUpgradeMaterials(s, cmd.storage);
+      if (!hasItems(s, mats)) fail('missing_items', 'Es fehlt Baumaterial.', missing(s, mats));
       payCoins(c, cost);
+      if (Object.keys(mats).length > 0) spend(c, mats);
       const d = CONTENT.storage[cmd.storage];
       s.storage[cmd.storage] = Math.min(d.maxCapacity, s.storage[cmd.storage] + d.stepCapacity);
       stat(c, 'storageUpgrades');
@@ -491,7 +496,10 @@ function run(c: Ctx, cmd: Command): void {
       const z = CONTENT.landZones.find((x) => x.id === cmd.zoneId) ?? fail('not_found', 'Unbekanntes Grundstück.');
       if (s.unlockedZones.includes(z.id)) fail('already_done', 'Schon freigeschaltet.');
       requireLevel(s, z.unlockLevel, z.name);
+      const mats = z.materials ?? {};
+      if (!hasItems(s, mats)) fail('missing_items', 'Es fehlt Baumaterial.', missing(s, mats));
       payCoins(c, z.cost);
+      if (Object.keys(mats).length > 0) spend(c, mats);
       s.unlockedZones.push(z.id);
       stat(c, 'landsUnlocked');
       addXp(c, 40);
@@ -507,7 +515,7 @@ function run(c: Ctx, cmd: Command): void {
       const coins = cfg.baseCoins + Math.min(streak - 1, cfg.maxStreakBonus) * cfg.streakCoins;
       const pool = unlockedItems(s).filter((i) => CONTENT.items[i]!.category !== 'crafted');
       const item = pick(s, pool);
-      const items: Inventory = { [item]: randInt(s, 1, 3) };
+      const items: Inventory = { [item]: CONTENT.items[item]!.category === 'material' ? 1 : randInt(s, 1, 3) };
       // Truhe verfällt nie: bei vollem Lager nur Münzen
       try { gain(c, items, 'dailyChest'); } catch (e) { if (!(e instanceof Fail)) throw e; for (const k of Object.keys(items)) delete items[k]; }
       addCoins(c, coins, 'dailyChest');
@@ -595,6 +603,18 @@ function run(c: Ctx, cmd: Command): void {
   }
 }
 
+/** Zufallsfund Baumaterial (ab Stufe 6). Bei voller Scheune kein Fund, nie ein Fehler. */
+function maybeFindMaterial(c: Ctx, at: string) {
+  const m = CONTENT.materials;
+  if (c.s.level < m.fromLevel) return; // vorher kein Zufallszug: alte Abläufe bleiben gleich
+  if (nextRandom(c.s) >= m.dropChance) return;
+  const pool = [...m.storage, ...m.land].filter((id) => (CONTENT.items[id]?.unlockLevel ?? 99) <= c.s.level);
+  if (pool.length === 0 || storageFree(c.s, 'barn') < 1) return;
+  const item = pick(c.s, pool);
+  gain(c, { [item]: 1 }, at);
+  c.ev.push({ type: 'materialFound', item, at });
+}
+
 function harvestField(c: Ctx, fieldId: string) {
   const f = getObject(c.s, fieldId, 'field') ?? fail('not_found', 'Feld nicht gefunden.');
   if (!f.crop) fail('not_ready', 'Feld ist leer.');
@@ -607,6 +627,7 @@ function harvestField(c: Ctx, fieldId: string) {
   c.ev.push({ type: 'harvested', fieldId: f.id, crop: it.id, qty });
   f.crop = null;
   f.plantedAt = c.now;
+  maybeFindMaterial(c, f.id);
 }
 
 // nextRandom wird re-exportiert, damit Tests den Seed-Verlauf prüfen können

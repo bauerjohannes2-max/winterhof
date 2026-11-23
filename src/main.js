@@ -28,6 +28,7 @@ import {
   footprintOf,
   storageUsed,
   storageUpgradeCost,
+  storageUpgradeMaterials,
   goalReady,
   activeChapter,
   dayKey,
@@ -306,6 +307,21 @@ class WinterhofGame {
     return { x: p.x, y: p.y - (lift || defaultLift), obj: o };
   }
 
+  /** Hat der Spieler alle Waren/Materialien? */
+  _hasAll(need) {
+    return Object.entries(need).every(([id, q]) => (this.core.inventory[id] || 0) >= q);
+  }
+
+  /** Zeile „Material: Holzschindel 1/2 · …“ für Ausbau-Karten. */
+  _matsLine(need) {
+    const parts = Object.entries(need).map(([id, q]) => {
+      const have = this.core.inventory[id] || 0;
+      const col = have >= q ? 'var(--pine)' : '#B91C1C';
+      return `<span style="color:${col};font-weight:800">${ITEMS[id]?.name || id} ${have}/${q}</span>`;
+    });
+    return parts.length ? `<br>Material: ${parts.join(' · ')}` : '';
+  }
+
   onEvents(events) {
     let levelUp = null;
     for (const ev of events) {
@@ -473,6 +489,10 @@ class WinterhofGame {
           if (g) this.showToast(`${g.title} abgeschlossen (+${g.coins} Münzen).`, 3000);
           break;
         }
+        case 'materialFound':
+          audio.playCoin();
+          if (ITEMS[ev.item]) this.showToast(`Baumaterial gefunden: ${ITEMS[ev.item].name}`, 2400);
+          break;
         case 'discovered':
           if (ITEMS[ev.item]) this.showToast(`Neu im Sammelbuch: ${ITEMS[ev.item].name}`, 2400);
           break;
@@ -1602,6 +1622,8 @@ class WinterhofGame {
         const pct = Math.min(100, Math.round((used / cap) * 100));
         const fillCls = used >= cap ? 'full' : pct >= 80 ? 'warn' : '';
         const upCost = storageUpgradeCost(s, kind);
+        const upMats = storageUpgradeMaterials(s, kind);
+        const matsOk = this._hasAll(upMats);
         const step = CONTENT.storage[kind].stepCapacity;
         const what = kind === 'silo' ? 'Ernte' : 'Tierprodukte und Waren';
         return `
@@ -1609,11 +1631,11 @@ class WinterhofGame {
           <div class="barn-cap-top">
             <div>
               <div class="card-title">${STORAGE_LABEL[kind]}: ${used} / ${cap}</div>
-              <div class="card-sub">${upCost === null ? 'Maximal ausgebaut.' : `Für ${what}. Ausbau: +${step} Plätze.`}</div>
+              <div class="card-sub">${upCost === null ? 'Maximal ausgebaut.' : `Für ${what}. Ausbau: +${step} Plätze.`}${this._matsLine(upMats)}</div>
             </div>
             ${upCost === null
               ? `<button class="btn-wood" disabled>Max</button>`
-              : `<button class="btn-green" data-upgrade="${kind}" ${s.coins >= upCost ? '' : 'disabled'}>+${step} (${upCost})</button>`
+              : `<button class="btn-green" data-upgrade="${kind}" ${s.coins >= upCost && matsOk ? '' : 'disabled'}>+${step} (${upCost})</button>`
             }
           </div>
           <div class="barn-cap-track"><div class="barn-cap-fill ${fillCls}" style="width:${pct}%"></div></div>
@@ -1819,13 +1841,13 @@ class WinterhofGame {
             <div class="card-thumb">${sprites.getUiIcon('land')}</div>
             <div class="card-info">
               <div class="card-title">${z.name}</div>
-              <div class="card-sub">${z.desc}</div>
+              <div class="card-sub">${z.desc}${isOpen ? '' : this._matsLine(z.materials || {})}</div>
             </div>
             ${isOpen
               ? `<button class="btn-wood" disabled>Frei</button>`
               : locked
                 ? `<button class="btn-wood" disabled>Lv.${z.unlockLevel}</button>`
-                : `<button class="btn-green" data-buy-land="${z.id}" ${this.state.coins >= z.cost ? '' : 'disabled'}>${z.cost}</button>`
+                : `<button class="btn-green" data-buy-land="${z.id}" ${this.state.coins >= z.cost && this._hasAll(z.materials || {}) ? '' : 'disabled'}>${z.cost}</button>`
             }
           </div>`;
       }).join('');
@@ -2060,6 +2082,7 @@ class WinterhofGame {
       const crops = allItems.filter((i) => i.category === 'crop');
       const animalProds = allItems.filter((i) => i.category === 'animal');
       const treats = allItems.filter((i) => i.category === 'crafted');
+      const materials = allItems.filter((i) => i.category === 'material');
 
       const secretsHtml = `
         <div class="album-section-title">Meilensteine (${discSecretsCount}/${ALBUM_SECRETS.length})</div>
@@ -2086,6 +2109,7 @@ class WinterhofGame {
         ${renderGroup('Winterpflanzen', crops)}
         ${renderGroup('Tierprodukte', animalProds)}
         ${renderGroup('Backstube, Café, Patisserie & Werkstatt', treats)}
+        ${renderGroup('Baumaterial', materials)}
         ${secretsHtml}`;
     } else {
       bodyEl.innerHTML = this.state.animals.map((an) => {

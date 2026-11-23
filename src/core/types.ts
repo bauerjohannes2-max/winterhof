@@ -8,7 +8,8 @@ export type ObjectId = string;
 export type Inventory = Record<ItemId, number>;
 
 export type StorageKind = 'silo' | 'barn';
-export type ItemCategory = 'crop' | 'animal' | 'crafted';
+export type ItemCategory = 'crop' | 'animal' | 'crafted' | 'material';
+export type MaterialGroup = 'storage' | 'land';
 
 // ---------------------------------------------------------------- Inhalte
 export interface ItemDef {
@@ -27,6 +28,8 @@ export interface ItemDef {
   station?: string;
   craftTime?: number;     // Sekunden
   ingredients?: Inventory;
+  // Baumaterial
+  materialGroup?: MaterialGroup;
 }
 
 export interface AnimalDef {
@@ -66,6 +69,8 @@ export interface LandZoneDef {
   signPos: { gx: number; gy: number };
   cost: number;
   unlockLevel: number;
+  /** Baumaterial zusätzlich zu den Münzen (ab Stufe 6) */
+  materials?: Inventory;
 }
 
 export interface LevelDef {
@@ -92,6 +97,18 @@ export interface StorageDef {
   maxCapacity: number;
   baseCost: number;
   costStep: number;
+  /** Ab dieser Spielerstufe braucht jeder Ausbau Baumaterial */
+  materialsFromLevel?: number;
+}
+
+export interface MaterialRules {
+  fromLevel: number;
+  /** Chance je Ernte/Abholen auf 1 Baumaterial */
+  dropChance: number;
+  storage: ItemId[];
+  land: ItemId[];
+  /** Lagerausbau: je Material 1 + floor(Ausbaustufe / storageQtyEvery) */
+  storageQtyEvery: number;
 }
 
 export interface OrderRules {
@@ -295,6 +312,7 @@ export type GameEvent =
   | { type: 'goalClaimed'; goalId: string }
   | { type: 'goalReady'; goalId: string }
   | { type: 'discovered'; item: ItemId }
+  | { type: 'materialFound'; item: ItemId; at?: ObjectId }
   | { type: 'villagerTipped'; coins: number }
   | { type: 'giftPacked'; items: Inventory }
   | { type: 'giftReceived'; parcelId: string; items: Inventory };
