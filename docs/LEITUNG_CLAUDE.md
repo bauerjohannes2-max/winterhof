@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Übergänge Runde 3 fertig (Claude 23.11. spät): Weg rund mit Saum + Schneeklumpen, Standflächen + Schneewehen an jedem Objekt, Feld ohne Leuchtrand, Hofrand als Schneewall mit Schatten, Texturnähte weg, E2E wiederholbar. Vergleich `docs/qa/probe/vergleich_runde3.jpg`, Vorbild-Notizen `docs/VORBILD_ANALYSE.md`. Nächstes: Neustart nach Entscheidung 12.
+- Niemand. Neustart Schritt 0 fertig (Claude 23.11. spät): Bestandsaufnahme + Plan `docs/NEUSTART_PLAN.md`, wartet auf Hannes. Danach Baustein 0 (GRAFIK_TECHNIK.md).
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -25,7 +25,7 @@
 
 11. **Erst perfektionieren, nichts Neues** (Hannes 23.11. abends): Bestehendes auf Hay-Day-/Clash-of-Clans-Niveau bringen, vor allem Übergänge (Objekt↔Boden, Weg↔Schnee, Feld↔Boden, Hof↔Wildnis); „vieles wirkt lose“. Vorher echte Screenshots beider Spiele im Detail analysieren (nie ins Repo).
 
-12. **Neustart „langsam und richtig“** (Hannes 23.11. spät): Kein Flicken mehr. Von vorn, ein Baustein nach dem anderen, jeder fertig und von Hannes abgenommen, bevor der nächste kommt. Erst technisches Fundament, dann Grafik Stück für Stück. Vorbild Hay Day + Clash of Clans bis ins Detail. Schritt 0: Bestandsaufnahme, Hannes entscheidet „Kern behalten, Darstellung neu“ (Empfehlung) oder „alles neu“. Alter Stand bleibt als Tag `v9-flickwerk`.
+12. **Neustart „langsam und richtig“** (Hannes 23.11. spät): Kein Flicken mehr. Von vorn, ein Baustein nach dem anderen, jeder fertig und von Hannes abgenommen, bevor der nächste kommt. Erst technisches Fundament, dann Grafik Stück für Stück. Vorbild Hay Day + Clash of Clans bis ins Detail. Schritt 0: Bestandsaufnahme, Hannes entscheidet „Kern behalten, Darstellung neu“ (Empfehlung) oder „alles neu“. Alter Stand bleibt als Tag `v9-flickwerk`. **Hannes 23.11.: Kern behalten, Darstellung neu.** Plan: `docs/NEUSTART_PLAN.md` (wartet auf Abnahme).
 
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof). `src/gameData.js` ist nur noch ein Adapter für die alte Oberfläche.
