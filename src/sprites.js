@@ -22,7 +22,17 @@ const WEBP_SPRITES = [
   'crop_matcha',
   'deco_pine',
   'deco_snowman',
-  'deco_lantern'
+  'deco_lantern',
+  'timber_bridge',
+  'alpine_cliff',
+  'alpine_villager',
+  'alpine_villager_green',
+  'alpine_villager_navy'
+];
+
+const TERRAIN_TEXTURES = [
+  { key: 'terrain_snow', path: './assets/terrain/snow_ground.webp' },
+  { key: 'terrain_cobble', path: './assets/terrain/cobble_road.webp' }
 ];
 
 // Painterly 2.5D Winter Props (soft warm borders matching the 3D WebP palette)
@@ -185,7 +195,7 @@ export class SpriteManager {
 
   async loadAll(onProgress = null) {
     const embedded = window.__WINTERHOF_ASSETS__ || {};
-    const total = WEBP_SPRITES.length + Object.keys(VECTOR_SPRITES_SVG).length + Object.keys(ITEM_ICONS_SVG).length;
+    const total = WEBP_SPRITES.length + TERRAIN_TEXTURES.length + Object.keys(VECTOR_SPRITES_SVG).length + Object.keys(ITEM_ICONS_SVG).length;
     let done = 0;
     const step = () => {
       done++;
@@ -198,6 +208,11 @@ export class SpriteManager {
       const src = embedded[key] || `./assets/sprites/${key}.webp`;
       this.iconUrls[key] = src;
       jobs.push(loadImg(src).then((img) => { if (img) this.images[key] = img; step(); }));
+    }
+
+    for (const entry of TERRAIN_TEXTURES) {
+      const src = embedded[entry.key] || entry.path;
+      jobs.push(loadImg(src).then((img) => { if (img) this.images[entry.key] = img; step(); }));
     }
 
     for (const [key, svg] of Object.entries(VECTOR_SPRITES_SVG)) {

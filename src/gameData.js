@@ -12,7 +12,7 @@ export const LAND_ZONES = [
     name: 'Tannenwäldchen',
     desc: 'Erweitert den westlichen Waldrand (2×12 Felder) für zusätzliche Beete & Deko.',
     bounds: { x0: 0, y0: 2, x1: 1, y1: 13 },
-    signPos: { gx: 1, gy: 7 },
+    signPos: { gx: 0.9, gy: 9.6 },
     cost: 120,
     unlockLevel: 2
   },
@@ -21,7 +21,7 @@ export const LAND_ZONES = [
     name: 'Teichwiese',
     desc: 'Öffnet die sonnige Südwiese (12×2 Felder) direkt am zugefrorenen Bach.',
     bounds: { x0: 2, y0: 14, x1: 13, y1: 15 },
-    signPos: { gx: 7, gy: 14 },
+    signPos: { gx: 6.8, gy: 14.3 },
     cost: 180,
     unlockLevel: 3
   },
@@ -30,7 +30,7 @@ export const LAND_ZONES = [
     name: 'Schlittenlichtung',
     desc: 'Schaltet die östliche Lichtung (2×12 Felder) neben dem Rentierschlitten frei.',
     bounds: { x0: 14, y0: 2, x1: 15, y1: 13 },
-    signPos: { gx: 14, gy: 8 },
+    signPos: { gx: 14.9, gy: 3.1 },
     cost: 250,
     unlockLevel: 4
   },
@@ -39,7 +39,7 @@ export const LAND_ZONES = [
     name: 'Nordlicht-Gipfel',
     desc: 'Erschließt das obere Panorama (16×2 Felder) hinter dem Chalet.',
     bounds: { x0: 0, y0: 0, x1: 15, y1: 1 },
-    signPos: { gx: 1.5, gy: 1 },
+    signPos: { gx: 11.2, gy: 1.0 },
     cost: 320,
     unlockLevel: 5
   }

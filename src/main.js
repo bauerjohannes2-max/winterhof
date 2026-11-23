@@ -31,7 +31,8 @@ import {
   clearIncomingUrlGift
 } from './giftExchange.js';
 
-const SAVE_KEY = 'winterhof_save_v5';
+const SAVE_KEY = 'winterhof_save_v6';
+const LEGACY_SAVE_KEY = 'winterhof_save_v5';
 
 const LOADING_TIPS = [
   'Wische mit einem Finger über reife Felder zum Ernten.',
@@ -174,10 +175,21 @@ class WinterhofGame {
     this.lastModalRefresh = 0;
 
     this.mountHudIcons();
+    this.syncOrientationGuard();
     this.bindUI();
     this.bindCanvasEvents();
     this.updateHUD();
     window.__WINTERHOF__ = this;
+  }
+
+  syncOrientationGuard() {
+    const updateOrientation = () => {
+      const portrait = window.innerHeight > window.innerWidth;
+      document.body.classList.toggle('is-portrait', portrait);
+    };
+    updateOrientation();
+    window.addEventListener('resize', updateOrientation);
+    window.addEventListener('orientationchange', updateOrientation);
   }
 
   mountHudIcons() {
@@ -205,8 +217,11 @@ class WinterhofGame {
     if (tipEl) tipEl.textContent = LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)];
 
     await sprites.loadAll((pct) => {
-      if (barEl) barEl.style.width = `${Math.max(14, Math.round(pct * 100))}%`;
+      if (barEl) barEl.style.width = `${Math.max(14, Math.round(pct * 84))}%`;
     });
+
+    if (tipEl) tipEl.textContent = 'WebGL-Wintertal wird aufgebaut...';
+    await this.world.init();
 
     if (barEl) barEl.style.width = '100%';
     await new Promise((r) => setTimeout(r, 240));
@@ -235,7 +250,7 @@ class WinterhofGame {
 
   loadState() {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
       if (!raw) return createInitialState();
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.fields || !parsed.stations) return createInitialState();
@@ -243,7 +258,7 @@ class WinterhofGame {
       const merged = {
         ...base,
         ...parsed,
-        version: 5,
+        version: 6,
         storedDecos: parsed.storedDecos || {},
         claimedChapters: parsed.claimedChapters || [],
         lastDailyChestDate: parsed.lastDailyChestDate || null,
