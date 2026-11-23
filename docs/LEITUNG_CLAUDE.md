@@ -31,6 +31,11 @@
 - 30 Level (XP = 60·(L−1)^2,2), kleine Level-Boni.
 - Vielspieler-Bot (3×20 min/Tag): Tag 1 Stufe 6, Tag 7 Stufe 15.
 
+## Stil und Prüfung
+- Verbindliche Regeln: `docs/STIL_REGELN.md` (nur Querformat, Maßstab in Kacheln, nie verzerren, Licht oben links, Bodenlinie).
+- Prüfung: `python scripts/qa/pruefe_assets.py` erzeugt Ampel + `docs/qa/aufstellung.png`. Vorschau ohne Datenänderung: `--set key=hoehe --out datei.png`.
+- Veröffentlichen erlaubt (Hannes 23.11.): wenn Tests, Typprüfung und Build grün sind. GitHub prüft das vor jedem Deploy automatisch.
+
 ## Nächste Schritte
 1. Oberfläche (`main.js`) auf `GameSession` umstellen: Klick → Befehl, Ereignis → Animation/Ton. Danach alte Logik in `main.js` löschen.
 2. Darstellung datengetrieben: Sprite, Anker und Footprint in die JSON, generische Objekt-Ansicht statt Pixel-Code je Gebäude.

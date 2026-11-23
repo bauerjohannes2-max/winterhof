@@ -1424,5 +1424,339 @@
   },
   "market": {
     "sellFactor": 0.3
+  },
+  "art": {
+    "tilePx": 116,
+    "note": "Höhen in Kacheln (1 Kachel = Kachelbreite 116 px Weltmaß). Breite ergibt sich IMMER aus dem Bild-Seitenverhältnis.",
+    "categories": {
+      "house": {
+        "label": "Gebäude 2x2",
+        "heightTiles": [
+          1.5,
+          2.4
+        ]
+      },
+      "landmark": {
+        "label": "Wahrzeichen 2x2",
+        "heightTiles": [
+          1.6,
+          2.8
+        ]
+      },
+      "prop": {
+        "label": "Hof-Objekt 1x1",
+        "heightTiles": [
+          0.45,
+          1
+        ]
+      },
+      "deco": {
+        "label": "Deko 1x1",
+        "heightTiles": [
+          0.45,
+          1.2
+        ]
+      },
+      "animal": {
+        "label": "Tier",
+        "heightTiles": [
+          0.25,
+          0.75
+        ]
+      },
+      "person": {
+        "label": "Person",
+        "heightTiles": [
+          0.5,
+          0.65
+        ]
+      },
+      "crop": {
+        "label": "Feldfrucht",
+        "heightTiles": [
+          0.4,
+          0.8
+        ]
+      },
+      "ground": {
+        "label": "Boden 1x1",
+        "heightTiles": [
+          0.4,
+          0.7
+        ]
+      }
+    },
+    "relations": [
+      {
+        "smaller": "animal_chicken",
+        "larger": "animal_sheep"
+      },
+      {
+        "smaller": "animal_sheep",
+        "larger": "animal_reindeer"
+      },
+      {
+        "smaller": "animal_chicken",
+        "larger": "alpine_villager",
+        "maxRatio": 0.7
+      },
+      {
+        "smaller": "animal_sheep",
+        "larger": "alpine_villager",
+        "maxRatio": 0.9
+      },
+      {
+        "smaller": "alpine_villager",
+        "larger": "christmas_bakery",
+        "maxRatio": 0.36
+      },
+      {
+        "smaller": "alpine_villager",
+        "larger": "winter_chalet",
+        "maxRatio": 0.36
+      },
+      {
+        "smaller": "christmas_bakery",
+        "larger": "winter_chalet"
+      },
+      {
+        "smaller": "alpine_villager",
+        "larger": "deco_lantern"
+      }
+    ],
+    "minSourcePxPerWorldPx": 1.6,
+    "sprites": {
+      "winter_chalet": {
+        "file": "winter_chalet.webp",
+        "category": "house",
+        "footprint": {
+          "w": 2,
+          "h": 2
+        },
+        "heightTiles": 1.897,
+        "anchorY": 0.86
+      },
+      "christmas_bakery": {
+        "file": "christmas_bakery.webp",
+        "category": "house",
+        "footprint": {
+          "w": 2,
+          "h": 2
+        },
+        "heightTiles": 1.69,
+        "anchorY": 0.86
+      },
+      "punch_stand": {
+        "file": "punch_stand.webp",
+        "category": "house",
+        "footprint": {
+          "w": 2,
+          "h": 2
+        },
+        "heightTiles": 1.509,
+        "anchorY": 0.86
+      },
+      "patisserie_house": {
+        "file": "patisserie_house.webp",
+        "category": "house",
+        "footprint": {
+          "w": 2,
+          "h": 2
+        },
+        "heightTiles": 1.69,
+        "anchorY": 0.86
+      },
+      "gift_workshop": {
+        "file": "gift_workshop.webp",
+        "category": "house",
+        "footprint": {
+          "w": 2,
+          "h": 2
+        },
+        "heightTiles": 1.69,
+        "anchorY": 0.86
+      },
+      "christmas_tree": {
+        "file": "christmas_tree.webp",
+        "category": "landmark",
+        "footprint": {
+          "w": 2,
+          "h": 2
+        },
+        "heightTiles": 1.776,
+        "anchorY": 0.86
+      },
+      "wishlist_board": {
+        "file": "wishlist_board.webp",
+        "category": "prop",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.793,
+        "anchorY": 0.88
+      },
+      "gift_mailbox": {
+        "file": "gift_mailbox.webp",
+        "category": "prop",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.569,
+        "anchorY": 0.88
+      },
+      "reindeer_sleigh": {
+        "file": "reindeer_sleigh.webp",
+        "category": "prop",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.931,
+        "anchorY": 0.88
+      },
+      "treasure_chest": {
+        "file": "treasure_chest.webp",
+        "category": "prop",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.5,
+        "anchorY": 0.88
+      },
+      "deco_pine": {
+        "file": "deco_pine.webp",
+        "category": "deco",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 1.086,
+        "anchorY": 0.88
+      },
+      "deco_snowman": {
+        "file": "deco_snowman.webp",
+        "category": "deco",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.638,
+        "anchorY": 0.88
+      },
+      "deco_lantern": {
+        "file": "deco_lantern.webp",
+        "category": "deco",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.621,
+        "anchorY": 0.88
+      },
+      "animal_chicken": {
+        "file": "animal_chicken.webp",
+        "category": "animal",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.448,
+        "anchorY": 0.88
+      },
+      "animal_sheep": {
+        "file": "animal_sheep.webp",
+        "category": "animal",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.552,
+        "anchorY": 0.88
+      },
+      "animal_reindeer": {
+        "file": "animal_reindeer.webp",
+        "category": "animal",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.672,
+        "anchorY": 0.88
+      },
+      "alpine_villager": {
+        "file": "alpine_villager.webp",
+        "category": "person",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.569,
+        "anchorY": 0.92
+      },
+      "alpine_villager_green": {
+        "file": "alpine_villager_green.webp",
+        "category": "person",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.569,
+        "anchorY": 0.92
+      },
+      "alpine_villager_navy": {
+        "file": "alpine_villager_navy.webp",
+        "category": "person",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.569,
+        "anchorY": 0.92
+      },
+      "crop_wheat": {
+        "file": "crop_wheat.webp",
+        "category": "crop",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.724,
+        "anchorY": 0.72
+      },
+      "crop_berries": {
+        "file": "crop_berries.webp",
+        "category": "crop",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.724,
+        "anchorY": 0.72
+      },
+      "crop_matcha": {
+        "file": "crop_matcha.webp",
+        "category": "crop",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.724,
+        "anchorY": 0.72
+      },
+      "snow_field_plot": {
+        "file": "snow_field_plot.webp",
+        "category": "ground",
+        "footprint": {
+          "w": 1,
+          "h": 1
+        },
+        "heightTiles": 0.569,
+        "anchorY": 0.62,
+        "fitWidthTiles": 1.02
+      }
+    }
   }
 }

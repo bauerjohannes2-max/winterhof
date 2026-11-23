@@ -5,6 +5,7 @@
 // ============================================================================
 import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { viewSize, elementCenter } from './viewport.js';
+import content from './content/winterhof.json';
 import { LAND_ZONES, ITEMS, ANIMALS, getLevelInfo, getStationMastery } from './gameData.js';
 import { GpuTextures } from './engine/textures.js';
 import { WorldGrid, SURFACE } from './engine/worldGrid.js';
@@ -32,6 +33,10 @@ export function worldToGrid(wx, wy) {
 }
 
 // Clean unlocked lakeside corner tile inside the estate (never touching fence or water!)
+// Größentabelle (docs/STIL_REGELN.md): Höhe in Kacheln, Breite immer aus dem Bild-Seitenverhältnis
+const ART = content.art.sprites;
+const artH = (key, scale = 1) => (ART[key]?.heightTiles ?? 0.5) * TILE_W * scale;
+
 export const DAILY_CHEST_POS = { gx: 11, gy: 11 };
 
 const VILLAGER_QUOTES = [
@@ -914,7 +919,15 @@ export class WinterWorld {
       node.wrap.x = x;
       node.wrap.y = y;
       node.wrap.zIndex = opts.zIndex ?? y;
-      node.sp.anchor.set(0.5, opts.anchorY ?? 0.88);
+      node.sp.anchor.set(0.5, opts.anchorY ?? ART[texKey]?.anchorY ?? 0.88);
+      // Nie verzerren: Breite aus Höhe (oder Höhe aus Breite bei Bodenplatten)
+      const tex = node.sp.texture;
+      const tw = tex?.orig?.width || tex?.width || 0;
+      const th = tex?.orig?.height || tex?.height || 0;
+      if (tw > 0 && th > 0 && opts.keepAspect !== false) {
+        if (opts.fitWidth) h = w * th / tw;
+        else w = h * tw / th;
+      }
       node.sp.width = w * bounce;
       node.sp.height = h * bounce;
       if (opts.flipX) node.sp.scale.x = -Math.abs(node.sp.scale.x);
@@ -949,7 +962,7 @@ export class WinterWorld {
 
     // ---- A. Winter Chalet (2x2) ----
     const chP = gridToWorld(state.chalet.gx + 1.0, state.chalet.gy + 1.0);
-    placeEntity('chalet', 'winter_chalet', chP.x, chP.y + 34, 232, 220, {
+    placeEntity('chalet', 'winter_chalet', chP.x, chP.y + 34, 0, artH('winter_chalet'), {
       bounceId: 'chalet',
       zIndex: chP.y + 34,
       anchorY: 0.86,
@@ -964,7 +977,7 @@ export class WinterWorld {
     const lvInfo = getLevelInfo(state.xp);
     const treeGrowth = lvInfo.level >= 5 ? 1.10 : lvInfo.level >= 3 ? 1.04 : 0.98;
     const trP = gridToWorld(state.christmasTree.gx + 1.0, state.christmasTree.gy + 1.0);
-    placeEntity('christmasTree', 'christmas_tree', trP.x, trP.y + 30, 174 * treeGrowth, 206 * treeGrowth, {
+    placeEntity('christmasTree', 'christmas_tree', trP.x, trP.y + 30, 0, artH('christmas_tree', treeGrowth), {
       bounceId: 'christmasTree',
       zIndex: trP.y + 30,
       anchorY: 0.86,
@@ -976,7 +989,7 @@ export class WinterWorld {
 
     // ---- C. Wishlist Board, Mailbox, Reindeer Sleigh (1x1 Grounded Props) ----
     const wbP = gridToWorld(state.wishlistBoard.gx + 0.5, state.wishlistBoard.gy + 0.5);
-    placeEntity('wishlistBoard', 'wishlist_board', wbP.x, wbP.y + 12, 86, 92, {
+    placeEntity('wishlistBoard', 'wishlist_board', wbP.x, wbP.y + 12, 0, artH('wishlist_board'), {
       bounceId: 'wishlistBoard',
       zIndex: wbP.y + 12
     });
@@ -992,14 +1005,14 @@ export class WinterWorld {
     }
 
     const mbP = gridToWorld(state.mailbox.gx + 0.5, state.mailbox.gy + 0.5);
-    placeEntity('mailbox', 'gift_mailbox', mbP.x, mbP.y + 10, 52, 66, {
+    placeEntity('mailbox', 'gift_mailbox', mbP.x, mbP.y + 10, 0, artH('gift_mailbox'), {
       bounceId: 'mailbox',
       zIndex: mbP.y + 10
     });
 
     if (!this.sleighFlight) {
       const slP = gridToWorld(state.sleighPos.gx + 0.5, state.sleighPos.gy + 0.5);
-      placeEntity('sleigh', 'reindeer_sleigh', slP.x, slP.y + 14, 162, 108, {
+      placeEntity('sleigh', 'reindeer_sleigh', slP.x, slP.y + 14, 0, artH('reindeer_sleigh'), {
         bounceId: 'sleigh',
         zIndex: slP.y + 14,
         shadowW: 0.80,
@@ -1009,7 +1022,7 @@ export class WinterWorld {
       const t = this.sleighFlight.t / this.sleighFlight.dur;
       const sx = this.sleighFlight.startX + Math.sin(t * Math.PI * 2) * 340 + t * 180;
       const sy = this.sleighFlight.startY - Math.sin(t * Math.PI) * 260;
-      placeEntity('sleigh', 'reindeer_sleigh', sx, sy, 162, 108, {
+      placeEntity('sleigh', 'reindeer_sleigh', sx, sy, 0, artH('reindeer_sleigh'), {
         zIndex: 99999,
         rot: -Math.cos(t * Math.PI) * 0.14,
         shadow: false
@@ -1022,10 +1035,10 @@ export class WinterWorld {
       if (!st.built) continue;
       const sp = gridToWorld(st.gx + 1.0, st.gy + 1.0);
       const texKey = STATION_SPRITES[st.type] || 'christmas_bakery';
-      const size = st.type === 'teahouse' ? 182 : 204;
+      const size = artH(texKey);
 
       if (st.wrapped) {
-        placeEntity(`st_${st.id}`, texKey, sp.x, sp.y + 30, size * 0.72, size * 0.68, {
+        placeEntity(`st_${st.id}`, texKey, sp.x, sp.y + 30, 0, size * 0.7, {
           bounceId: st.id,
           zIndex: sp.y + 30,
           tint: 0xd9c7a8
@@ -1036,7 +1049,7 @@ export class WinterWorld {
           textColor: 0xfffdf7
         });
       } else {
-        placeEntity(`st_${st.id}`, texKey, sp.x, sp.y + 30, size, size * 0.96, {
+        placeEntity(`st_${st.id}`, texKey, sp.x, sp.y + 30, 0, size, {
           bounceId: st.id,
           zIndex: sp.y + 30,
           anchorY: 0.86,
@@ -1086,7 +1099,8 @@ export class WinterWorld {
     const nowMs = Date.now();
     for (const f of state.fields || []) {
       const fp = gridToWorld(f.gx + 0.5, f.gy + 0.5);
-      placeEntity(`plot_${f.id}`, 'snow_field_plot', fp.x, fp.y + 8, 118, 66, {
+      placeEntity(`plot_${f.id}`, 'snow_field_plot', fp.x, fp.y + 8, (ART.snow_field_plot?.fitWidthTiles ?? 1) * TILE_W, 0, {
+        fitWidth: true,
         bounceId: f.id,
         zIndex: fp.y - 4,
         anchorY: 0.62,
@@ -1101,7 +1115,7 @@ export class WinterWorld {
         if (pct >= 1) {
           const cropTexKey = `crop_${f.cropId}`;
           const sway = Math.sin(sec * 2.1 + f.gx * 1.3 + f.gy * 0.9) * 0.018;
-          placeEntity(`crop_${f.id}`, cropTexKey, fp.x, fp.y + 2, 106, 84, {
+          placeEntity(`crop_${f.id}`, cropTexKey, fp.x, fp.y + 2, 0, artH(cropTexKey), {
             bounceId: f.id,
             zIndex: fp.y + 4,
             anchorY: 0.72,
@@ -1142,7 +1156,7 @@ export class WinterWorld {
       const ap = gridToWorld(an.gx + 0.5 + mot.ox, an.gy + 0.5 + mot.oy);
       const def = ANIMALS[an.type];
       const texKey = ANIMAL_SPRITES[an.type] || 'animal_chicken';
-      const sz = an.type === 'reindeer' ? 78 : an.type === 'sheep' ? 64 : 52;
+      const sz = artH(texKey);
       const hop = Math.abs(Math.sin(mot.phase)) * 3.0;
 
       placeEntity(`an_${an.id}`, texKey, ap.x, ap.y - hop, sz, sz, {
@@ -1172,9 +1186,7 @@ export class WinterWorld {
     for (const d of state.decorations || []) {
       const dp = gridToWorld(d.gx + 0.5, d.gy + 0.5);
       const texKey = DECO_SPRITES[d.type] || 'deco_lantern';
-      const w = d.type === 'pine' ? 112 : d.type === 'snowman' ? 66 : 56;
-      const h = d.type === 'pine' ? 126 : d.type === 'snowman' ? 74 : 72;
-      placeEntity(`deco_${d.id}`, texKey, dp.x, dp.y + 8, w, h, {
+      placeEntity(`deco_${d.id}`, texKey, dp.x, dp.y + 8, 0, artH(texKey), {
         bounceId: d.id,
         zIndex: dp.y + 8,
         shadowW: 0.68,
@@ -1188,7 +1200,7 @@ export class WinterWorld {
     // ---- H. Lakeside Daily Treasure Chest (1x1 Exact Tile Center) ----
     const chPos = gridToWorld(DAILY_CHEST_POS.gx + 0.5, DAILY_CHEST_POS.gy + 0.5);
     const chestReady = Boolean(uiState.dailyChestReady);
-    placeEntity('daily_chest', 'treasure_chest', chPos.x, chPos.y + 6, 62, 58, {
+    placeEntity('daily_chest', 'treasure_chest', chPos.x, chPos.y + 6, 0, artH('treasure_chest'), {
       zIndex: chPos.y + 6,
       alpha: chestReady ? 1 : 0.72,
       tint: chestReady ? 0xffffff : 0xcbd5e1
@@ -1209,7 +1221,7 @@ export class WinterWorld {
       const strideBob = walking ? Math.abs(Math.sin(v.stepPhase)) * 3.6 : 0;
       const tilt = walking ? Math.sin(v.stepPhase) * 0.045 : 0;
 
-      placeEntity(`vil_${v.id}`, v.sprite, vp.x, vp.y - strideBob, 42, 66, {
+      placeEntity(`vil_${v.id}`, v.sprite, vp.x, vp.y - strideBob, 0, artH(v.sprite), {
         zIndex: vp.y + 10,
         anchorY: 0.92,
         flipX: v.facing < 0,
