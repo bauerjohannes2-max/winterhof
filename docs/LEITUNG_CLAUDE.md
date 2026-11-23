@@ -14,6 +14,7 @@
 2. Push auf GitHub (= live) erlaubt, wenn Typprüfung + Tests + Build grün sind (Hannes 23.11.). Lokal committen ist frei.
 3. Geminis Stand gesichert als Tag `v6-prototyp`.
 4. Thema: Alpen-Winter als Basis, Daten so, dass später Jahreszeiten möglich sind.
+7. **Weihnachten ist das Konzept** (Hannes 23.11.): jede neue Ware, jedes Tier, Gebäude und jede Deko hat Weihnachtsbezug; Alpen nur Kulisse. Kein normaler Bauernhof-Inhalt (Kuh, Kartoffel, Kohl).
 5. Grafik mutiger: gleiche Handschrift, aber jedes Objekt mit eigener Silhouette, Star-Merkmal, Akzentfarbe; später = spektakulärer. Gemini liefert je Auftrag 3 Varianten (zurückhaltend → wild), Hannes wählt (STIL_REGELN §6a). **Erst ganz zum Schluss** (Hannes 23.11.): zuerst Spiel fertig, dann Grafik-Runde.
 6. Stufe 6–30 (Hannes 23.11.): Baumaterial ab Stufe 6 für Lager- und Landausbau. Neue Systeme: Bergbahn-Lieferungen, Eisfischen, Schneestollen (Mine), Weihnachtsmarkt-Fest. Inhalte jetzt mit Platzhalter-Bildern einbauen, echte Grafik am Schluss.
 
