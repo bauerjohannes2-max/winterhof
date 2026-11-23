@@ -3,8 +3,10 @@
 // Gelände (statisch) kommt aus der WorldGrid-Basiskarte, Belegung wird aus
 // state.objects berechnet. Keine Kopie im Spielstand, keine Neuberechnung pro Frame.
 // ============================================================================
+// Bekannte Ausnahme bis Baustein 2 (Karte als Daten): danach kein Import aus engine/ mehr.
+// eslint-disable-next-line no-restricted-imports
 import { WorldGrid, TERRAIN, SURFACE, ZONE } from '../engine/worldGrid.js';
-import { CONTENT, footprintOf } from './content';
+import { footprintOf } from './content';
 import type { GameState, MapObject, ObjectId } from './types';
 
 interface Tile { terrain: string; surface: string; zone: string }

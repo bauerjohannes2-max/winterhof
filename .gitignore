@@ -8,3 +8,5 @@ __pycache__/
 Thumbs.db
 node_modules/
 art_src/
+test-results/
+playwright-report/

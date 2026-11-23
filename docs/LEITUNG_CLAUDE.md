@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Neustart: Prüfung + Plan (15 Bausteine) fertig, Baustein 0 `docs/GRAFIK_TECHNIK.md` wartet auf Hannes (Claude 24.11.). Danach Baustein 1 Werkzeuge.
+- Niemand. Neustart: Baustein 0 abgenommen (Hannes 24.11.), Baustein 1 Werkzeuge fertig, wartet auf Hannes (Claude 24.11.). Prüfen: `npm run check`. Danach Baustein 2 Karte als Daten.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).

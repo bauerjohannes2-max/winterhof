@@ -116,8 +116,9 @@ export function migrateLegacy(d: Legacy, nowMs: number): LoadReport {
 
   // Objekte: feste Gebäude an alten Positionen übernehmen
   const objects: MapObject[] = [];
-  const prop = (id: string, type: string, pos: any, fallback: MapObject) => {
-    if (pos && Number.isInteger(pos.gx) && Number.isInteger(pos.gy)) objects.push({ id, kind: 'prop', type, gx: pos.gx, gy: pos.gy });
+  const prop = (id: string, type: string, pos: unknown, fallback: MapObject) => {
+    const p = pos as { gx?: unknown; gy?: unknown } | null | undefined;
+    if (p && Number.isInteger(p.gx) && Number.isInteger(p.gy)) objects.push({ id, kind: 'prop', type, gx: p.gx as number, gy: p.gy as number });
     else objects.push(fallback);
   };
   const startObj = (id: string) => s.objects.find((o) => o.id === id)!;

@@ -1,4 +1,4 @@
-# Winterhof – Grafik-Technik (Baustein 0) · Entwurf 24.11.2026, wartet auf Hannes
+# Winterhof – Grafik-Technik (Baustein 0) · abgenommen Hannes 24.11.2026
 
 Ziel: Bevor eine Zeile Darstellung entsteht, ist festgelegt, wie gezeichnet wird. Alles Spätere hält sich daran, kein Sonderweg.
 Vorbild: Hay Day (Bilder bringen ihren Boden mit) und Clash of Clans (jede Grundfläche hat eine eigene Standfläche, Raster lesbar). Ergänzt die Gestaltungsregeln in `STIL_REGELN.md`.

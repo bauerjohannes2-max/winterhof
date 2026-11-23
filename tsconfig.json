@@ -16,5 +16,5 @@
     "skipLibCheck": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src/core/**/*.ts", "tests/**/*.ts"]
+  "include": ["src/core/**/*.ts", "src/render/**/*.ts", "tests/**/*.ts", "playwright.config.ts"]
 }

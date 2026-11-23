@@ -82,7 +82,6 @@ describe('Wirtschaft (7-Tage-Bot)', () => {
       }
       levelByDay.push(s.level);
     }
-    // eslint-disable-next-line no-console
     console.log('Level je Tag', levelByDay.join(','), '| Münzen', s.coins, '| Aufträge', s.stats.ordersDone, '| Objekte', s.objects.length);
     expect(levelByDay[0]).toBeGreaterThanOrEqual(3);       // Tag 1: spürbarer Fortschritt
     expect(levelByDay[0]).toBeLessThanOrEqual(8);          // ...aber nicht durchgespielt

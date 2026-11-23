@@ -25,7 +25,7 @@ Hannes 23.11. spät: **Kern behalten, Darstellung neu.**
 3. **Keine Lint-Regeln:** Nichts verhindert, dass Darstellungscode den Spielstand ändert. → ESLint mit Import-Grenzen (render darf aus core nur lesen und Befehle schicken).
 4. **Browser-Test selbst gebaut (CDP), kein Bildvergleich:** Standard ist Playwright mit Screenshot-Vergleich. Das passt genau zu unserer Vorher/Nachher-Abnahme. → Playwright mit dem installierten Chrome (kein Browser-Download).
 5. **Online-Prüfung ohne Browser-Test:** Der GitHub-Ablauf prüft Typen, Tests und Build, aber nicht den Browser. → E2E kommt in den Ablauf, sobald es stabil läuft.
-6. **Bilder einzeln, kein Atlas, keine Auflösungsstufen:** Profis packen Bilder in Atlanten (weniger Ladevorgänge und Zeichenaufrufe). → Bild-Pipeline mit Pixi AssetPack (Baustein 0 legt das fest, Baustein 1 baut es).
+6. **Bilder einzeln, kein Atlas, keine Auflösungsstufen:** Profis packen Bilder in Atlanten (weniger Ladevorgänge und Zeichenaufrufe). → Bild-Pipeline mit Pixi AssetPack (Baustein 0 legt das fest, Baustein 3 baut es).
 
 Mitnehmen aus Runde 3 (Tag `v9-flickwerk`): Weg als eine weiche Fläche mit Saum, Standfläche + Kontaktschatten je Objekt, Feld ohne Leuchtrand, Hofrand als Farbstufe mit Schatten, nur nahtlose Texturen.
 
@@ -33,6 +33,10 @@ Mitnehmen aus Runde 3 (Tag `v9-flickwerk`): Weg als eine weiche Fläche mit Saum
 - Neue Darstellung entsteht in `src/render/` und läuft während des Baus auf eigener Seite `neu.html` (nur lokal). Die Live-Seite bleibt unverändert, bis Baustein 14 umschaltet. Kein Mischen alt/neu in einer Datei.
 - Darstellung liest nur den Kern-Stand und schickt nur Befehle. Keine Spiellogik in `src/render/`.
 - Kein Sonderweg, kein `?probe`, keine Schalter für Varianten. Varianten zum Vergleich nur als Bild in `docs/qa/neustart/`.
+
+## Prüfen
+- `npm run check` = Typprüfung + Lint + Kern-Tests + Build + alter E2E + Browser-Bildvergleich. Nur bei Grün committen/pushen.
+- Vergleichsbilder neu erzeugen nur nach Abnahme durch Hannes: `node ./node_modules/@playwright/test/cli.js test --update-snapshots`.
 
 ## Jeder Baustein (Abnahme-Ablauf)
 1. Ziel in 1 Satz.
@@ -45,10 +49,10 @@ Mitnehmen aus Runde 3 (Tag `v9-flickwerk`): Weg als eine weiche Fläche mit Saum
 ## Bausteine
 | Nr. | Baustein | Abnahmekriterium |
 |---|---|---|
-| 0 | **Grafik-Technik festlegen** (`docs/GRAFIK_TECHNIK.md`) | Hannes nickt die Entscheidungen ab (Ebenen, Reihenfolge, Kamera, Licht, Bild-Vertrag, Atlas, Leistungsbudget) |
-| 1 | **Werkzeuge** | TypeScript streng für `src/render/`, ESLint mit Import-Grenzen, Playwright mit Bildvergleich (installierter Chrome), Bild-Pipeline (AssetPack → Atlas); alles mit einem Befehl `npm run check` grün |
+| 0 ✅ | **Grafik-Technik festlegen** (`docs/GRAFIK_TECHNIK.md`) | abgenommen Hannes 24.11. |
+| 1 | **Werkzeuge** | TypeScript streng für `src/render/`, ESLint mit Import-Grenzen (Gegenprobe: verbotene Importe werden erkannt), Playwright mit Bildvergleich (installierter Chrome, Gegenprobe: leichte Farbänderung wird erkannt); alles mit einem Befehl `npm run check` grün. Bild-Pipeline verschoben nach Baustein 3 (erst dort wird ein Bild geladen) |
 | 2 | **Karte als Daten** | Gelände, Zonen, Wege, Waldrand in `winterhof.json`; `core/map.ts` ohne Import aus `engine/` oder `gameData.js`; Tests: Karte gültig, alter Spielstand passt weiter (keine Objekte auf Weg/Wald) |
-| 3 | **Technik-Gerüst** `src/render/` + `neu.html` | Leere Szene startet in Chrome, iOS Safari, Samsung Internet; Ebenen in fester Reihenfolge per Test geprüft; ≥ 55 Bilder/s am Handy |
+| 3 | **Technik-Gerüst** `src/render/` + `neu.html` + Bild-Pipeline (AssetPack → Atlas, Manifest) | Leere Szene startet in Chrome, iOS Safari, Samsung Internet; Ebenen in fester Reihenfolge per Test geprüft; ≥ 55 Bilder/s am Handy |
 | 4 | **Raster + Kamera** | Umrechnung Raster ↔ Bild mit Tests; Wischen und Zoomen (2 Finger, Mausrad) weich mit Grenzen und Nachlauf; Hilfsraster ein-/ausblendbar |
 | 5 | **Grundboden** Schnee (Hof) + Wildnis (außen) | Nahtlos ohne sichtbare Wiederholung; Hofrand als Farbstufe mit Schattenstreifen, keine Linie, kein weißer Rand |
 | 6 | **Wege** | Eine durchgehende Fläche aus den Kartendaten, runde Kurven und Kreuzungen, Saum innen, Schneeklumpen auf der Kante, keine Kachel-Treppen |

@@ -49,6 +49,9 @@ export default defineConfig({
       }
     }
   },
+  test: {
+    include: ['tests/core/**/*.test.ts']
+  },
   server: {
     host: '127.0.0.1',
     port: 8085
