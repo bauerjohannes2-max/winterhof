@@ -1,6 +1,6 @@
 // Bei jedem Release hochzählen. Seite/Code: erst Netz, dann Cache (Updates kommen an).
 // Bilder: erst Cache, dann Netz (schnell, offline).
-const CACHE_NAME = 'winterhof-v8-1';
+const CACHE_NAME = 'winterhof-v8-2';
 const ASSETS = [
   './',
   './index.html',
@@ -33,7 +33,8 @@ const ASSETS = [
   './assets/sprites/alpine_cliff.webp',
   './assets/sprites/alpine_villager.webp',
   './assets/sprites/alpine_villager_green.webp',
-  './assets/sprites/alpine_villager_navy.webp'
+  './assets/sprites/alpine_villager_navy.webp',
+  './assets/sprites/treasure_chest.webp'
 ];
 
 self.addEventListener('install', (e) => {

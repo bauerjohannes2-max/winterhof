@@ -9,8 +9,7 @@
 - **GRÜN** `wishlist_board`
 - **GRÜN** `gift_mailbox`
 - **GRÜN** `reindeer_sleigh`
-- **ROT** `treasure_chest`
-  - ROT: Bilddatei fehlt
+- **GRÜN** `treasure_chest`
 - **GRÜN** `deco_pine`
 - **GRÜN** `deco_snowman`
 - **GRÜN** `deco_lantern`
@@ -32,6 +31,6 @@
 - alpine_cliff
 - timber_bridge
 
-Gesamt: **ROT**
+Gesamt: **GRÜN**
 
 Aufstellungsbild: docs/qa/aufstellung.png
