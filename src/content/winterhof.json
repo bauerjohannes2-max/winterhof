@@ -1222,26 +1222,18 @@
         "x1": 1,
         "y1": 11
       },
-      "signPos": {
-        "gx": 1,
-        "gy": 9
-      },
       "cost": 120,
       "unlockLevel": 2
     },
     {
       "id": "south_meadow",
       "name": "Südwiese",
-      "desc": "Öffnet die sonnige Südwiese (10×2 Felder) am Waldrand.",
+      "desc": "Öffnet die sonnige Südwiese (14×2 Felder).",
       "bounds": {
-        "x0": 2,
+        "x0": 0,
         "y0": 12,
-        "x1": 11,
+        "x1": 13,
         "y1": 13
-      },
-      "signPos": {
-        "gx": 5,
-        "gy": 12
       },
       "cost": 180,
       "unlockLevel": 3
@@ -1256,26 +1248,18 @@
         "x1": 13,
         "y1": 11
       },
-      "signPos": {
-        "gx": 12,
-        "gy": 9
-      },
       "cost": 250,
       "unlockLevel": 4
     },
     {
       "id": "north_ridge",
       "name": "Nordlicht-Gipfel",
-      "desc": "Erschließt das obere Panorama (12×2 Felder) hinter dem Chalet.",
+      "desc": "Erschließt das obere Panorama (14×2 Felder) hinter dem Chalet.",
       "bounds": {
         "x0": 0,
         "y0": 0,
-        "x1": 11,
+        "x1": 13,
         "y1": 1
-      },
-      "signPos": {
-        "gx": 11,
-        "gy": 1
       },
       "cost": 320,
       "unlockLevel": 5
@@ -1283,16 +1267,12 @@
     {
       "id": "bachwiese",
       "name": "Ostwiese",
-      "desc": "Weites Land im Osten bis zum Waldrand (3×13 Felder).",
+      "desc": "Weites Land im Osten (3×14 Felder).",
       "bounds": {
         "x0": 14,
         "y0": 0,
         "x1": 16,
-        "y1": 12
-      },
-      "signPos": {
-        "gx": 16,
-        "gy": 9
+        "y1": 13
       },
       "cost": 600,
       "unlockLevel": 6,
@@ -1300,6 +1280,222 @@
         "snow_shovel": 1,
         "boundary_stake": 1,
         "survey_map": 1
+      }
+    },
+    {
+      "id": "tannenruecken",
+      "name": "Tannenrücken",
+      "desc": "Verschneiter Waldstreifen im Norden. (8×4 Felder)",
+      "bounds": {
+        "x0": 0,
+        "y0": -4,
+        "x1": 7,
+        "y1": -1
+      },
+      "cost": 700,
+      "unlockLevel": 7,
+      "materials": {
+        "snow_shovel": 1,
+        "boundary_stake": 1,
+        "survey_map": 1
+      }
+    },
+    {
+      "id": "nordlichtwiese",
+      "name": "Nordlichtwiese",
+      "desc": "Offene Wiese unter dem Nordlicht. (9×4 Felder)",
+      "bounds": {
+        "x0": 8,
+        "y0": -4,
+        "x1": 16,
+        "y1": -1
+      },
+      "cost": 800,
+      "unlockLevel": 8,
+      "materials": {
+        "snow_shovel": 2,
+        "boundary_stake": 1,
+        "survey_map": 1
+      }
+    },
+    {
+      "id": "glockenhang",
+      "name": "Glockenhang",
+      "desc": "Sanfter Hang im Westen, oberhalb des Weges. (4×7 Felder)",
+      "bounds": {
+        "x0": -4,
+        "y0": 0,
+        "x1": -1,
+        "y1": 6
+      },
+      "cost": 950,
+      "unlockLevel": 9,
+      "materials": {
+        "snow_shovel": 2,
+        "boundary_stake": 2,
+        "survey_map": 1
+      }
+    },
+    {
+      "id": "schlittenhang",
+      "name": "Schlittenhang",
+      "desc": "Perfekt zum Rodeln, unterhalb des Weges. (4×7 Felder)",
+      "bounds": {
+        "x0": -4,
+        "y0": 7,
+        "x1": -1,
+        "y1": 13
+      },
+      "cost": 1100,
+      "unlockLevel": 10,
+      "materials": {
+        "snow_shovel": 2,
+        "boundary_stake": 2,
+        "survey_map": 2
+      }
+    },
+    {
+      "id": "plaetzchenwiese",
+      "name": "Plätzchenwiese",
+      "desc": "Weite Fläche im Süden. (8×4 Felder)",
+      "bounds": {
+        "x0": 0,
+        "y0": 14,
+        "x1": 7,
+        "y1": 17
+      },
+      "cost": 1300,
+      "unlockLevel": 11,
+      "materials": {
+        "snow_shovel": 3,
+        "boundary_stake": 2,
+        "survey_map": 2
+      }
+    },
+    {
+      "id": "sternenfeld",
+      "name": "Sternenfeld",
+      "desc": "Großes Feld im Südosten. (9×4 Felder)",
+      "bounds": {
+        "x0": 8,
+        "y0": 14,
+        "x1": 16,
+        "y1": 17
+      },
+      "cost": 1500,
+      "unlockLevel": 12,
+      "materials": {
+        "snow_shovel": 3,
+        "boundary_stake": 3,
+        "survey_map": 2
+      }
+    },
+    {
+      "id": "wichtelhain",
+      "name": "Wichtelhain",
+      "desc": "Lichtung im Osten, oberhalb des Weges. (4×7 Felder)",
+      "bounds": {
+        "x0": 17,
+        "y0": 0,
+        "x1": 20,
+        "y1": 6
+      },
+      "cost": 1700,
+      "unlockLevel": 13,
+      "materials": {
+        "snow_shovel": 3,
+        "boundary_stake": 3,
+        "survey_map": 3
+      }
+    },
+    {
+      "id": "rentierweide",
+      "name": "Rentierweide",
+      "desc": "Weide im Osten, unterhalb des Weges. (4×7 Felder)",
+      "bounds": {
+        "x0": 17,
+        "y0": 7,
+        "x1": 20,
+        "y1": 13
+      },
+      "cost": 1900,
+      "unlockLevel": 14,
+      "materials": {
+        "snow_shovel": 4,
+        "boundary_stake": 3,
+        "survey_map": 3
+      }
+    },
+    {
+      "id": "eiszapfenecke",
+      "name": "Eiszapfenecke",
+      "desc": "Stille Ecke im Nordwesten. (4×4 Felder)",
+      "bounds": {
+        "x0": -4,
+        "y0": -4,
+        "x1": -1,
+        "y1": -1
+      },
+      "cost": 2200,
+      "unlockLevel": 15,
+      "materials": {
+        "snow_shovel": 4,
+        "boundary_stake": 4,
+        "survey_map": 3
+      }
+    },
+    {
+      "id": "mistelwinkel",
+      "name": "Mistelwinkel",
+      "desc": "Ecke im Nordosten. (4×4 Felder)",
+      "bounds": {
+        "x0": 17,
+        "y0": -4,
+        "x1": 20,
+        "y1": -1
+      },
+      "cost": 2500,
+      "unlockLevel": 16,
+      "materials": {
+        "snow_shovel": 4,
+        "boundary_stake": 4,
+        "survey_map": 4
+      }
+    },
+    {
+      "id": "kerzenwinkel",
+      "name": "Kerzenwinkel",
+      "desc": "Ecke im Südwesten. (4×4 Felder)",
+      "bounds": {
+        "x0": -4,
+        "y0": 14,
+        "x1": -1,
+        "y1": 17
+      },
+      "cost": 2800,
+      "unlockLevel": 17,
+      "materials": {
+        "snow_shovel": 5,
+        "boundary_stake": 4,
+        "survey_map": 4
+      }
+    },
+    {
+      "id": "zimtsternecke",
+      "name": "Zimtsternecke",
+      "desc": "Ecke im Südosten. (4×4 Felder)",
+      "bounds": {
+        "x0": 17,
+        "y0": 14,
+        "x1": 20,
+        "y1": 17
+      },
+      "cost": 3200,
+      "unlockLevel": 18,
+      "materials": {
+        "snow_shovel": 5,
+        "boundary_stake": 5,
+        "survey_map": 4
       }
     }
   ],

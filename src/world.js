@@ -24,6 +24,11 @@ export function gridToWorld(gx, gy) {
   };
 }
 
+function isoRectPoly(g2w, x0, y0, x1, y1) {
+  const a = g2w(x0, y0), b = g2w(x1, y0), c = g2w(x1, y1), d = g2w(x0, y1);
+  return [a.x, a.y, b.x, b.y, c.x, c.y, d.x, d.y];
+}
+
 export function worldToGrid(wx, wy) {
   const halfW = TILE_W * 0.5;
   const halfH = TILE_H * 0.5;
@@ -271,18 +276,8 @@ export class WinterWorld {
 
     // 1. Felsgrat nur hinten im Norden (Kulisse)
     if (cliffTex) {
-      const cliffs = [
-        // Northern terraced alpine ridge (gy = -2.2)
-        { gx: -2.4, gy: 1.8, s: 245, flip: false },
-        { gx: -1.6, gy: -0.2, s: 265, flip: true },
-        { gx: 0.2, gy: -1.8, s: 285, flip: false },
-        { gx: 2.8, gy: -2.2, s: 280, flip: true },
-        { gx: 5.5, gy: -2.3, s: 300, flip: false },
-        { gx: 8.2, gy: -2.2, s: 285, flip: true },
-        { gx: 10.9, gy: -2.0, s: 290, flip: false },
-        { gx: 13.6, gy: -2.2, s: 280, flip: true },
-        { gx: 16.4, gy: -2.0, s: 265, flip: false }
-      ];
+      const cliffs = [];
+      for (let gx = -9; gx <= 23; gx += 2.9) cliffs.push({ gx, gy: -10.8, s: 300, flip: cliffs.length % 2 === 1 });
       for (const c of cliffs) {
         addProp(cliffTex, c.gx, c.gy, c.s, c.s, {
           flipX: c.flip,
@@ -309,23 +304,17 @@ export class WinterWorld {
           forest.push(axis === 'x' ? { gx: v + j, gy: fixed, scale } : { gx: fixed, gy: v + j, scale });
         }
       };
-      // Hinten Nord (oben im Bild): zwei dichte Reihen vor/hinter den Felsen
-      row(-1.35, -3.5, 17.5, 1.2, 'x', 1.0);
-      row(-3.3, -4, 18, 1.2, 'x', 1.12, 0.6);
-      // Hinten West (oben links): drei Reihen, Weglücke frei
-      row(-1.35, -0.5, 17, 1.2, 'y', 1.0, 0, true);
-      row(-2.7, -1, 17.5, 1.2, 'y', 1.1, 0.6, true);
-      row(-4.0, -1, 18, 1.2, 'y', 1.18, 0.3, true);
-      row(-5.3, -1, 18, 1.2, 'y', 1.2, 0.0); // Weg verschwindet im Wald (keine Lücke)
+      // Großer Hof (Hay-Day-Größe): Waldrahmen erst hinter dem äußeren Erweiterungsring (-4..20).
+      // Hinten Nord (oben im Bild): dichte, hohe Reihen
+      for (const [gy, sc, off] of [[-5.4, 1.0, 0], [-6.7, 1.1, 0.6], [-8.0, 1.15, 0.2], [-9.3, 1.2, 0.8]]) row(gy, -11, 22, 1.2, 'x', sc, off);
+      // Hinten West (oben links), Weglücke frei, Wegende verschwindet im Wald
+      for (const [gx, sc, off] of [[-5.4, 1.0, 0], [-6.7, 1.1, 0.6], [-8.0, 1.15, 0.2], [-9.3, 1.2, 0.8]]) row(gx, -5, 22, 1.2, 'y', sc, off, true);
+      row(-10.6, 4.2, 8.8, 1.0, 'y', 1.2);
       // Vorn Süd (unten links): klein vorne, größer weiter draußen
-      row(15.0, -3, 18.5, 1.05, 'x', 0.56);
-      row(16.2, -3.5, 19, 1.15, 'x', 0.8, 0.5);
-      row(17.5, -4, 19.5, 1.2, 'x', 1.05);
-      // Vorn Ost (unten rechts): gleich aufgebaut, Weglücke frei
-      row(17.9, -1, 14.5, 1.05, 'y', 0.6, 0, true);
-      row(19.1, -1.5, 15.5, 1.15, 'y', 0.85, 0.5, true);
-      row(20.4, -2, 16.5, 1.2, 'y', 1.05, 0, true);
-      row(21.0, 4.6, 8.6, 1.0, 'y', 0.95); // Wegende im Wald
+      for (const [gy, sc, off] of [[18.4, 0.56, 0], [19.6, 0.8, 0.5], [20.9, 1.05, 0], [22.2, 1.15, 0.6]]) row(gy, -11, 27, 1.1, 'x', sc, off);
+      // Vorn Ost (unten rechts), Weglücke frei, Wegende im Wald
+      for (const [gx, sc, off] of [[21.4, 0.6, 0], [22.6, 0.85, 0.5], [23.9, 1.05, 0], [25.2, 1.15, 0.6]]) row(gx, -5, 18, 1.1, 'y', sc, off, true);
+      row(27.2, 4.2, 8.8, 1.0, 'y', 1.0);
 
       forest.sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy));
       for (let i = 0; i < forest.length; i++) {
@@ -384,9 +373,9 @@ export class WinterWorld {
     if (!Number.isFinite(this.cam.vx)) this.cam.vx = 0;
     if (!Number.isFinite(this.cam.vy)) this.cam.vy = 0;
 
-    this.cam.zoom = Math.max(0.54, Math.min(1.55, this.cam.zoom));
-    this.cam.x = Math.max(-720, Math.min(920, this.cam.x));
-    this.cam.y = Math.max(80, Math.min(860, this.cam.y));
+    this.cam.zoom = Math.max(0.42, Math.min(1.55, this.cam.zoom));
+    this.cam.x = Math.max(-1350, Math.min(1500, this.cam.x));
+    this.cam.y = Math.max(-150, Math.min(1180, this.cam.y));
   }
 
   triggerBounce(entityId) {
@@ -654,68 +643,113 @@ export class WinterWorld {
     return pen;
   }
 
-  // Schild für gesperrtes Land (Hannes 23.11.): ein klares Holzschild, Schloss + Stufe.
-  // Preis erst beim Antippen. Ist die Stufe erreicht, zeigt es „Erweitern“ in Grün.
-  _acquireSignNode(zone, level) {
-    const open = level >= zone.unlockLevel;
-    const sig = open ? 'open' : 'locked';
-    let node = this.signNodes.get(zone.id);
-    if (!node) {
-      const c = new Container();
-      const g = new Graphics();
-      const label = new Text({
-        text: '',
-        style: new TextStyle({
-          fontFamily: 'Inter, Segoe UI, system-ui, sans-serif',
-          fontSize: 15,
-          fontWeight: '900',
-          fill: 0xfffaf0,
-          stroke: { color: 0x3a1a08, width: 3 }
-        })
-      });
-      label.anchor.set(0, 0.5);
-      c.addChild(g, label);
-      this.entityStage.addChild(c);
-      node = { container: c, g, label, sig: '', used: false };
-      this.signNodes.set(zone.id, node);
+  // Wildnis auf gesperrtem Land: wird nur neu gebaut, wenn sich die freigeschalteten Flächen ändern.
+  _syncWild(state) {
+    const unlocked = new Set(state.unlockedLands || []);
+    const sig = [...unlocked].sort().join(',');
+    if (this._wildSig === sig) return;
+    this._wildSig = sig;
+    if (this._wildNodes) for (const n of this._wildNodes) n.destroy({ children: true });
+    this._wildNodes = [];
+    if (!this._wildGround) {
+      this._wildGround = new Graphics();
+      this.terrainLayer.container.addChildAt(this._wildGround, 1);
     }
-    if (node.sig !== sig) {
-      node.sig = sig;
-      const g = node.g;
-      g.clear();
-      const W = 92, H = 34, top = -64;
-      // weicher Kontaktschatten
-      g.ellipse(4, 2, 20, 7).fill({ color: 0x2c4a70, alpha: 0.22 });
-      // Pfosten
-      g.roundRect(-5, top + H - 4, 10, -top - H + 6, 3).fill(0x4a2410);
-      g.roundRect(-2.5, top + H - 3, 4, -top - H + 4, 2).fill(0x9a5a2a);
-      // Brett: dunkle Kontur, harte Unterkante, Holzfläche, Lichtkante oben
-      g.roundRect(-W / 2, top + 3, W, H, 10).fill(0x3a1a08);
-      g.roundRect(-W / 2, top, W, H, 10).fill(0x3a1a08);
-      g.roundRect(-W / 2 + 2.5, top + 2.5, W - 5, H - 6, 8).fill(open ? 0x2f8f4e : 0xa8642e);
-      g.roundRect(-W / 2 + 6, top + 4.5, W - 12, 5, 3).fill({ color: 0xffffff, alpha: 0.28 });
-      // Schneehaube
-      g.roundRect(-W / 2 + 4, top - 4, W - 8, 8, 4).fill(0xf8fbff);
-      // Symbol links: Schloss bzw. Plus
-      const ix = -W / 2 + 19, iy = top + H / 2 - 1;
-      g.circle(ix, iy, 12).fill(0x3a1a08);
-      g.circle(ix, iy, 10).fill(0xfff3d6);
-      if (open) {
-        g.roundRect(ix - 6, iy - 1.8, 12, 3.6, 1.5).fill(0x2f8f4e);
-        g.roundRect(ix - 1.8, iy - 6, 3.6, 12, 1.5).fill(0x2f8f4e);
-      } else {
-        g.arc(ix, iy - 2, 3.6, Math.PI, 0).stroke({ color: 0x5a3214, width: 2.4 });
-        g.roundRect(ix - 5, iy - 2, 10, 8, 2).fill(0x5a3214);
-        g.circle(ix, iy + 1.6, 1.4).fill(0xfff3d6);
+    const g = this._wildGround;
+    g.clear();
+
+    const isRoad = (x, y) => {
+      const t = this.grid.getTile(x, y);
+      return t && t.surface !== SURFACE.NONE;
+    };
+    const tex = {
+      pine: this.textures.get('deco_pine'),
+      rock: this.textures.get('wild_rock'),
+      stump: this.textures.get('wild_stump'),
+      bush: this.textures.get('wild_bush')
+    };
+    const add = (key, gx, gy, h, flip) => {
+      const t = tex[key];
+      if (!t) return;
+      const wp = gridToWorld(gx, gy);
+      const wrap = new Container();
+      wrap.x = wp.x;
+      wrap.y = wp.y;
+      wrap.zIndex = wp.y;
+      const sh = new Sprite(this.textures.get('fx_shadow'));
+      sh.anchor.set(0.5);
+      sh.width = h * 0.9;
+      sh.height = h * 0.26;
+      sh.y = 2;
+      sh.alpha = 0.32;
+      const sp = new Sprite(t);
+      sp.anchor.set(0.5, key === 'pine' ? 0.9 : 0.86);
+      sp.height = h;
+      sp.width = h * (t.width / t.height);
+      if (flip) sp.scale.x *= -1;
+      wrap.addChild(sh, sp);
+      this.entityStage.addChild(wrap);
+      this._wildNodes.push(wrap);
+    };
+
+    const drawn = new Set();
+    for (const z of LAND_ZONES) {
+      if (unlocked.has(z.id)) continue;
+      const b = z.bounds;
+      // Nahe Flächen (bis Stufe 6) nur locker bewachsen, damit der Start-Hof Luft hat (Hay Day)
+      const near = z.unlockLevel <= 6;
+      // unberührter Tiefschnee, eine Spur kühler als der Hof
+      g.poly(isoRectPoly(gridToWorld, b.x0 + 0.04, b.y0 + 0.04, b.x1 + 0.96, b.y1 + 0.96))
+        .fill({ color: 0xc9d8ea, alpha: 0.5 });
+      let h = 0;
+      for (const z2 of z.id) h = (h * 31 + z2.charCodeAt(0)) >>> 0;
+      const rnd = makeSeededRand(h);
+
+      // Wildnis: je Kachel mit fester Wahrscheinlichkeit ein Objekt, nie auf dem Weg
+      for (let y = b.y0; y <= b.y1; y++) {
+        for (let x = b.x0; x <= b.x1; x++) {
+          if (isRoad(x, y)) continue;
+          const r = rnd();
+          const jx = 0.3 + rnd() * 0.4, jy = 0.3 + rnd() * 0.4;
+          const flip = rnd() < 0.5;
+          if (r < (near ? 0.07 : 0.22)) add('pine', x + jx, y + jy, (near ? 0.6 + rnd() * 0.25 : 0.75 + rnd() * 0.45) * TILE_W, flip);
+          else if (r < 0.26) add('rock', x + jx, y + jy, (0.36 + rnd() * 0.14) * TILE_W, flip);
+          else if (r < 0.31) add('bush', x + jx, y + jy, (0.34 + rnd() * 0.1) * TILE_W, flip);
+          else if (r < 0.34) add('stump', x + jx, y + jy, (0.26 + rnd() * 0.06) * TILE_W, flip);
+        }
       }
-      node.label.text = open ? 'Erweitern' : `Stufe ${zone.unlockLevel}`;
-      node.label.style.fontSize = open ? 13 : 15;
-      node.label.x = ix + 15;
-      node.label.y = iy;
     }
-    node.used = true;
-    node.container.visible = true;
-    return node;
+
+    // Grenze gesperrter Flächen: EINE saubere Schneewall-Kante (nur wo die Zone wechselt, nie über den Weg)
+    const zoneAt = (x, y) => this.grid.getTile(x, y)?.zone;
+    const lockedZ = (zid) => LAND_ZONES.some((z) => z.id === zid && !unlocked.has(z.id));
+    const segs = [];
+    for (const z of LAND_ZONES) {
+      if (unlocked.has(z.id)) continue;
+      const b = z.bounds;
+      for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) {
+        for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+          const nz = zoneAt(x + dx, y + dy);
+          if (nz === z.id) continue;
+          if (nz && lockedZ(nz) && (dx < 0 || dy < 0)) continue; // gemeinsame Kante nur einmal
+          if (isRoad(x, y) || isRoad(x + dx, y + dy)) continue;
+          if (dx === 1) segs.push([x + 1, y, x + 1, y + 1]);
+          else if (dx === -1) segs.push([x, y, x, y + 1]);
+          else if (dy === 1) segs.push([x, y + 1, x + 1, y + 1]);
+          else segs.push([x, y, x + 1, y]);
+        }
+      }
+    }
+    const line = (w, color, alpha, oy) => {
+      for (const [x0, y0, x1, y1] of segs) {
+        const p = gridToWorld(x0, y0), q = gridToWorld(x1, y1);
+        g.moveTo(p.x, p.y + oy).lineTo(q.x, q.y + oy);
+      }
+      g.stroke({ color, width: w, alpha, cap: 'round', join: 'round' });
+    };
+    line(9, 0x7f98b6, 0.28, 4);
+    line(7, 0xffffff, 0.95, 0);
+    line(2.5, 0xc9d8e8, 0.9, 2.5);
   }
 
   _acquireBubble(key, bgHex = 0xfffdf7, strokeHex = 0x6e391b) {
@@ -834,7 +868,6 @@ export class WinterWorld {
     }
 
     for (const n of this.entityNodes.values()) n.used = false;
-    for (const s of this.signNodes.values()) s.used = false;
     for (const b of this.bubbleNodes.values()) b.used = false;
     for (const p of this.penNodes.values()) p.used = false;
     for (const c of this.cropGfxPool.values()) c.used = false;
@@ -1030,13 +1063,7 @@ export class WinterWorld {
     const nowMs = Date.now();
     for (const f of state.fields || []) {
       const fp = gridToWorld(f.gx + 0.5, f.gy + 0.5);
-      placeEntity(`plot_${f.id}`, 'snow_field_plot', fp.x, fp.y + 8, (ART.snow_field_plot?.fitWidthTiles ?? 1) * TILE_W, 0, {
-        fitWidth: true,
-        bounceId: f.id,
-        zIndex: fp.y - 4,
-        anchorY: 0.62,
-        shadow: false
-      });
+      // Ackerfläche selbst malt terrainLayer (flach, exakt im Raster)
 
       if (f.cropId && ITEMS[f.cropId]) {
         const crop = ITEMS[f.cropId];
@@ -1165,23 +1192,8 @@ export class WinterWorld {
       });
     }
 
-    // ---- J. Unobstructed Carved Wooden Land Expansion Signposts (1x1 Exact Tile Center) ----
-    const unlocked = new Set(state.unlockedLands || []);
-    for (const zone of LAND_ZONES) {
-      if (unlocked.has(zone.id)) continue;
-      const sp = gridToWorld(zone.signPos.gx + 0.5, zone.signPos.gy + 0.5);
-      const sign = this._acquireSignNode(zone, lvInfo.level);
-      sign.container.x = sp.x;
-      sign.container.y = sp.y + 4;
-      sign.container.zIndex = sp.y + 10;
-      this._lastSignBounds.push({
-        id: zone.id,
-        x0: sp.x - 46,
-        y0: sp.y - 66,
-        x1: sp.x + 46,
-        y1: sp.y + 4
-      });
-    }
+    // ---- J. Gesperrtes Land = Wildnis (Hay Day: Bäume, Steine, Stümpfe, Steinrand – kein Schild) ----
+    this._syncWild(state);
 
     // ---- K. Incoming Gift Parachute ----
     if (this.giftParachute) {
@@ -1196,7 +1208,6 @@ export class WinterWorld {
     }
 
     for (const n of this.entityNodes.values()) if (!n.used) n.wrap.visible = false;
-    for (const s of this.signNodes.values()) if (!s.used) s.container.visible = false;
     for (const b of this.bubbleNodes.values()) if (!b.used) b.container.visible = false;
     for (const p of this.penNodes.values()) if (!p.used) p.container.visible = false;
     for (const c of this.cropGfxPool.values()) if (!c.used) c.g.visible = false;

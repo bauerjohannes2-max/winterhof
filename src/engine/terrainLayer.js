@@ -3,8 +3,7 @@
 // 100% Derived from WorldGrid (Single Source of Truth) + Optional Debug-Grid
 // Zero Random Ellipses · Zero Fence-in-Water · Crisp Grounded Foundations
 // ============================================================================
-import { Container, Graphics, Sprite, TilingSprite } from 'pixi.js';
-import { LAND_ZONES } from '../gameData.js';
+import { Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { TERRAIN, SURFACE, PLAYABLE_MIN, PLAYABLE_MAX } from './worldGrid.js';
 
 function isoTilePoly(gridToWorld, gx, gy, pad = 0) {
@@ -30,44 +29,16 @@ export class TerrainLayer {
     this.grid = worldGrid;
     this.container = new Container();
 
-    // 1. Calm, silky hand-painted Alpine Snow Ground (GPU TilingSprite)
-    const snowTex = textures.get('terrain_snow');
-    if (snowTex) {
-      this.snowField = new TilingSprite({
-        texture: snowTex,
-        width: 5600,
-        height: 3600
-      });
-      this.snowField.anchor.set(0.5);
-      this.snowField.x = 0;
-      this.snowField.y = 440;
-      this.snowField.tileScale.set(0.68, 0.50);
-      this.container.addChild(this.snowField);
-    } else {
-      const fb = new Graphics();
-      fb.rect(-2800, -1400, 5600, 3600).fill(0xe8f2fb);
-      this.container.addChild(fb);
-    }
-
-    // 2. Soft sunlit center radial lift (smooth gradient sprite, zero hard contour edges)
-    const softGlow = textures.get('fx_frost_glow');
-    if (softGlow) {
-      const center = gridToWorld(7.0, 6.5);
-      const sp = new Sprite(softGlow);
-      sp.anchor.set(0.5);
-      sp.x = center.x;
-      sp.y = center.y;
-      sp.width = 1650;
-      sp.height = 880;
-      sp.tint = 0xffffff;
-      sp.alpha = 0.22;
-      this.container.addChild(sp);
-    }
-
-    // 3. Strictly Grid-Driven Cobblestone Roads & Plaza (ZERO ellipses, ZERO orphan stubs!)
+    // 1. Boden wie bei Hay Day: eine ruhige, gemalte Fläche ohne Kachelmuster,
+    //    Wege direkt hineingemalt (weiche Ränder, Fahrspuren) statt harter Pflasterkacheln.
+    this.ground = this._paintGround();
+    this.container.addChild(this.ground);
     this.roadContainer = new Container();
-    this._buildGridCobblestoneRoads();
-    this.container.addChild(this.roadContainer);
+
+    // 4. Ackerfelder: flach, exakt auf dem Raster, aneinanderliegend wie ein Feld (Hay Day)
+    this.fieldGfx = new Graphics();
+    this.container.addChild(this.fieldGfx);
+    this._lastFieldSig = null;
 
     // 5. Grounding Base Plates (Footprint Foundations under buildings/landmarks/props)
     this.groundingGfx = new Graphics();
@@ -94,6 +65,111 @@ export class TerrainLayer {
     this._lastGroundSig = null;
   }
 
+  _paintGround() {
+    const g2w = this.gridToWorld;
+    // Weltausschnitt, der den ganzen Talboden abdeckt (großzügig über den Waldrand hinaus)
+    const X0 = -2600, Y0 = -900, W = 5200, H = 2900;
+    const K = 0.42; // Bildpunkte je Weltpunkt (Boden ist weich, braucht keine Schärfe)
+    const cw = Math.round(W * K), ch = Math.round(H * K);
+    const c = document.createElement('canvas');
+    c.width = cw;
+    c.height = ch;
+    const ctx = c.getContext('2d');
+    const P = (x, y) => [(x - X0) * K, (y - Y0) * K];
+    let seed = 1224;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+
+    // Grundton: frischer Schnee, ganz leicht blau
+    ctx.fillStyle = '#EDF3F9';
+    ctx.fillRect(0, 0, cw, ch);
+    // Große, weiche Licht- und Schattenwolken (wie Wiesenflecken bei Hay Day, sehr dezent)
+    for (let i = 0; i < 170; i++) {
+      const [x, y] = P(X0 + rnd() * W, Y0 + rnd() * H);
+      const r = (120 + rnd() * 380) * K;
+      const light = rnd() < 0.55;
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, light ? 'rgba(255,255,255,0.55)' : 'rgba(196,214,234,0.32)');
+      gr.addColorStop(1, light ? 'rgba(255,255,255,0)' : 'rgba(196,214,234,0)');
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.ellipse(x, y, r, r * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Feine Schneestruktur: kurze, flache Striche (isometrisch flach gedrückt)
+    for (let i = 0; i < 9000; i++) {
+      const [x, y] = P(X0 + rnd() * W, Y0 + rnd() * H);
+      const bright = rnd() < 0.5;
+      ctx.fillStyle = bright ? 'rgba(255,255,255,0.75)' : 'rgba(170,192,218,0.22)';
+      ctx.fillRect(x, y, 1 + rnd() * 2.5, 1);
+    }
+
+    // Wege: weich gemalter, festgetretener Schneeweg (Hay-Day-Feldweg im Winter)
+    const tiles = this.grid.roadTiles;
+    const polyPath = (pad) => {
+      ctx.beginPath();
+      for (const t of tiles) {
+        const pts = isoTilePoly(g2w, t.gx, t.gy, pad);
+        for (let i = 0; i < 8; i += 2) {
+          const [x, y] = P(pts[i], pts[i + 1]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+      }
+    };
+    ctx.save();
+    // Rand: weicher, dunklerer Saum (Weg liegt leicht vertieft im Schnee)
+    ctx.filter = `blur(${Math.max(2, Math.round(6 * K))}px)`;
+    ctx.fillStyle = 'rgba(122,86,56,0.75)';
+    polyPath(0.08);
+    ctx.fill();
+    // Wegfläche: warmes, festgefahrenes Erdbraun mit Schnee (Hay-Day-Feldweg im Winter)
+    ctx.filter = `blur(${Math.max(1, Math.round(2 * K))}px)`;
+    ctx.fillStyle = '#C79A6B';
+    polyPath(0.0);
+    ctx.fill();
+    ctx.filter = 'none';
+    const lg = ctx.createLinearGradient(0, 0, 0, ch);
+    lg.addColorStop(0, 'rgba(255,236,205,0.25)'); lg.addColorStop(1, 'rgba(255,236,205,0.1)');
+    ctx.fillStyle = lg;
+    polyPath(-0.12);
+    ctx.fill();
+    ctx.restore();
+    // Fahrspuren entlang des Hauptwegs (Reihe gy = 6)
+    ctx.save();
+    ctx.filter = `blur(${Math.max(1, Math.round(2 * K))}px)`;
+    ctx.lineCap = 'round';
+    const mainRow = tiles.filter((t) => t.gy === 6);
+    if (mainRow.length) {
+      const xs = mainRow.map((t) => t.gx);
+      const minX = Math.min(...xs), maxX = Math.max(...xs) + 1;
+      for (const off of [0.3, 0.7]) {
+        const a = P(g2w(minX, 6 + off).x, g2w(minX, 6 + off).y);
+        const b = P(g2w(maxX, 6 + off).x, g2w(maxX, 6 + off).y);
+        ctx.strokeStyle = 'rgba(132,92,58,0.6)';
+        ctx.lineWidth = 7 * K;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      }
+    }
+    // Schneereste und Kiesel auf dem Weg
+    for (const t of tiles) {
+      for (let i = 0; i < 7; i++) {
+        const w = g2w(t.gx + 0.1 + rnd() * 0.8, t.gy + 0.1 + rnd() * 0.8);
+        const [x, y] = P(w.x, w.y);
+        ctx.fillStyle = rnd() < 0.6 ? 'rgba(255,255,255,0.8)' : 'rgba(120,96,70,0.5)';
+        ctx.beginPath(); ctx.ellipse(x, y, (2 + rnd() * 4) * K, (1 + rnd() * 2) * K, 0, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    const tex = Texture.from(c);
+    const sp = new Sprite(tex);
+    sp.x = X0;
+    sp.y = Y0;
+    sp.width = W;
+    sp.height = H;
+    return sp;
+  }
+
   _drawRoadTilePolys(g, pad = 0) {
     const g2w = this.gridToWorld;
     for (const t of this.grid.roadTiles) {
@@ -103,50 +179,44 @@ export class TerrainLayer {
     }
   }
 
-  _buildGridCobblestoneRoads() {
-    const cobbleTex = this.textures.get('terrain_cobble');
-
-    // Outer cool alpine stone-edge shadow so cobblestones recess naturally into the snow
-    const curbShadow = new Graphics();
-    this._drawRoadTilePolys(curbShadow, 0.08);
-    curbShadow.fill({ color: 0x7e9ec0, alpha: 0.36 });
-    this.roadContainer.addChild(curbShadow);
-
-    // Soft sculpted snow curb framing every road & plaza tile
-    const curbSnow = new Graphics();
-    this._drawRoadTilePolys(curbSnow, 0.04);
-    curbSnow.fill({ color: 0xf7fbff, alpha: 0.90 });
-    this.roadContainer.addChild(curbSnow);
-
-    if (cobbleTex) {
-      const roadMask = new Graphics();
-      this._drawRoadTilePolys(roadMask, 0.0);
-      roadMask.fill({ color: 0xffffff, alpha: 1 });
-      this.roadContainer.addChild(roadMask);
-
-      const cobbleTiling = new TilingSprite({
-        texture: cobbleTex,
-        width: 3600,
-        height: 2400
-      });
-      cobbleTiling.anchor.set(0.5);
-      cobbleTiling.x = 0;
-      cobbleTiling.y = 420;
-      cobbleTiling.tileScale.set(0.30, 0.21);
-      cobbleTiling.mask = roadMask;
-      this.roadContainer.addChild(cobbleTiling);
-    } else {
-      const fallback = new Graphics();
-      this._drawRoadTilePolys(fallback, 0.0);
-      fallback.fill({ color: 0x9aa5b4, alpha: 0.95 });
-      this.roadContainer.addChild(fallback);
-    }
-  }
-
   /**
    * Renders true isometric Footprint Grounding Base Plates under every building/station/landmark
    * so sprites sit firmly PLANTED into the snow (eliminating the "floating sticker" look!).
    */
+  _rebuildFields(fields) {
+    const g = this.fieldGfx;
+    const g2w = this.gridToWorld;
+    g.clear();
+    const has = new Set(fields.map((f) => `${f.gx},${f.gy}`));
+    // 1) Kante/Sockel aller Felder zuerst (Erde ragt 6 px aus dem Schnee)
+    for (const f of fields) {
+      const i = 0.03;
+      const a = g2w(f.gx + i, f.gy + 1 - i), b = g2w(f.gx + 1 - i, f.gy + 1 - i), c = g2w(f.gx + 1 - i, f.gy + i);
+      const D = 6;
+      if (!has.has(`${f.gx},${f.gy + 1}`)) g.poly([a.x, a.y, b.x, b.y, b.x, b.y + D, a.x, a.y + D]).fill(0x5a3218);
+      if (!has.has(`${f.gx + 1},${f.gy}`)) g.poly([b.x, b.y, c.x, c.y, c.x, c.y + D, b.x, b.y + D]).fill(0x4a2812);
+      g.ellipse((a.x + c.x) / 2 + 3, b.y + D + 3, 30, 6).fill({ color: 0x2c4a70, alpha: 0.08 });
+    }
+    // 2) Ackerfläche mit Furchen
+    for (const f of fields) {
+      const i = 0.03;
+      const top = isoTilePoly(g2w, f.gx + i, f.gy + i, 0).map((v, k) => v);
+      const p0 = g2w(f.gx + i, f.gy + i), p1 = g2w(f.gx + 1 - i, f.gy + i), p2 = g2w(f.gx + 1 - i, f.gy + 1 - i), p3 = g2w(f.gx + i, f.gy + 1 - i);
+      g.poly([p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y]).fill(0x8b5a33).stroke({ color: 0x5a3218, width: 1.5, alpha: 0.6 });
+      // Furchen entlang gx (gleiche Richtung auf allen Feldern -> sauberes Gesamtbild)
+      for (let r = 1; r <= 4; r++) {
+        const t = r / 5;
+        const u = g2w(f.gx + 0.1, f.gy + t), v = g2w(f.gx + 0.9, f.gy + t);
+        g.moveTo(u.x, u.y + 1.5).lineTo(v.x, v.y + 1.5).stroke({ color: 0x5e3519, width: 3, cap: 'round', alpha: 0.75 });
+        g.moveTo(u.x, u.y - 1).lineTo(v.x, v.y - 1).stroke({ color: 0xa87444, width: 2, cap: 'round', alpha: 0.8 });
+      }
+      // Lichtkante oben links
+      g.moveTo(p0.x, p0.y + 1).lineTo(p1.x, p1.y + 1).stroke({ color: 0xc08a56, width: 1.5, alpha: 0.7 });
+      g.moveTo(p0.x, p0.y + 1).lineTo(p3.x, p3.y + 1).stroke({ color: 0xc08a56, width: 1.5, alpha: 0.7 });
+      void top;
+    }
+  }
+
   _rebuildGroundingPlates() {
     // Keine Platten/Rauten mehr unter Gebäuden (Hannes 23.11.). Nur der weiche Sprite-Schatten bleibt.
     this.groundingGfx.clear();
@@ -182,11 +252,8 @@ export class TerrainLayer {
   }
 
   _rebuildFences() {
-    const g = this.fenceGfx;
-    g.clear();
-    for (const edge of this.grid.fenceEdges) {
-      this._drawFenceEdge(g, edge);
-    }
+    // Kein Zaun um den Hof (Hay Day: die Grenze ist die Wildnis, nicht ein Zaun).
+    this.fenceGfx.clear();
   }
 
   renderDebugGrid(visible) {
@@ -242,6 +309,13 @@ export class TerrainLayer {
       this._rebuildFences();
     }
 
+    const fields = state.fields || [];
+    const fieldSig = fields.map((f) => `${f.gx},${f.gy}`).join(';');
+    if (fieldSig !== this._lastFieldSig) {
+      this._lastFieldSig = fieldSig;
+      this._rebuildFields(fields);
+    }
+
     // Rebuild grounding plates whenever entity count/positions change
     let groundSig = '';
     for (const ent of this.grid.entities.values()) {
@@ -254,21 +328,7 @@ export class TerrainLayer {
 
     this.renderDebugGrid(showDebugGrid);
 
-    // Gesperrtes Land immer leicht abgedunkelt (wie bei den großen Aufbauspielen),
-    // beim Bauen/Verschieben etwas deutlicher.
-    this.zoneOverlayGfx.clear();
-    {
-      const unlocked = new Set(state.unlockedLands || []);
-      const building = uiState.mode === 'place' || uiState.mode === 'move';
-      const g2w = this.gridToWorld;
-      for (const zone of LAND_ZONES) {
-        if (unlocked.has(zone.id)) continue;
-        const b = zone.bounds;
-        this.zoneOverlayGfx
-          .poly(isoRectPoly(g2w, b.x0, b.y0, b.x1 + 1, b.y1 + 1))
-          .fill({ color: 0x46648c, alpha: building ? 0.2 : 0.11 });
-      }
-    }
+    this.zoneOverlayGfx.clear(); // gesperrtes Land zeigt die Wildnis selbst (world.js)
 
     // Interactive placement / move tile highlight
     this.ghostGfx.clear();

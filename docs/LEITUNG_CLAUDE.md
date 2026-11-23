@@ -19,6 +19,8 @@
 5. Grafik mutiger: gleiche Handschrift, aber jedes Objekt mit eigener Silhouette, Star-Merkmal, Akzentfarbe; später = spektakulärer. Gemini liefert je Auftrag 3 Varianten (zurückhaltend → wild), Hannes wählt (STIL_REGELN §6a). **Erst ganz zum Schluss** (Hannes 23.11.): zuerst Spiel fertig, dann Grafik-Runde.
 6. Stufe 6–30 (Hannes 23.11.): Baumaterial ab Stufe 6 für Lager- und Landausbau. Neue Systeme: Bergbahn-Lieferungen, Eisfischen, Schneestollen (Mine), Weihnachtsmarkt-Fest. Inhalte jetzt mit Platzhalter-Bildern einbauen, echte Grafik am Schluss.
 
+9. **Hay Day ist der Maßstab für alles** (Hannes 23.11. abends): Bei jeder Frage und jedem Detail (Karte, Boden, Wege, Felder, Erweitern, Buttons, Schrift, Schatten, Spielgefühl) zuerst nachsehen, wie Hay Day es macht, Bild daneben legen, dann umsetzen. Weihnachten bleibt das Thema, Grafiken eigene (nichts kopieren).
+
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof). `src/gameData.js` ist nur noch ein Adapter für die alte Oberfläche.
 - `src/core/` – Logik-Kern in TypeScript, ohne DOM/Pixi/Audio:

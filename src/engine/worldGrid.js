@@ -6,10 +6,10 @@
 // ============================================================================
 import { LAND_ZONES } from '../gameData.js';
 
-export const WORLD_MIN = -4;
-export const WORLD_MAX = 19; // 24x24 total valley grid covering playable 0..15 + scenic border
-export const PLAYABLE_MIN = 0;
-export const PLAYABLE_MAX = 16; // Hof inkl. Ostwiese (x bis 16), Rand = Waldsaum
+export const WORLD_MIN = -10;
+export const WORLD_MAX = 26; // Hof + 4 Kacheln Erweiterungsring + Waldrahmen (Hay-Day-Größe)
+export const PLAYABLE_MIN = -4;
+export const PLAYABLE_MAX = 20; // Hof inkl. aller Erweiterungen, außen Waldrahmen
 
 export const TERRAIN = {
   SNOW: 'SNOW',
@@ -102,11 +102,7 @@ export class WorldGrid {
         const t = this.getTile(gx, gy);
         if (!t || t.zone !== ZONE.BORDER || t.terrain === TERRAIN.WATER) continue;
         if (gy === 6) continue; // Keep horizon-to-horizon village road clear!
-        if (gy <= -2 || gx >= 18 || gx <= -3) {
-          t.terrain = (gy === -2 && gx >= -1 && gx <= 13) || (gx === 18 && gy >= 0 && gy <= 12)
-            ? TERRAIN.CLIFF
-            : TERRAIN.FOREST;
-        }
+        if (gy <= -5 || gy >= 18 || gx >= 21 || gx <= -5) t.terrain = TERRAIN.FOREST;
       }
     }
 
@@ -214,11 +210,6 @@ export class WorldGrid {
     }
 
     const unlocked = new Set(state.unlockedLands || []);
-    for (const z of LAND_ZONES) {
-      if (!unlocked.has(z.id)) {
-        register(`sign_${z.id}`, 'sign', Math.floor(z.signPos.gx), Math.floor(z.signPos.gy), 1, 1, { zoneId: z.id });
-      }
-    }
 
     this._computeFenceEdges(unlocked);
   }

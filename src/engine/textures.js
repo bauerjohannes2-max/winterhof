@@ -52,6 +52,51 @@ export class GpuTextures {
       }
     }
 
+    // ---- Wildnis auf gesperrtem Land (Hay-Day-Prinzip: Steine, Stümpfe, Büsche) ----
+    const outline = '#3A2A22';
+    this.map.set('wild_rock', makeCanvasTexture(160, 120, (ctx) => {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = outline;
+      const body = new Path2D('M18 98 C10 70 30 40 62 34 C80 18 116 24 132 48 C150 62 152 90 140 102 C110 112 50 112 18 98 Z');
+      const gr = ctx.createLinearGradient(30, 30, 130, 110);
+      gr.addColorStop(0, '#B9C6D6'); gr.addColorStop(0.6, '#8C9BB0'); gr.addColorStop(1, '#6C7A90');
+      ctx.fillStyle = gr; ctx.fill(body); ctx.stroke(body);
+      const cap = new Path2D('M30 58 C40 38 66 30 82 34 C100 24 124 34 132 52 C118 60 104 52 92 58 C76 50 56 64 30 58 Z');
+      ctx.fillStyle = '#FBFDFF'; ctx.fill(cap);
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(58,42,34,0.55)'; ctx.stroke(cap);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.ellipse(52, 76, 10, 5, -0.4, 0, Math.PI * 2); ctx.fill();
+    }));
+    this.map.set('wild_stump', makeCanvasTexture(120, 120, (ctx) => {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = outline;
+      const side = new Path2D('M24 46 L24 92 C24 108 96 108 96 92 L96 46 Z');
+      const gr = ctx.createLinearGradient(24, 0, 96, 0);
+      gr.addColorStop(0, '#8A5530'); gr.addColorStop(0.5, '#6E3F22'); gr.addColorStop(1, '#4E2A15');
+      ctx.fillStyle = gr; ctx.fill(side); ctx.stroke(side);
+      ctx.beginPath(); ctx.ellipse(60, 46, 36, 14, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#F7FBFF'; ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(58,42,34,0.5)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(40, 70); ctx.lineTo(40, 96); ctx.moveTo(72, 66); ctx.lineTo(72, 98); ctx.stroke();
+    }));
+    this.map.set('wild_bush', makeCanvasTexture(150, 120, (ctx) => {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = outline;
+      const b = new Path2D('M16 96 C6 74 22 52 44 54 C48 32 76 22 94 38 C112 30 138 46 132 68 C148 78 142 102 124 104 C90 110 46 110 16 96 Z');
+      ctx.fillStyle = '#2F7A4A'; ctx.fill(b); ctx.stroke(b);
+      ctx.fillStyle = '#3F9A5E';
+      ctx.beginPath(); ctx.ellipse(56, 78, 22, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(102, 82, 20, 12, 0, 0, Math.PI * 2); ctx.fill();
+      const snow = new Path2D('M30 62 C40 48 56 46 64 52 C72 34 96 32 106 46 C118 42 130 54 126 66 C110 62 98 70 86 64 C70 72 50 62 30 62 Z');
+      ctx.fillStyle = '#FBFDFF'; ctx.fill(snow);
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(58,42,34,0.45)'; ctx.stroke(snow);
+      ctx.fillStyle = '#D23A32';
+      for (const [x, y] of [[48, 84], [90, 72], [112, 92]]) { ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fill(); }
+    }));
+
     // Soft cool-alpine contact shadow (replaces flat ellipses, zero CPU shadowBlur)
     this.map.set('fx_shadow', makeCanvasTexture(128, 64, (ctx, w, h) => {
       const g = ctx.createRadialGradient(w * 0.5, h * 0.5, 4, w * 0.5, h * 0.5, w * 0.5);

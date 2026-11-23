@@ -1,6 +1,6 @@
 // Bei jedem Release hochzählen. Seite/Code: erst Netz, dann Cache (Updates kommen an).
 // Bilder: erst Cache, dann Netz (schnell, offline).
-const CACHE_NAME = 'winterhof-v8-2';
+const CACHE_NAME = 'winterhof-v8-3';
 const ASSETS = [
   './',
   './index.html',

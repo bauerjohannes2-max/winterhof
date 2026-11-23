@@ -201,12 +201,13 @@ class WinterhofGame {
 
   mountHudIcons() {
     const map = {
-      'ico-shop': 'shop',
-      'ico-move': 'move',
-      'ico-barn': 'barn',
-      'ico-orders': 'orders',
-      'ico-gifts': 'mail',
-      'btn-settings': 'gear'
+      'ico-shop': 'hd_shop',
+      'ico-move': 'hd_move',
+      'ico-barn': 'hd_barn',
+      'ico-orders': 'hd_orders',
+      'ico-gifts': 'hd_mail',
+      'btn-settings': 'hd_gear',
+      'hud-coin-ico': 'hd_coin'
     };
     for (const [elId, iconName] of Object.entries(map)) {
       const el = document.getElementById(elId);
@@ -470,7 +471,8 @@ class WinterhofGame {
           const z = LAND_ZONES.find((x) => x.id === ev.zoneId);
           audio.playLevelUp();
           if (z) {
-            const sp = gridToWorld(z.signPos.gx + 0.5, z.signPos.gy + 0.5);
+            const b = z.bounds;
+            const sp = gridToWorld((b.x0 + b.x1 + 1) / 2, (b.y0 + b.y1 + 1) / 2);
             this.world.spawnBurst(sp.x, sp.y - 20, '#FDE047', 18, 'star');
             this.world.spawnFloater(sp.x, sp.y - 42, `${z.name} frei`, null, '#A7F3D0');
           }
@@ -896,7 +898,7 @@ class WinterhofGame {
 
     const lightEl = document.getElementById('btn-light');
     if (lightEl) {
-      const iconKey = this.world.lightingMode === 'day' ? 'sun' : this.world.lightingMode === 'dusk' ? 'dusk' : this.world.lightingMode === 'night' ? 'moon' : 'auto';
+      const iconKey = this.world.lightingMode === 'night' ? 'hd_moon' : 'hd_sun';
       lightEl.innerHTML = sprites.getUiIcon(iconKey);
     }
 
@@ -1259,7 +1261,7 @@ class WinterhofGame {
 
     if (hit.kind === 'daily_chest') { this.claimDailyChest(); return; }
     if (hit.kind === 'villager') { this.greetVillager(hit.entity); return; }
-    if (hit.kind === 'land_sign') { audio.playTap(); this.openModal('shop', {}, 'land'); return; }
+    if (hit.kind === 'land_sign') { audio.playTap(); this.openModal('land_zone', { zoneId: hit.entity.id }); return; }
 
     if (hit.kind === 'field') {
       const f = hit.entity;
@@ -1309,16 +1311,6 @@ class WinterhofGame {
     const vil = this.world.hitTestVillager(wx, wy);
     if (vil) {
       candidates.push({ kind: 'villager', entity: vil, depth: vil.gx + vil.gy + 0.5, hit: () => true });
-    }
-
-    const unlocked = new Set(this.state.unlockedLands || []);
-    for (const z of LAND_ZONES) {
-      if (unlocked.has(z.id)) continue;
-      const p = gridToWorld(z.signPos.gx + 0.5, z.signPos.gy + 0.5);
-      candidates.push({
-        kind: 'land_sign', entity: z, depth: z.signPos.gx + z.signPos.gy + 0.8,
-        hit: () => Math.abs(wx - p.x) < 50 && wy > p.y - 72 && wy < p.y + 12
-      });
     }
 
     for (const st of this.state.stations) {
@@ -1391,6 +1383,10 @@ class WinterhofGame {
     const field = this.state.fields.find((f) => f.gx === tx && f.gy === ty);
     if (field) return { kind: 'field', entity: field };
 
+    // Gesperrtes Land (Wildnis) antippen = Erweitern-Fenster für genau dieses Stück (wie Hay Day)
+    const lz = this.getLockedZoneAt(tx, ty);
+    if (lz) return { kind: 'land_sign', entity: lz };
+
     return { kind: 'ground', gx: tx, gy: ty };
   }
 
@@ -1433,6 +1429,33 @@ class WinterhofGame {
     else if (m.kind === 'village') this._renderVillageModal(titleEl, tabsEl, bodyEl, m.tab || 'overview');
     else if (m.kind === 'settings') this._renderSettingsModal(titleEl, bodyEl);
     else if (m.kind === 'levelup') this._renderLevelUpModal(titleEl, bodyEl, m.data.lvlInfo);
+    else if (m.kind === 'land_zone') this._renderLandZoneModal(titleEl, bodyEl, m.data.zoneId);
+  }
+
+  _renderLandZoneModal(titleEl, bodyEl, zoneId) {
+    const z = LAND_ZONES.find((x) => x.id === zoneId);
+    if (!z) { this.closeModal(); return; }
+    titleEl.textContent = 'Land erweitern';
+    const lvl = getLevelInfo(this.state.xp).level;
+    const isOpen = (this.state.unlockedLands || []).includes(z.id);
+    const tooLow = z.unlockLevel > lvl;
+    const can = !isOpen && !tooLow && this.state.coins >= z.cost && this._hasAll(z.materials || {});
+    bodyEl.innerHTML = `
+      <div class="cozy-card">
+        <div class="card-thumb">${sprites.getUiIcon('land')}</div>
+        <div class="card-info">
+          <div class="card-title">${z.name}</div>
+          <div class="card-sub">${z.desc}${isOpen ? '' : this._matsLine(z.materials || {})}</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:12px">
+        ${isOpen ? '<button class="btn-wood" disabled>Schon frei</button>'
+          : tooLow ? `<button class="btn-wood" disabled>Ab Stufe ${z.unlockLevel}</button>`
+            : `<button class="btn-green" id="btn-land-buy" ${can ? '' : 'disabled'}>Erweitern für ${z.cost} Münzen</button>`}
+      </div>`;
+    bodyEl.querySelector('#btn-land-buy')?.addEventListener('click', () => {
+      if (this.unlockLandZone(z.id)) this.closeModal();
+    });
   }
 
   _renderChaptersModal(titleEl, bodyEl) {

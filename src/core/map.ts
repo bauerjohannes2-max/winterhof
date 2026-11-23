@@ -36,15 +36,12 @@ export function isZoneUnlocked(zone: string, state: GameState): boolean {
 
 export type PlaceCheck = { ok: true } | { ok: false; reason: 'terrain' | 'locked' | 'occupied' | 'bounds' };
 
-/** Darf ein Objekt mit Footprint w×h an (gx,gy)? Signschilder gesperrter Zonen belegen ihre Kachel. */
+/** Darf ein Objekt mit Footprint w×h an (gx,gy)? */
 export function canPlace(
   state: GameState, gx: number, gy: number, w: number, h: number, ignoreId: ObjectId | null = null
 ): PlaceCheck {
   if (!Number.isInteger(gx) || !Number.isInteger(gy)) return { ok: false, reason: 'bounds' };
   const occ = buildOccupancy(state.objects);
-  const signs = new Set(
-    CONTENT.landZones.filter((z) => !state.unlockedZones.includes(z.id)).map((z) => tileKey(Math.floor(z.signPos.gx), Math.floor(z.signPos.gy)))
-  );
   for (let dy = 0; dy < h; dy++) {
     for (let dx = 0; dx < w; dx++) {
       const x = gx + dx, y = gy + dy;
@@ -54,7 +51,7 @@ export function canPlace(
       if (t.terrain !== TERRAIN.SNOW || t.surface !== SURFACE.NONE) return { ok: false, reason: 'terrain' };
       const k = tileKey(x, y);
       const who = occ.get(k);
-      if ((who && who !== ignoreId) || signs.has(k)) return { ok: false, reason: 'occupied' };
+      if (who && who !== ignoreId) return { ok: false, reason: 'occupied' };
     }
   }
   return { ok: true };

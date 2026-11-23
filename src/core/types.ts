@@ -66,7 +66,6 @@ export interface LandZoneDef {
   id: string;
   name: string;
   bounds: { x0: number; y0: number; x1: number; y1: number };
-  signPos: { gx: number; gy: number };
   cost: number;
   unlockLevel: number;
   /** Baumaterial zusätzlich zu den Münzen (ab Stufe 6) */

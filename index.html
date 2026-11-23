@@ -12,6 +12,9 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="apple-touch-icon" href="./assets/icon-180.png" />
   <link rel="icon" type="image/png" href="./assets/icon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -70,14 +73,9 @@
     <!-- Top-Right: Coin Counter + Minimal Time-of-Day & Settings -->
     <div class="hud-top-right">
       <button id="btn-coins" class="coin-pill" title="Münzen und Hofladen">
-        <span class="coin-svg-wrap" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22">
-            <circle cx="12" cy="12" r="10.5" fill="#FACC15" stroke="#8C4E08" stroke-width="2"/>
-            <circle cx="12" cy="12" r="7.5" fill="#FEF08A" opacity="0.55"/>
-            <polygon points="12,5.5 13.8,10 18.5,10 14.8,12.8 16.2,17.5 12,14.7 7.8,17.5 9.2,12.8 5.5,10 10.2,10" fill="#B45309"/>
-          </svg>
-        </span>
         <span id="hud-coins" class="coin-num">145</span>
+        <span class="coin-svg-wrap" id="hud-coin-ico" aria-hidden="true"></span>
+        <span class="coin-plus" aria-hidden="true">+</span>
       </button>
 
       <button id="btn-light" class="circle-util-btn" title="Tageszeit wechseln" aria-label="Tageszeit"></button>

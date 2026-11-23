@@ -1133,128 +1133,210 @@ body.is-portrait #app {
 }
 
 /* ============================================================================
-   EINHEITLICHES BUTTON-SYSTEM (Kern-Qualität, 23.11.2026)
-   Regeln (Recherche KERN_QUALITAET_PLAN.md, Teil B):
-   - Jeder Button: dunkle Kontur, EINE satte Hauptfarbe, Lichtkante oben, harte Unterkante (3D).
-   - Drücken: Button sinkt um die Unterkante ein. Loslassen: kurzer Feder-Hüpfer.
-   - Drei runde Größen: L (Hauptaktion), M (Dock), S (Werkzeug). Beschriftung immer gleiche Plakette.
+   HUD & BUTTONS IM HAY-DAY-STIL (23.11.2026, ersetzt das Medaillon-System)
+   Vorbild Hay Day (App-Store-Bilder, Wiki): keine Scheiben/Platten hinter Symbolen.
+   - Symbole selbst sind die Knöpfe: bunt, gefüllt, dicke dunkle Kontur, weicher Schatten.
+   - Zahlen und Beschriftungen in dicker, runder Spielschrift, weiß mit dunklem Rand.
+   - Text-Knöpfe (in Fenstern): satte Farbe, runde Ecken, harte Unterkante, weißer Rand-Text.
+   - Drücken: kurz eindrücken, beim Loslassen federnd zurück.
    ============================================================================ */
 :root {
-  --btn-edge: #3A1B0A;
-  --btn-depth: 4px;
-  --btn-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --btn-L: 64px;
-  --btn-M: 54px;
-  --btn-S: 42px;
-  --btn-cream: #FFF3D6;
-  --btn-cream-dark: #D9B47A;
-  --btn-wood: #8A4D24;
-  --btn-wood-dark: #4A2410;
-  --btn-gold: #F7B92F;
-  --btn-gold-dark: #B06A0C;
-  --btn-green: #2E9A55;
-  --btn-green-dark: #17592F;
-  --btn-red: #D23A32;
-  --btn-red-dark: #7E1A16;
+  --hd-font: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+  --hd-edge: #3A1B0A;
+  --hd-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --hd-outline-s: -1.5px -1.5px 0 var(--hd-edge), 1.5px -1.5px 0 var(--hd-edge), -1.5px 1.5px 0 var(--hd-edge), 1.5px 1.5px 0 var(--hd-edge),
+    0 -1.5px 0 var(--hd-edge), 0 1.5px 0 var(--hd-edge), -1.5px 0 0 var(--hd-edge), 1.5px 0 0 var(--hd-edge), 0 3px 0 var(--hd-edge);
 }
 
-.medallion-btn, .circle-util-btn, .scythe-btn, .modal-close, .zoom-btn,
-.coin-pill, .level-crest-btn, .chapter-chip,
-.btn-green, .btn-red, .btn-gold, .btn-wood, .banner-store, .banner-close {
-  border: 2.5px solid var(--btn-edge) !important;
-  transition: transform 0.18s var(--btn-spring), box-shadow 0.12s ease, filter 0.12s ease !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  -webkit-tap-highlight-color: transparent;
+/* --- Symbol-Knöpfe (Dock, Werkzeuge, Einstellungen) --- */
+.medallion-btn, .medallion-btn.primary, .medallion-btn.compact, .circle-util-btn {
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  filter: drop-shadow(0 4px 3px rgba(20, 30, 50, 0.35));
+  transition: transform 0.2s var(--hd-spring) !important;
 }
+.medallion-btn .m-svg { width: 58px !important; height: 58px !important; margin: 0 !important; }
+.medallion-btn.primary .m-svg { width: 70px !important; height: 70px !important; }
+.medallion-btn.compact .m-svg { width: 40px !important; height: 40px !important; }
+.circle-util-btn svg { width: 38px !important; height: 38px !important; }
+.medallion-btn:active, .circle-util-btn:active {
+  transform: scale(0.86) !important;
+  transition: transform 0.06s ease-out !important;
+}
+.medallion-btn.active .m-svg { filter: drop-shadow(0 0 6px #FFE08A) drop-shadow(0 0 2px #FFFFFF); }
 
-/* Runde Knöpfe: Größen */
-.medallion-btn { width: var(--btn-M) !important; height: var(--btn-M) !important; }
-.medallion-btn.primary { width: var(--btn-L) !important; height: var(--btn-L) !important; }
-.medallion-btn.compact, .circle-util-btn, .scythe-btn, .zoom-btn { width: var(--btn-S) !important; height: var(--btn-S) !important; }
-.modal-close { width: 36px !important; height: 36px !important; }
-
-/* Farben: je Rolle EINE Hauptfarbe */
-.medallion-btn {
-  background: radial-gradient(circle at 50% 30%, #FFFDF5 0%, var(--btn-cream) 55%, #F1D9A6 100%) !important;
-  color: var(--btn-edge) !important;
-  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.85), inset 0 -3px 0 rgba(160, 110, 50, 0.25),
-    0 var(--btn-depth) 0 var(--btn-cream-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 8px 16px rgba(20, 30, 50, 0.28) !important;
-}
-.medallion-btn.primary {
-  background: radial-gradient(circle at 50% 30%, #FFE79A 0%, var(--btn-gold) 60%, #E59A1A 100%) !important;
-  box-shadow: inset 0 3px 0 rgba(255, 250, 220, 0.8), inset 0 -3px 0 rgba(150, 80, 0, 0.3),
-    0 var(--btn-depth) 0 var(--btn-gold-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 8px 16px rgba(20, 30, 50, 0.3) !important;
-}
-.medallion-btn.compact, .circle-util-btn, .coin-pill, .level-crest-btn, .btn-wood {
-  background: linear-gradient(180deg, #A35D2E 0%, var(--btn-wood) 55%, #6E391B 100%) !important;
-  color: #FFFDF7 !important;
-  box-shadow: inset 0 2px 0 rgba(255, 220, 170, 0.45),
-    0 var(--btn-depth) 0 var(--btn-wood-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.28) !important;
-}
-.scythe-btn, .btn-gold, .banner-store {
-  background: linear-gradient(180deg, #FFD266 0%, var(--btn-gold) 55%, #E2961B 100%) !important;
-  color: var(--btn-edge) !important;
-  box-shadow: inset 0 2px 0 rgba(255, 250, 220, 0.7),
-    0 var(--btn-depth) 0 var(--btn-gold-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.25) !important;
-}
-.btn-green {
-  background: linear-gradient(180deg, #49B86E 0%, var(--btn-green) 55%, #23803F 100%) !important;
-  color: #FFFDF7 !important;
-  box-shadow: inset 0 2px 0 rgba(220, 255, 220, 0.45),
-    0 var(--btn-depth) 0 var(--btn-green-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.25) !important;
-}
-.btn-red, .modal-close, .banner-close {
-  background: linear-gradient(180deg, #EA5A4F 0%, var(--btn-red) 55%, #B02A23 100%) !important;
-  color: #FFFDF7 !important;
-  box-shadow: inset 0 2px 0 rgba(255, 210, 200, 0.45),
-    0 var(--btn-depth) 0 var(--btn-red-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.25) !important;
-}
-.zoom-btn, .chapter-chip {
-  background: linear-gradient(180deg, #FFFDF5 0%, var(--btn-cream) 100%) !important;
-  color: var(--btn-edge) !important;
-  box-shadow: inset 0 2px 0 #FFFFFF,
-    0 var(--btn-depth) 0 var(--btn-cream-dark), 0 calc(var(--btn-depth) + 1px) 0 var(--btn-edge), 0 6px 14px rgba(20, 30, 50, 0.22) !important;
-}
-.medallion-btn.active {
-  background: radial-gradient(circle at 50% 30%, #D9F7E2 0%, #7BD39A 60%, var(--btn-green) 100%) !important;
-}
-
-/* Text-Knöpfe: gleiche Rundung und Schrift */
-.btn-green, .btn-red, .btn-gold, .btn-wood, .banner-store, .banner-close {
-  border-radius: 14px !important;
-  padding: 8px 14px !important;
-  font-weight: 900 !important;
-  font-size: 13px !important;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
-}
-.btn-gold, .banner-store, .scythe-btn { text-shadow: none; }
-
-/* Druckgefühl: einsinken, dann federnd zurück */
-.medallion-btn:active, .circle-util-btn:active, .scythe-btn:active, .modal-close:active, .zoom-btn:active,
-.coin-pill:active, .level-crest-btn:active, .chapter-chip:active,
-.btn-green:active, .btn-red:active, .btn-gold:active, .btn-wood:active, .banner-store:active, .banner-close:active {
-  transform: translateY(var(--btn-depth)) scale(0.97) !important;
-  transition: transform 0.05s ease-out, box-shadow 0.05s ease-out !important;
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 0 0 var(--btn-edge), 0 1px 0 var(--btn-edge), 0 2px 6px rgba(20, 30, 50, 0.25) !important;
-}
-@media (hover: hover) {
-  .medallion-btn:hover, .circle-util-btn:hover, .scythe-btn:hover, .zoom-btn:hover,
-  .btn-green:hover, .btn-red:hover, .btn-gold:hover, .btn-wood:hover { filter: brightness(1.06); }
-}
-
-/* Beschriftungs-Plakette: gleich für alle Dock-Knöpfe */
+/* Beschriftung unter dem Symbol: Spielschrift, weiß mit dunklem Rand (kein Kasten) */
 .m-label {
-  bottom: -9px !important;
-  padding: 2px 8px !important;
-  background: var(--btn-edge) !important;
-  border: 1.5px solid #F7D9A0 !important;
-  font-size: 9.5px !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.05em !important;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35) !important;
+  position: static !important;
+  transform: none !important;
+  margin-top: -6px;
+  padding: 0 !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.02em !important;
+  color: #FFFFFF !important;
+  text-shadow: var(--hd-outline-s);
 }
-.medallion-badge, .scythe-count {
-  border: 2px solid #FFFDF7 !important;
-  box-shadow: 0 2px 0 var(--btn-edge) !important;
+
+/* Rote Zahl-Plakette */
+.medallion-badge {
+  top: -2px !important;
+  right: -4px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  border: 2.5px solid #FFFFFF !important;
+  background: radial-gradient(circle at 40% 30%, #FF6B5E, #D7261C) !important;
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  font-size: 13px !important;
+  box-shadow: 0 2px 0 var(--hd-edge), 0 0 0 1.5px var(--hd-edge) !important;
+}
+
+/* --- Oben links: Stufe (Stern) + Fortschrittsbalken, frei schwebend --- */
+.level-crest-btn {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  gap: 2px !important;
+  filter: drop-shadow(0 3px 2px rgba(20, 30, 50, 0.35));
+  transition: transform 0.2s var(--hd-spring) !important;
+}
+.level-crest-btn:active { transform: scale(0.94) !important; }
+.level-star-wrap { width: 54px !important; height: 54px !important; margin: 0 !important; filter: none !important; }
+.level-star-svg { width: 56px !important; height: 56px !important; }
+.level-star-svg polygon { stroke: var(--hd-edge) !important; stroke-width: 2.6 !important; }
+.level-num {
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  font-size: 21px !important;
+  color: #FFFFFF !important;
+  text-shadow: var(--hd-outline-s);
+  margin-top: 3px !important;
+}
+.village-meta { gap: 3px !important; }
+.village-name {
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  font-size: 16px !important;
+  color: #FFFFFF;
+  text-shadow: var(--hd-outline-s);
+  letter-spacing: 0.01em !important;
+  overflow: visible !important;
+  padding: 2px 2px 3px;
+}
+.xp-track {
+  height: 12px !important;
+  min-width: 110px;
+  background: #24324A !important;
+  border: 2.5px solid var(--hd-edge) !important;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.xp-fill { background: linear-gradient(180deg, #8FE36A 0%, #4CB33A 60%, #3A9A2C 100%) !important; box-shadow: inset 0 2px 0 rgba(255,255,255,0.45); }
+
+/* --- Oben rechts: Münzen als Zahl mit Münze und grünem Plus --- */
+.coin-pill {
+  background: linear-gradient(180deg, rgba(36, 50, 74, 0.55), rgba(36, 50, 74, 0.4)) !important;
+  border: 2.5px solid var(--hd-edge) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.2) !important;
+  padding: 1px 4px 1px 14px !important;
+  gap: 4px !important;
+  height: 36px;
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  font-size: 20px !important;
+  color: #FFFFFF !important;
+  text-shadow: var(--hd-outline-s);
+  transition: transform 0.2s var(--hd-spring) !important;
+}
+.coin-pill .coin-svg-wrap svg { width: 38px; height: 38px; margin: -6px 0; filter: drop-shadow(0 2px 1px rgba(0,0,0,.3)); }
+.coin-plus {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 7px;
+  background: linear-gradient(180deg, #8FE36A, #3A9A2C);
+  border: 2.5px solid var(--hd-edge);
+  box-shadow: 0 2px 0 var(--hd-edge);
+  font-size: 20px; line-height: 1; color: #FFFFFF; text-shadow: var(--hd-outline-s);
+}
+.coin-pill:active { transform: scale(0.92) !important; transition: transform 0.06s ease-out !important; }
+
+/* --- Kapitel-Hinweis: kleines Papier-Schild --- */
+.chapter-chip {
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  font-size: 14px !important;
+  background: linear-gradient(180deg, #FFF8E6, #F3DFB4) !important;
+  border: 2.5px solid var(--hd-edge) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 3px 0 var(--hd-edge) !important;
+  color: var(--hd-edge) !important;
+}
+
+/* --- Text-Knöpfe in Fenstern --- */
+.btn-green, .btn-red, .btn-gold, .btn-wood, .banner-store, .banner-close {
+  border: 2.5px solid var(--hd-edge) !important;
+  border-radius: 14px !important;
+  padding: 7px 16px 9px !important;
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  font-size: 16px !important;
+  letter-spacing: 0.02em !important;
+  color: #FFFFFF !important;
+  text-shadow: var(--hd-outline-s);
+  transition: transform 0.2s var(--hd-spring), box-shadow 0.1s ease !important;
+}
+.btn-green { background: linear-gradient(180deg, #9BE86E 0%, #58C23E 45%, #3C9E2C 100%) !important; box-shadow: inset 0 3px 0 rgba(255,255,255,0.5), 0 4px 0 var(--hd-edge) !important; }
+.btn-gold, .banner-store { background: linear-gradient(180deg, #FFE27A 0%, #FFC232 45%, #E8960F 100%) !important; box-shadow: inset 0 3px 0 rgba(255,255,255,0.55), 0 4px 0 var(--hd-edge) !important; }
+.btn-red, .banner-close { background: linear-gradient(180deg, #FF8A7A 0%, #EE4B3C 45%, #C72A1E 100%) !important; box-shadow: inset 0 3px 0 rgba(255,255,255,0.45), 0 4px 0 var(--hd-edge) !important; }
+.btn-wood { background: linear-gradient(180deg, #D9A066 0%, #B87A43 50%, #8F5428 100%) !important; box-shadow: inset 0 3px 0 rgba(255,255,255,0.35), 0 4px 0 var(--hd-edge) !important; }
+.btn-green:active, .btn-red:active, .btn-gold:active, .btn-wood:active, .banner-store:active, .banner-close:active {
+  transform: translateY(3px) scale(0.97) !important;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,0.35), 0 1px 0 var(--hd-edge) !important;
+  transition: transform 0.05s ease-out !important;
+}
+button.btn-green:disabled, button.btn-wood:disabled, button.btn-gold:disabled, button.btn-red:disabled {
+  filter: grayscale(0.85) brightness(1.05);
+  opacity: 0.6;
+}
+
+/* Fenster-Schließen: rundes rotes X mit Kontur */
+.modal-close {
+  width: 40px !important; height: 40px !important;
+  border: 2.5px solid var(--hd-edge) !important;
+  background: radial-gradient(circle at 40% 30%, #FF8A7A, #E0372A 60%, #B8241A) !important;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,0.45), 0 3px 0 var(--hd-edge) !important;
+  transition: transform 0.2s var(--hd-spring) !important;
+}
+.modal-close svg { stroke-width: 3.4; filter: drop-shadow(0 1.5px 0 var(--hd-edge)); }
+.modal-close:active { transform: scale(0.85) !important; }
+
+/* Überschriften und Reiter in der Spielschrift */
+.modal-title, .card-title, .tab-btn {
+  font-family: var(--hd-font) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.02em !important;
+}
+.modal-title { font-size: 22px !important; color: #FFFFFF !important; text-shadow: var(--hd-outline-s); text-transform: none !important; }
+.card-title { font-size: 15px !important; }
+
+.scythe-btn {
+  border: 2.5px solid var(--hd-edge) !important;
+  background: linear-gradient(180deg, #FFE27A, #E8960F) !important;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,0.5), 0 4px 0 var(--hd-edge) !important;
+  color: var(--hd-edge) !important;
 }

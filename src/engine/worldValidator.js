@@ -129,33 +129,7 @@ export function validateWorld(grid, state, villagers = []) {
     }
   }
 
-  // Rule 7: Signpost Isolation Invariant (each locked zone sign on free SNOW in its own zone, clear of water/road/buildings)
-  for (const z of LAND_ZONES) {
-    if (unlocked.has(z.id)) continue;
-    const sx = Math.floor(z.signPos.gx);
-    const sy = Math.floor(z.signPos.gy);
-    const st = grid.getTile(sx, sy);
-    if (!st || st.zone !== z.id || st.terrain !== TERRAIN.SNOW || st.surface !== SURFACE.NONE) {
-      errors.push(`R7_SIGN_BAD_TILE: Sign ${z.id} at (${sx},${sy}) invalid tile`);
-    }
-    // Check 8-neighborhood has no 2x2 building or water/cliff
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dx = -1; dx <= 1; dx++) {
-        if (dx === 0 && dy === 0) continue;
-        const nt = grid.getTile(sx + dx, sy + dy);
-        if (!nt) continue;
-        if (nt.terrain === TERRAIN.WATER || nt.terrain === TERRAIN.CLIFF) {
-          errors.push(`R7_SIGN_TOO_CLOSE_TERRAIN: Sign ${z.id} at (${sx},${sy}) adjacent to ${nt.terrain} (${nt.gx},${nt.gy})`);
-        }
-        if (nt.occupant && nt.occupant !== `sign_${z.id}`) {
-          const other = grid.entities.get(nt.occupant);
-          if (other && (other.kind === 'building' || other.kind === 'station' || other.kind === 'landmark')) {
-            errors.push(`R7_SIGN_TOO_CLOSE_BUILDING: Sign ${z.id} adjacent to ${other.id}`);
-          }
-        }
-      }
-    }
-  }
+  // Rule 7 (Schilder) entfällt: gesperrtes Land ist Wildnis ohne Schild (Hay Day).
 
   // Rule 8: Villager Walkability Invariant (every villager strictly on walkable ROAD/PLAZA/BRIDGE)
   for (const v of villagers) {

@@ -29,6 +29,20 @@ Hannes' Urteil: „Grafisch noch random, nichts wirklich rund.“ Ziel: Gefühl 
 - Erledigt (Bild: `docs/qa/kern/vergleich_schritt1-4.jpg`): Recherche; Bach, Brücke, Wasser-Shader raus (Validator verbietet Wasser jetzt); Bachwiese → **Ostwiese** (x 14–16); Waldsaum in festen Reihen (hinten hoch, vorn klein, Weg verschwindet im Wald); Felsen nur hinten; keine laufenden Figuren (nur Kunde mit Angebot steht still vor der Wunschtafel); Truhe fest rechts neben Haupthaus (6,3), alte Stände ziehen automatisch um; Platten/Rauten unter Gebäuden weg; neue Schilder (Schloss + „Stufe N“, grün „Erweitern“ wenn erreichbar, Preis erst beim Antippen); gesperrtes Land leicht abgedunkelt; Felder: Saatreihen → kleine blasse Pflanze → reif; einheitliches Button-System (styles.css Ende); Ernte-Zahlen kurz „+2“ statt überlappender Langtexte; fehlende Gebäude-Beschreibungen ergänzt.
 - Offen / selbst kritisch gesehen: (a) Weg läuft schnurgerade quer durch den Hof – besser an den Rand? (Hannes entscheidet) (b) Schlitten ragt über den Zaun; (c) Ladebild zeigt Herbst/Kürbisse statt Weihnachten → Gemini-Auftrag in der Grafik-Runde; (d) Spielgefühl (Schritt 5) erst begonnen; (e) Hühnerstall-Strohplatte prüfen.
 
+## Runde 2: Hay Day als Maßstab (Hannes 23.11. spät)
+Vorlagen angesehen: Hay-Day-Wiki (Erweiterungskarte, gesperrtes Grundstück), App-Store-Bilder (HUD).
+| Detail | Hay Day | Winterhof jetzt |
+|---|---|---|
+| Gesperrtes Land | verwildert (Bäume, Steine, Stümpfe), Rand, Antippen öffnet Erweitern | Wildnis mit Tannen/Steinen/Büschen/Stümpfen, Schneewall-Kante, Antippen öffnet „Land erweitern“. Keine Schilder mehr |
+| Kartengröße | großer Hof, Dutzende Erweiterungsstücke | Welt −10…26, 17 Erweiterungsstücke (5 alt + 12 neu, Stufe 7–18) |
+| Zaun um den Hof | keiner | entfernt |
+| Boden | ruhige, gemalte Fläche, kein Kachelmuster | einmal gemalter Schneeboden (weiche Flecken, feine Struktur), kein Wiederholmuster, keine großen Licht-Rauten |
+| Weg | weicher Feldweg, Ränder fließen | gemalter Erdweg mit Saum + Fahrspuren statt Pflasterkacheln |
+| Felder | flache Erdquadrate, nahtlos aneinander | flach im Raster gemalt, gleiche Furchenrichtung, Erdkante nur außen |
+| Buttons | Symbole ohne Scheibe, dicke Kontur, Spielschrift | neue bunte Symbole (Laden, Scheune, Auftragstafel, Paket, Zahnrad, Sonne, Münze), Schrift Lilita One, Zahlen weiß mit Rand, grünes Plus, rote Plakette |
+| Schatten | weich, dezent | Platten/Rauten/Lichtfleck weg, nur weicher Kontaktschatten |
+- Offen: Weg führt schnurgerade quer (Hay Day: Weg am Rand mit Abzweig) – nächster Schritt; Hühnerstall-Strohplatte; Ladebild Herbst → Weihnachten (Grafik-Runde); Spielgefühl (Juice); Münz-Senken (Bot 34.000 Münzen an Tag 7).
+
 ## Recherche-Ergebnisse (23.11.2026)
 Hinweis: Öffentliche Design-Dokumente von Supercell gibt es kaum. Was nicht aus einer Quelle stammt, ist als **Beobachtung** (eigenes Spielwissen) markiert.
 
