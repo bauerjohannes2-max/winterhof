@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Neustart Schritt 0 fertig (Claude 23.11. spät): Bestandsaufnahme + Plan `docs/NEUSTART_PLAN.md`, wartet auf Hannes. Danach Baustein 0 (GRAFIK_TECHNIK.md).
+- Niemand. Neustart: Prüfung + Plan (15 Bausteine) fertig, Baustein 0 `docs/GRAFIK_TECHNIK.md` wartet auf Hannes (Claude 24.11.). Danach Baustein 1 Werkzeuge.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
