@@ -23,4 +23,11 @@ Dauerhaftes Gedächtnis aller Entscheidungen, Visionen und Feedback-Regeln des S
 - **2026-11-23 — Stil-Findung (FINAL):** **Stil C (Knackiges Supercell / Clash-of-Clans Terrassen-Tal)** als Tag-Basis (skulptierte Schneefelsen-Terrassen, markantes Kopfsteinpflaster, maximale Mobile-Klarheit) kombiniert mit **Stil B (Märchenhafte Goldene Stunde)** als Dämmerungs-Lichtstimmung + tiefblaue Nacht mit warmem Gold-Bloom.
 
 ## 4. Director-Feedback-Log (append-only)
-- **2026-11-23:** Stil-Entscheidungen immer visuell am Bild treffen. Gewähltes Zielbild: Stil C (Tag/Struktur) + Stil B (Goldene Stunde). Vertical Slice 1 zuerst: Terrain + PixiJS-Wasser/Licht + Querformat live abnehmen vor Figuren-Animationen.
+- **2026-11-23 (Look-Dev):** Stil-Entscheidungen immer visuell am Bild treffen. Gewähltes Zielbild: Stil C (Tag/Struktur) + Stil B (Goldene Stunde). Vertical Slice 1 zuerst: Terrain + PixiJS-Wasser/Licht + Querformat live abnehmen vor Figuren-Animationen.
+- **2026-11-23 (Kritisches Review Slice 1 — MASSGEBENDES GESETZ):**
+  1. **Logik & echtes Raster VOR Grafik:** Nie wieder lose Koordinaten! Zuerst Single-Source-of-Truth `WorldGrid` mit harten Invarianten bauen (Zaun NIEMALS im Wasser, Haus NIEMALS auf Zaun oder Gehweg, Brücke immer exakt in Straßenrichtung über Bach, Wege sauber gerastert ohne Zufalls-Flecken).
+  2. **Automatische 1000-Fehler-Prüfung:** Ein strikter `WorldValidator` muss vor jedem Build alle räumlichen, topologischen und Pfad-Invarianten mathematisch erzwingen — der Director darf solche Grundfehler nie selbst finden müssen.
+  3. **Grounding gegen Schweben:** Jedes Gebäude/Objekt braucht eine echte isometrische Boden-Grundplatte (Footprint), einheitliche Boden-Ankerzeile und kalibrierte Kontaktschatten; Boden-Schnee deutlich ruhiger & wertiger.
+  4. **HUD / Buttons auf echtes Hay-Day-/CoC-Niveau umbauen:** Bestehende flache braune Kreise verworfen. Neue plastische 3D-Tactile-Buttons (Gloss-Highlight, dicke Bevels, fette schattierte Spiel-Typografie, hochwertige Spiel-Icons).
+  5. **Mobile-First Steuerung:** `+`/`-`-Zoom-Buttons am rechten Rand KOMPLETT entfernen (Pinch-Zoom auf Handy + Mausrad am PC).
+  6. **2.5D-Sprites bestätigt:** Vorgerenderte 3D-Sprites (= Supercell Titan-Engine in Hay Day & CoC) sind das richtige technische Fundament — entscheidend sind striktes Raster, Grounding, einheitliche Perspektive und echte Spiel-Logik.

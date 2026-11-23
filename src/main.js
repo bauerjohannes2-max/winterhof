@@ -31,8 +31,8 @@ import {
   clearIncomingUrlGift
 } from './giftExchange.js';
 
-const SAVE_KEY = 'winterhof_save_v6';
-const LEGACY_SAVE_KEY = 'winterhof_save_v5';
+const SAVE_KEY = 'winterhof_save_v6_grid';
+const LEGACY_SAVE_KEYS = ['winterhof_save_v6', 'winterhof_save_v5'];
 
 const LOADING_TIPS = [
   'Wische mit einem Finger über reife Felder zum Ernten.',
@@ -78,34 +78,35 @@ function createInitialState() {
       berries: 2,
       egg: 2
     },
-    // Composed grid-aligned starter architecture around main road (gy = 5.5)
-    chalet: { gx: 5, gy: 2 },
-    christmasTree: { gx: 8, gy: 2 },
-    wishlistBoard: { gx: 10, gy: 4 },
-    sleighPos: { gx: 12, gy: 4 },
-    mailbox: { gx: 4, gy: 4 },
+    // 100% Grid-Verified Starter Architecture (Starter Estate 2..11 x 2..11, Main Road Row gy = 6)
+    // Zero buildings on fences (y=2), zero buildings on road (y=6), zero fences in brook (x=14)
+    chalet: { gx: 4, gy: 3 },
+    christmasTree: { gx: 8, gy: 3 },
+    wishlistBoard: { gx: 6, gy: 5 },
+    sleighPos: { gx: 10, gy: 5 },
+    mailbox: { gx: 3, gy: 5 },
     stations: [
-      { id: 'st_bakery', type: 'bakery', gx: 3, gy: 7, built: true, wrapped: false, craftedCount: 0, queue: [], ready: [] },
-      { id: 'st_teahouse', type: 'teahouse', gx: 10, gy: 7, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
+      { id: 'st_bakery', type: 'bakery', gx: 3, gy: 8, built: true, wrapped: false, craftedCount: 0, queue: [], ready: [] },
+      { id: 'st_teahouse', type: 'teahouse', gx: 10, gy: 9, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
       { id: 'st_patisserie', type: 'patisserie', gx: 3, gy: 10, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
-      { id: 'st_workshop', type: 'gift_workshop', gx: 10, gy: 10, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] }
+      { id: 'st_workshop', type: 'gift_workshop', gx: 7, gy: 10, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] }
     ],
-    // Clean, tidy 2x2 starter wheat block on open sunny snow terrace (zero road overlap!)
+    // Tidy 2x2 starter wheat block on open snow terrace (clear of road gy=6 & bakery x=3..4)
     fields: [
-      { id: 'f_1', gx: 6, gy: 7, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_2', gx: 7, gy: 7, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_3', gx: 6, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_4', gx: 7, gy: 8, cropId: 'wheat', plantedAt: now - 300000 }
+      { id: 'f_1', gx: 6, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
+      { id: 'f_2', gx: 7, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
+      { id: 'f_3', gx: 6, gy: 9, cropId: 'wheat', plantedAt: now - 300000 },
+      { id: 'f_4', gx: 7, gy: 9, cropId: 'wheat', plantedAt: now - 300000 }
     ],
-    // 1 cozy starter Chicken in a proper fenced pen beside the terrace
+    // 1 cozy starter Chicken in straw-and-timber pen
     animals: [
-      { id: 'a_1', type: 'chicken', nick: 'Flöckchen', gx: 9, gy: 7, state: 'ready', readyAt: now - 1000, lastPet: 0 }
+      { id: 'a_1', type: 'chicken', nick: 'Flöckchen', gx: 9, gy: 8, state: 'ready', readyAt: now - 1000, lastPet: 0 }
     ],
-    // Minimal tasteful road lanterns + 1 snowman flanking the village road cleanly
+    // Symmetric unobstructed road lanterns + 1 snowman on clean free snow tiles
     decorations: [
-      { id: 'd_1', type: 'lantern', gx: 4, gy: 6 },
-      { id: 'd_2', type: 'lantern', gx: 10, gy: 6 },
-      { id: 'd_3', type: 'snowman', gx: 7, gy: 4 }
+      { id: 'd_1', type: 'lantern', gx: 5, gy: 7 },
+      { id: 'd_2', type: 'lantern', gx: 10, gy: 7 },
+      { id: 'd_3', type: 'snowman', gx: 7, gy: 5 }
     ],
     standSlots: [null, null, null, null, null, null],
     orders: [],
@@ -250,7 +251,14 @@ class WinterhofGame {
 
   loadState() {
     try {
-      const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem(LEGACY_SAVE_KEY);
+      let raw = localStorage.getItem(SAVE_KEY);
+      let migratedFromLegacy = false;
+      if (!raw) {
+        for (const lk of LEGACY_SAVE_KEYS) {
+          raw = localStorage.getItem(lk);
+          if (raw) { migratedFromLegacy = true; break; }
+        }
+      }
       if (!raw) return createInitialState();
       const parsed = JSON.parse(raw);
       if (!parsed || !parsed.fields || !parsed.stations) return createInitialState();
@@ -258,7 +266,18 @@ class WinterhofGame {
       const merged = {
         ...base,
         ...parsed,
-        version: 6,
+        version: 7,
+        // On legacy v5/v6 migration, adopt the verified WorldGrid positions while preserving all progression!
+        ...(migratedFromLegacy ? {
+          chalet: base.chalet,
+          christmasTree: base.christmasTree,
+          wishlistBoard: base.wishlistBoard,
+          sleighPos: base.sleighPos,
+          mailbox: base.mailbox,
+          fields: base.fields,
+          animals: base.animals.map((a, i) => ({ ...a, ...(parsed.animals?.[i] ? { nick: parsed.animals[i].nick, state: parsed.animals[i].state } : {}) })),
+          decorations: base.decorations
+        } : {}),
         storedDecos: parsed.storedDecos || {},
         claimedChapters: parsed.claimedChapters || [],
         lastDailyChestDate: parsed.lastDailyChestDate || null,
@@ -630,18 +649,11 @@ class WinterhofGame {
     this.updateHUD();
   }
 
-  // ---- Land Expansion & Grid Occupancy ----
+  // ---- Land Expansion & Single-Source-of-Truth Grid Occupancy ----
   isTileUnlocked(gx, gy) {
-    if (gx < 0 || gy < 0 || gx >= GRID_SIZE || gy >= GRID_SIZE) return false;
-    if (gx >= 2 && gx <= 13 && gy >= 2 && gy <= 13) return true;
     const unlocked = new Set(this.state.unlockedLands || []);
-    for (const z of LAND_ZONES) {
-      if (unlocked.has(z.id)) {
-        const b = z.bounds;
-        if (gx >= b.x0 && gx <= b.x1 && gy >= b.y0 && gy <= b.y1) return true;
-      }
-    }
-    return false;
+    const tile = this.world.grid.getTile(gx, gy);
+    return !!(tile && tile.zone !== 'border' && this.world.grid.isZoneUnlocked(tile.zone, unlocked));
   }
 
   getLockedZoneAt(gx, gy) {
@@ -680,30 +692,14 @@ class WinterhofGame {
   }
 
   isAreaFree(gx, gy, size = 1, ignoreId = null) {
+    this.world.grid.syncFromState(this.state, DAILY_CHEST_POS);
+    const unlocked = new Set(this.state.unlockedLands || []);
     for (let dx = 0; dx < size; dx++) {
       for (let dy = 0; dy < size; dy++) {
-        if (!this.isTileUnlocked(gx + dx, gy + dy)) return false;
+        if (!this.world.grid.isTileBuildable(gx + dx, gy + dy, unlocked, ignoreId)) {
+          return false;
+        }
       }
-    }
-
-    const rects = [
-      { id: 'chalet', gx: this.state.chalet.gx, gy: this.state.chalet.gy, s: 2 },
-      { id: 'christmasTree', gx: this.state.christmasTree.gx, gy: this.state.christmasTree.gy, s: 2 },
-      { id: 'wishlistBoard', gx: this.state.wishlistBoard.gx, gy: this.state.wishlistBoard.gy, s: 1 },
-      { id: 'sleighPos', gx: this.state.sleighPos.gx, gy: this.state.sleighPos.gy, s: 2 },
-      { id: 'mailbox', gx: this.state.mailbox.gx, gy: this.state.mailbox.gy, s: 1 }
-    ];
-    for (const st of this.state.stations) {
-      if (st.built) rects.push({ id: st.id, gx: st.gx, gy: st.gy, s: 2 });
-    }
-    for (const f of this.state.fields) rects.push({ id: f.id, gx: f.gx, gy: f.gy, s: 1 });
-    for (const a of this.state.animals) rects.push({ id: a.id, gx: a.gx, gy: a.gy, s: 1 });
-    for (const d of this.state.decorations) rects.push({ id: d.id, gx: d.gx, gy: d.gy, s: 1 });
-
-    for (const r of rects) {
-      if (r.id === ignoreId) continue;
-      const overlap = !(gx + size <= r.gx || gx >= r.gx + r.s || gy + size <= r.gy || gy >= r.gy + r.s);
-      if (overlap) return false;
     }
     return true;
   }
@@ -1388,12 +1384,12 @@ class WinterhofGame {
       this.openModal('settings');
     });
 
-    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
       this.world.cam.targetZoom = null;
       this.world.cam.zoom = Math.min(1.55, this.world.cam.zoom * 1.16);
       this.world.clampCamera();
     });
-    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
       this.world.cam.targetZoom = null;
       this.world.cam.zoom = Math.max(0.52, this.world.cam.zoom / 1.16);
       this.world.clampCamera();

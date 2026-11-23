@@ -1,4 +1,4 @@
-const CACHE_NAME = 'winterhof-v6-slice1';
+const CACHE_NAME = 'winterhof-v6-grid';
 const ASSETS = [
   './',
   './index.html',

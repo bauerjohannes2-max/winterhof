@@ -170,19 +170,22 @@ try {
   // Wait for splash fade-out + WebGL warmup
   await sleep(2600);
 
-  // 1. Verify WebGL2 PixiJS Engine, Calm Level-1 Start, Zero Emojis, Zero Sign Overlaps
+  // 1. Verify WebGL2 PixiJS Engine, 12-Rule WorldValidator, Zero +/- Buttons, Zero Emojis, Zero Sign Overlaps
   const initCheck = await cdp.eval(`
     const g = window.__WINTERHOF__;
     if (!g) throw new Error('Game instance missing');
     const bodyText = document.body.innerText || '';
     const emojiRe = /[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u;
     const rotStyle = getComputedStyle(document.getElementById('rotate-overlay')).display;
+    const validation = g.world.validateState(g.state);
     return {
       modalHidden: document.getElementById('modal-backdrop').classList.contains('hidden'),
       rotateDisplayInLandscape: rotStyle,
+      hasZoomButtons: !!(document.getElementById('btn-zoom-in') || document.getElementById('btn-zoom-out')),
       hasEmojiInHud: emojiRe.test(bodyText),
       renderer: g.world.getRendererInfo(),
       layout: g.world.getLayoutDiagnostics(),
+      validation,
       coins: g.state.coins,
       fields: g.state.fields.length,
       animals: g.state.animals.length
@@ -191,13 +194,22 @@ try {
   assert(initCheck.renderer.ready === true, `PixiJS v8 engine ready (${initCheck.renderer.rendererType})`);
   assert(String(initCheck.renderer.rendererType).toLowerCase().includes('webgl'), `WebGL GPU renderer active (got ${initCheck.renderer.rendererType})`);
   assert(initCheck.rotateDisplayInLandscape === 'none', 'Rotate overlay hidden in Landscape');
+  assert(initCheck.hasZoomButtons === false, 'Zero clunky +/- zoom buttons on screen');
   assert(initCheck.modalHidden === true, 'Calm Level-1 start: zero blocking popup');
   assert(initCheck.hasEmojiInHud === false, 'Strict Zero-Emoji Policy passed on initial HUD');
+  assert(initCheck.validation.ok === true, `12-Rule WorldValidator PASSED (${initCheck.validation.errorCount} errors: ${initCheck.validation.errors.join(' | ')})`);
   assert(initCheck.layout.signBuildingOverlaps.length === 0, `Zero sign/building overlaps (found ${JSON.stringify(initCheck.layout.signBuildingOverlaps)})`);
   assert(initCheck.coins === 145 && initCheck.fields === 4 && initCheck.animals === 1, 'Calm Level-1 starter estate intact');
 
   // Capture crisp Style-C Day Landscape
   shots.push(await cdp.screenshot('02_v6_day_landscape.png'));
+
+  // Capture Debug-Grid Proof View (proves 100% tile alignment, fences, bridge, footprints, water!)
+  await cdp.eval(`window.__WINTERHOF__.world.setDebugGrid(true);`);
+  await sleep(180);
+  shots.push(await cdp.screenshot('02a_v6_debug_grid.png'));
+  await cdp.eval(`window.__WINTERHOF__.world.setDebugGrid(false);`);
+  await sleep(120);
 
   // Capture Style-B Golden Hour Dusk Landscape
   await cdp.eval(`
@@ -286,7 +298,10 @@ try {
 
     g.state.coins = 600;
     g.enterPlaceMode({ kind: 'station', type: 'teahouse', label: 'Punsch-Stand', cost: 90, size: 2 });
-    const wp = { x: (10.5 - 10.5) * 58, y: (10.5 + 10.5) * 29 };
+    const blockedRoad = g.isAreaFree(5, 6, 2);
+    const blockedWater = g.isAreaFree(14, 4, 2);
+    // Clean free 2x2 starter snow tiles (5..6 x 10..11)
+    const wp = { x: (5.5 - 10.5) * 58, y: (5.5 + 10.5) * 29 };
     const sp = g.world.worldToScreen(wp.x, wp.y);
     g.handleCanvasTap(sp.x, sp.y);
     const tea = g.state.stations.find(s => s.type === 'teahouse');
@@ -320,6 +335,7 @@ try {
 
     return {
       harvested, planted, eggDelta,
+      blockedRoad, blockedWater,
       wasWrapped, nowUnwrapped,
       cookies: g.state.inventory.butterplaetzchen || 0,
       upOk, cap: g.getBarnCapacity(), chestOk, offerOk, violations
@@ -327,7 +343,8 @@ try {
   `);
   assert(loopRes.harvested === 4 && loopRes.planted, 'Harvest & plant core loop passed');
   assert(loopRes.eggDelta === 1, 'Animal collect/feed/pet loop passed');
-  assert(loopRes.wasWrapped && loopRes.nowUnwrapped && loopRes.cookies >= 1, 'Build, unwrap & bake loop passed');
+  assert(loopRes.blockedRoad === false && loopRes.blockedWater === false, 'WorldGrid blocks building on road & water tiles');
+  assert(loopRes.wasWrapped && loopRes.nowUnwrapped && loopRes.cookies >= 1, `Build, unwrap & bake loop passed (${JSON.stringify(loopRes)})`);
   assert(loopRes.upOk && loopRes.cap === 75 && loopRes.chestOk && loopRes.offerOk, 'Barn upgrade, Daily Chest & Villager offer passed');
   assert(loopRes.violations.length === 0, `Zero emojis across all modals (violations: ${loopRes.violations.join(',')})`);
 

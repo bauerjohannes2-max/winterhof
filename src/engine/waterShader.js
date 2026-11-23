@@ -122,17 +122,19 @@ function sampleCatmullRom(pts, t) {
 export function createAlpineWaterLayer(gridToWorld) {
   const container = new Container();
 
-  // Brook winds naturally down the SE alpine valley, crossing under the wooden bridge near (13.9, 5.5)
+  // Brook aligned 1:1 with WorldGrid WATER column gx=14 (centerline 14.5) and lakeside pond gy=14..15
+  // Strictly OUTSIDE all playable zones (0..13 x 0..13) -> ZERO fence-in-water ever!
   const controlGrid = [
-    { gx: 15.2, gy: -5.5, w: 68 },
-    { gx: 14.5, gy: -1.5, w: 78 },
-    { gx: 14.0, gy: 2.2, w: 84 },
-    { gx: 13.8, gy: 5.5, w: 88 }, // Bridge crossing!
-    { gx: 13.9, gy: 8.8, w: 102 },
-    { gx: 13.3, gy: 12.2, w: 142 }, // Widens into scenic alpine pond beside daily chest
-    { gx: 11.4, gy: 14.8, w: 150 },
-    { gx: 9.2, gy: 18.2, w: 112 },
-    { gx: 7.4, gy: 23.0, w: 96 }
+    { gx: 14.5, gy: -4.5, w: 68 },
+    { gx: 14.5, gy: 0.0, w: 76 },
+    { gx: 14.5, gy: 3.5, w: 82 },
+    { gx: 14.5, gy: 6.5, w: 86 }, // Exact BRIDGE_X crossing at tile (14, 6)!
+    { gx: 14.5, gy: 10.5, w: 94 },
+    { gx: 14.4, gy: 13.8, w: 120 },
+    { gx: 13.2, gy: 15.1, w: 148 }, // Scenic Lakeside Pond strictly south of gy=14!
+    { gx: 10.4, gy: 15.4, w: 146 },
+    { gx: 7.4, gy: 16.5, w: 112 },
+    { gx: 4.5, gy: 19.5, w: 94 }
   ];
 
   const worldCtrl = controlGrid.map((p) => {
