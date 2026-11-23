@@ -57,6 +57,8 @@ export function createNewGame(nowMs: number, seed = 0x5eed1234): GameState {
     discovered: Object.keys(s.inventory),
     stats: emptyStats(),
     claimedGoals: [],
+    claimedGifts: [],
+    lastTipAt: 0,
     settings: { sfx: true, music: false, lighting: 'day' }
   };
 }

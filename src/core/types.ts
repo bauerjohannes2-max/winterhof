@@ -220,6 +220,10 @@ export interface GameState {
   discovered: ItemId[];
   stats: Stats;
   claimedGoals: string[];
+  /** Bereits ausgepackte Winterpost-Päckchen (Schutz vor doppeltem Einlösen) */
+  claimedGifts: string[];
+  /** Letztes Trinkgeld eines Dorfbewohners */
+  lastTipAt: number;
 
   settings: { sfx: boolean; music: boolean; lighting: 'day' | 'dusk' | 'night' | 'auto' };
 }
@@ -254,7 +258,11 @@ export type Command =
   | { type: 'claimDaily' }
   | { type: 'claimGoal'; goalId: string }
   | { type: 'setSetting'; key: keyof GameState['settings']; value: unknown }
-  | { type: 'rename'; villageName?: string; playerName?: string };
+  | { type: 'rename'; villageName?: string; playerName?: string }
+  | { type: 'renameAnimal'; animalId: ObjectId; nick: string }
+  | { type: 'greetVillager' }
+  | { type: 'packGift'; items: Inventory }
+  | { type: 'receiveGift'; parcelId: string; items: Inventory };
 
 export type GameEvent =
   | { type: 'itemsGained'; items: Inventory; at?: ObjectId }
@@ -286,7 +294,10 @@ export type GameEvent =
   | { type: 'dailyClaimed'; streak: number; coins: number; items: Inventory }
   | { type: 'goalClaimed'; goalId: string }
   | { type: 'goalReady'; goalId: string }
-  | { type: 'discovered'; item: ItemId };
+  | { type: 'discovered'; item: ItemId }
+  | { type: 'villagerTipped'; coins: number }
+  | { type: 'giftPacked'; items: Inventory }
+  | { type: 'giftReceived'; parcelId: string; items: Inventory };
 
 export type ErrorCode =
   | 'not_found' | 'invalid' | 'locked' | 'no_coins' | 'missing_items' | 'storage_full'

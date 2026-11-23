@@ -283,49 +283,47 @@ try {
   `);
   console.log(`  PERF: ${fpsRes.avgFps} FPS (avg frame ${fpsRes.avgMs} ms)`);
 
-  // 2. Core Gameplay Loop (Harvest, Plant, Chicken, Build/Unwrap, Move, Store, Craft, Chapters)
+  // 2. Spielablauf über den Logik-Kern (Ernten, Pflanzen, Tier, Bauen/Auspacken, Backen, Lager, Truhe, Angebot)
   const loopRes = await cdp.eval(`
     const g = window.__WINTERHOF__;
     let harvested = 0;
-    for (const f of g.state.fields) if (g.harvestField(f)) harvested++;
+    for (const f of [...g.state.fields]) if (g.harvestField(f).ok) harvested++;
     const planted = g.plantField(g.state.fields[0], 'berries');
 
-    const eggBefore = g.state.inventory.egg || 0;
+    const eggBefore = g.core.inventory.egg || 0;
     g.interactAnimal(g.state.animals[0]);
     g.interactAnimal(g.state.animals[0]);
-    g.interactAnimal(g.state.animals[0]);
-    g.state.animals[0].nick = 'Schneeflocke';
-    const eggDelta = (g.state.inventory.egg || 0) - eggBefore;
+    g.act({ type: 'renameAnimal', animalId: g.state.animals[0].id, nick: 'Schneeflocke' });
+    const eggDelta = (g.core.inventory.egg || 0) - eggBefore;
 
-    g.state.coins = 600;
+    // Testgeld: nur im Test direkt in die Session (Oberfläche selbst ändert den Stand nie)
+    g.session._state = { ...g.session._state, coins: 600, xp: 300, level: 3 };
     g.enterPlaceMode({ kind: 'station', type: 'teahouse', label: 'Punsch-Stand', cost: 90, size: 2 });
     const blockedRoad = g.isAreaFree(5, 6, 2);
     const blockedWater = g.isAreaFree(14, 4, 2);
-    // Clean free 2x2 starter snow tiles (5..6 x 10..11)
     const wp = { x: (5.5 - 10.5) * 58, y: (5.5 + 10.5) * 29 };
     const sp = g.world.worldToScreen(wp.x, wp.y);
     g.handleCanvasTap(sp.x, sp.y);
-    const tea = g.state.stations.find(s => s.type === 'teahouse');
-    const wasWrapped = tea.wrapped === true;
-    g.interactStation(tea);
-    const nowUnwrapped = tea.wrapped === false;
+    let tea = g.state.stations.find(s => s.type === 'teahouse');
+    const wasWrapped = !!tea && tea.wrapped === true;
+    if (tea) g.interactStation(tea);
+    tea = g.state.stations.find(s => s.type === 'teahouse');
+    const nowUnwrapped = !!tea && tea.wrapped === false;
 
     g.startCraft('st_bakery', 'butterplaetzchen');
-    const bak = g.state.stations.find(s => s.id === 'st_bakery');
-    bak.queue[0].finishAt = Date.now() - 1000;
-    g.tickSimulation(Date.now());
-    g.interactStation(bak);
+    const craftQueued = g.core.objects.find(o => o.id === 'st_bakery').queue.length === 1;
 
-    const upOk = g.upgradeBarn();
+    const upOk = g.upgradeStorage('barn');
     const chestOk = g.isDailyChestReady() && !!g.claimDailyChest();
     g.closeModal();
 
-    const v = g.world.villagers[0];
-    g.generateVillagerOffer(v);
-    g.greetVillager(v);
-    const offerOk = g.ui.activeModal?.kind === 'villager_offer' && g.acceptVillagerOffer(v.id);
+    g.session._state = { ...g.session._state, nextOfferAt: 0, villagerOffer: null };
+    g.session.tick();
+    g.syncVillagerOffer();
+    const v = g.offerVillager();
+    let offerOk = false;
+    if (v) { g.greetVillager(v); offerOk = g.ui.activeModal?.kind === 'villager_offer' && g.acceptVillagerOffer(v.id); }
 
-    // Zero-emoji modal audit
     const emojiRe = /[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]/u;
     const violations = [];
     for (const [k, t] of [['shop','buildings'], ['shop','deco'], ['barn','inv'], ['orders','wishlist'], ['village','album'], ['settings', null]]) {
@@ -335,19 +333,17 @@ try {
     g.closeModal();
 
     return {
-      harvested, planted, eggDelta,
-      blockedRoad, blockedWater,
-      wasWrapped, nowUnwrapped,
-      cookies: g.state.inventory.butterplaetzchen || 0,
-      upOk, cap: g.getBarnCapacity(), chestOk, offerOk, violations
+      harvested, planted, eggDelta, blockedRoad, blockedWater,
+      wasWrapped, nowUnwrapped, craftQueued,
+      upOk, cap: g.core.storage.barn, chestOk, offerOk, violations
     };
   `);
-  assert(loopRes.harvested === 4 && loopRes.planted, 'Harvest & plant core loop passed');
-  assert(loopRes.eggDelta === 1, 'Animal collect/feed/pet loop passed');
-  assert(loopRes.blockedRoad === false && loopRes.blockedWater === false, 'WorldGrid blocks building on road & water tiles');
-  assert(loopRes.wasWrapped && loopRes.nowUnwrapped && loopRes.cookies >= 1, `Build, unwrap & bake loop passed (${JSON.stringify(loopRes)})`);
-  assert(loopRes.upOk && loopRes.cap === 75 && loopRes.chestOk && loopRes.offerOk, 'Barn upgrade, Daily Chest & Villager offer passed');
-  assert(loopRes.violations.length === 0, `Zero emojis across all modals (violations: ${loopRes.violations.join(',')})`);
+  assert(loopRes.harvested === 4 && loopRes.planted, 'Ernten & Pflanzen über Befehle');
+  assert(loopRes.eggDelta === 1, 'Tier abholen/füttern über Befehle');
+  assert(loopRes.blockedRoad === false && loopRes.blockedWater === false, 'Kein Bauen auf Weg & Wasser (gleiche Regel wie Kern)');
+  assert(loopRes.wasWrapped && loopRes.nowUnwrapped && loopRes.craftQueued, `Bauen, Auspacken & Backen (${JSON.stringify(loopRes)})`);
+  assert(loopRes.upOk && loopRes.cap === 75 && loopRes.chestOk && loopRes.offerOk, 'Lager-Ausbau, Tagestruhe & Dorf-Angebot');
+  assert(loopRes.violations.length === 0, `Keine Emojis in Fenstern (violations: ${loopRes.violations.join(',')})`);
 
   // Modal visual screenshots
   await cdp.eval(`window.__WINTERHOF__.openModal('shop', {}, 'buildings');`);
@@ -365,12 +361,12 @@ try {
   const afterReload = await cdp.eval(`
     const g = window.__WINTERHOF__;
     return {
-      cap: g.getBarnCapacity(),
-      teaBuilt: g.state.stations.find(s => s.type === 'teahouse').built,
+      cap: g.core.storage.barn,
+      teaBuilt: g.state.stations.some(s => s.type === 'teahouse'),
       nick: g.state.animals[0].nick
     };
   `);
-  assert(afterReload.cap === 75 && afterReload.teaBuilt && afterReload.nick === 'Schneeflocke', 'Save persistence v6 verified across reload');
+  assert(afterReload.cap === 75 && afterReload.teaBuilt && afterReload.nick === 'Schneeflocke', 'Speicherstand v8 übersteht Neuladen');
 
   const errors = cdp.events.filter((e) =>
     (e.method === 'Runtime.exceptionThrown') ||

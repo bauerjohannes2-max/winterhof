@@ -175,6 +175,7 @@ export function migrateLegacy(d: Legacy, nowMs: number): LoadReport {
   const oldStats = (d.stats ?? {}) as Record<string, number>;
   for (const k of Object.keys(s.stats) as StatKey[]) s.stats[k] = Number(oldStats[k === 'storageUpgrades' ? 'barnUpgrades' : k]) || 0;
   s.claimedGoals = [...(d.claimedAchievements ?? []), ...(d.claimedChapters ?? [])].filter((x: unknown) => typeof x === 'string');
+  s.claimedGifts = Array.isArray(d.claimedGifts) ? d.claimedGifts.filter((x: unknown) => typeof x === 'string') : [];
   s.settings = { ...s.settings, ...(typeof d.settings === 'object' ? d.settings : {}) };
   s.clockMaxMs = nowMs;
   return { state: s, source: 'legacy', warnings };

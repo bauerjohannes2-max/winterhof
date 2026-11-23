@@ -1,29 +1,45 @@
 // ============================================================================
-// WINTERHOF — AAA Alpine Christmas Main Controller
-// Calm Uncluttered Onboarding · Strict Zero-Emoji Policy · 60 FPS Hardened
+// WINTERHOF – Oberfläche
+// Regel: Diese Datei ändert den Spielstand NIE selbst. Jede Aktion geht als
+// Befehl an den Logik-Kern (GameSession.dispatch). Ereignisse des Kerns
+// lösen Animation, Ton und Anzeige aus (onEvents).
 // ============================================================================
 
 import {
-  GRID_SIZE,
-  LAND_ZONES,
   ITEMS,
   CROP_IDS,
   ANIMALS,
   STATIONS,
   DECORATIONS,
+  LAND_ZONES,
   ACHIEVEMENTS,
   CHAPTERS,
   NPCS,
-  BARN_CONFIG,
   ALBUM_SECRETS,
-  getBarnUpgradeCost,
+  LEVELS,
   getLevelInfo,
   getStationMastery
 } from './gameData.js';
+import {
+  CONTENT,
+  GameSession,
+  SAVE_KEY,
+  canPlace,
+  footprintOf,
+  storageUsed,
+  storageUpgradeCost,
+  goalReady,
+  activeChapter,
+  dayKey,
+  serialize,
+  deserialize,
+  createNewGame
+} from './core';
+import { buildView } from './ui/view.js';
 import { sprites } from './sprites.js';
 import { vx, vy, applyOrientationClass, tryLockLandscape } from './viewport.js';
 import { audio } from './audio.js';
-import { WinterWorld, DAILY_CHEST_POS, gridToWorld, worldToGrid } from './world.js';
+import { WinterWorld, gridToWorld, worldToGrid } from './world.js';
 import {
   encodeGiftParcel,
   decodeGiftParcel,
@@ -32,12 +48,9 @@ import {
   clearIncomingUrlGift
 } from './giftExchange.js';
 
-const SAVE_KEY = 'winterhof_save_v6_grid';
-const LEGACY_SAVE_KEYS = ['winterhof_save_v6', 'winterhof_save_v5'];
-
 const LOADING_TIPS = [
   'Wische mit einem Finger über reife Felder zum Ernten.',
-  'Im Hofladen zahlen Dorfbewohner 25 % mehr Münzen.',
+  'Im Hofladen bekommst du viel mehr als beim Händler.',
   'Tippe auf fertige Backwaren über deiner Backstube.',
   'Neue Gebäude und Tiere schaltest du Stufe für Stufe frei.'
 ];
@@ -58,94 +71,50 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-// Calm, spacious, composed starter estate (like Hay Day Level 1!)
-function createInitialState() {
-  const now = Date.now();
+/** localStorage mit Absicherung (privater Modus, volle Platte). */
+function createStore() {
+  const mem = new Map();
   return {
-    version: 5,
-    villageName: 'Winterhof',
-    playerName: 'Winterhof-Gast',
-    coins: 145,
-    xp: 0,
-    lastLevel: 1,
-    barnCapacity: BARN_CONFIG.baseCapacity,
-    lastDailyChestDate: null,
-    dailyStreak: 0,
-    discoveredItems: ['wheat', 'berries', 'egg'],
-    unlockedLands: [],
-    storedDecos: {},
-    inventory: {
-      wheat: 4,
-      berries: 2,
-      egg: 2
+    getItem(k) {
+      try { return localStorage.getItem(k); } catch { return mem.has(k) ? mem.get(k) : null; }
     },
-    // 100% Grid-Verified Starter Architecture (Starter Estate 2..11 x 2..11, Main Road Row gy = 6)
-    // Zero buildings on fences (y=2), zero buildings on road (y=6), zero fences in brook (x=14)
-    chalet: { gx: 4, gy: 3 },
-    christmasTree: { gx: 8, gy: 3 },
-    wishlistBoard: { gx: 6, gy: 5 },
-    sleighPos: { gx: 10, gy: 5 },
-    mailbox: { gx: 3, gy: 5 },
-    stations: [
-      { id: 'st_bakery', type: 'bakery', gx: 3, gy: 8, built: true, wrapped: false, craftedCount: 0, queue: [], ready: [] },
-      { id: 'st_teahouse', type: 'teahouse', gx: 10, gy: 9, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
-      { id: 'st_patisserie', type: 'patisserie', gx: 3, gy: 10, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] },
-      { id: 'st_workshop', type: 'gift_workshop', gx: 7, gy: 10, built: false, wrapped: false, craftedCount: 0, queue: [], ready: [] }
-    ],
-    // Tidy 2x2 starter wheat block on open snow terrace (clear of road gy=6 & bakery x=3..4)
-    fields: [
-      { id: 'f_1', gx: 6, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_2', gx: 7, gy: 8, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_3', gx: 6, gy: 9, cropId: 'wheat', plantedAt: now - 300000 },
-      { id: 'f_4', gx: 7, gy: 9, cropId: 'wheat', plantedAt: now - 300000 }
-    ],
-    // 1 cozy starter Chicken in straw-and-timber pen
-    animals: [
-      { id: 'a_1', type: 'chicken', nick: 'Flöckchen', gx: 9, gy: 8, state: 'ready', readyAt: now - 1000, lastPet: 0 }
-    ],
-    // Symmetric unobstructed road lanterns + 1 snowman on clean free snow tiles
-    decorations: [
-      { id: 'd_1', type: 'lantern', gx: 5, gy: 7 },
-      { id: 'd_2', type: 'lantern', gx: 10, gy: 7 },
-      { id: 'd_3', type: 'snowman', gx: 7, gy: 5 }
-    ],
-    standSlots: [null, null, null, null, null, null],
-    orders: [],
-    stats: {
-      harvests: 0,
-      crafted: 0,
-      pets: 0,
-      ordersDone: 0,
-      standSales: 0,
-      landsUnlocked: 0,
-      chestsOpened: 0,
-      villagerDeals: 0,
-      barnUpgrades: 0
-    },
-    claimedAchievements: [],
-    claimedChapters: [],
-    claimedGifts: [],
-    settings: {
-      sfx: true,
-      music: false,
-      lighting: 'day'
+    setItem(k, v) {
+      try { localStorage.setItem(k, v); } catch { mem.set(k, v); }
     }
   };
 }
+
+function memoryStore() {
+  const mem = new Map();
+  return { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, v) };
+}
+
+const STORAGE_LABEL = { silo: 'Silo', barn: 'Scheune' };
 
 class WinterhofGame {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
     this.world = new WinterWorld(this.canvas);
-    this.state = this.loadState();
 
-    while (this.state.orders.length < 4) {
-      this.state.orders.push(this.generateOrder());
+    this._saveBlocked = false;
+    try {
+      this.session = new GameSession({ store: createStore() });
+    } catch (e) {
+      // Spielstand ist neuer als das Spiel o. Ä.: nichts überschreiben, nur im Speicher spielen
+      console.error('[Winterhof] Spielstand nicht ladbar', e);
+      this._saveBlocked = true;
+      this.session = new GameSession({ store: memoryStore() });
+      this._startWarning = 'Dein Spielstand konnte nicht geladen werden und bleibt unverändert. Bitte Seite neu laden.';
     }
+    if (this.session.loadReport.warnings.length) console.warn('[Winterhof] Hinweise beim Laden', this.session.loadReport.warnings);
 
-    audio.setSfx(this.state.settings.sfx);
+    this._viewSrc = null;
+    this._view = null;
+
+    audio.setSfx(this.core.settings.sfx);
+    audio.setMusic?.(this.core.settings.music);
     audio.setSeason('winter');
-    this.world.lightingMode = this.state.settings.lighting || 'day';
+    this.world.lightingMode = this.core.settings.lighting || 'day';
 
     this.ui = {
       mode: 'normal',
@@ -156,12 +125,9 @@ class WinterhofGame {
       previewTile: null,
       activeModal: null,
       dailyChestReady: false,
-      giftDraft: { items: {}, note: '', generatedCode: null }
+      giftDraft: { items: {}, note: '', from: null, generatedCode: null },
+      pendingLevelUp: null
     };
-
-    this._saveTimer = null;
-    // Delay first villager offer so opening minutes stay calm & uncluttered
-    this._lastVillagerOfferCheck = Date.now() + 25000;
 
     this.pointers = new Map();
     this.pinchStartDist = 0;
@@ -171,10 +137,13 @@ class WinterhofGame {
     this.lastPanPos = null;
     this.lastPanTime = 0;
     this.swipedFieldIds = new Set();
+    this._swipeFullWarned = false;
 
     this.toastTimer = null;
     this.lastFrame = performance.now();
     this.lastModalRefresh = 0;
+
+    this.session.subscribe((events) => this.onEvents(events));
 
     this.mountHudIcons();
     this.syncOrientationGuard();
@@ -182,6 +151,42 @@ class WinterhofGame {
     this.bindCanvasEvents();
     this.updateHUD();
     window.__WINTERHOF__ = this;
+  }
+
+  // ---- Zugriff auf den Stand ----
+  /** Kern-Stand (nur lesen). */
+  get core() {
+    return this.session.state;
+  }
+
+  /** Anzeige-Form für Grafik und Fenster (nur lesen, wird bei Änderung neu gebaut). */
+  get state() {
+    const src = this.session.state;
+    if (src !== this._viewSrc) {
+      this._viewSrc = src;
+      this._view = buildView(src);
+    }
+    return this._view;
+  }
+
+  /** Befehl an den Kern. Fehler werden als Hinweis gezeigt (außer quiet). */
+  act(cmd, { quiet = false } = {}) {
+    const res = this.session.dispatch(cmd);
+    if (!res.ok && !quiet) this.showError(res.error);
+    return res;
+  }
+
+  showError(error) {
+    audio.playTap();
+    if (error.code === 'storage_full') {
+      const k = error.detail?.storage || 'barn';
+      this.showToast(`${STORAGE_LABEL[k]} voll (${storageUsed(this.core, k)}/${this.core.storage[k]}). Im Vorrat ausbauen oder verkaufen.`, 3200);
+    } else if (error.code === 'missing_items' && error.detail) {
+      const names = Object.entries(error.detail).map(([id, q]) => `${q}× ${ITEMS[id]?.name || id}`).join(', ');
+      this.showToast(`Es fehlt: ${names}`);
+    } else {
+      this.showToast(error.message);
+    }
   }
 
   syncOrientationGuard() {
@@ -221,7 +226,7 @@ class WinterhofGame {
       if (barEl) barEl.style.width = `${Math.max(14, Math.round(pct * 84))}%`;
     });
 
-    if (tipEl) tipEl.textContent = 'WebGL-Wintertal wird aufgebaut...';
+    if (tipEl) tipEl.textContent = 'Wintertal wird aufgebaut...';
     await this.world.init();
 
     if (barEl) barEl.style.width = '100%';
@@ -233,14 +238,22 @@ class WinterhofGame {
       setTimeout(() => splash.remove(), 550);
     }
 
+    if (this._startWarning) this.showToast(this._startWarning, 8000);
+
     const incoming = getIncomingUrlGift();
     if (incoming) {
       clearIncomingUrlGift();
       setTimeout(() => this.receiveGiftParcel(incoming), 550);
     }
 
-    setInterval(() => this.saveState(), 8000);
-    window.addEventListener('pagehide', () => this.saveState());
+    // Zeitfortschritt 1× pro Sekunde (nicht pro Frame); Speichern übernimmt die Session gedrosselt
+    setInterval(() => this.session.tick(), 1000);
+    const flush = () => { if (!this._saveBlocked) this.session.saveNow(); };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+      else this.session.tick();
+    });
 
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -249,90 +262,25 @@ class WinterhofGame {
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  loadState() {
-    try {
-      let raw = localStorage.getItem(SAVE_KEY);
-      let migratedFromLegacy = false;
-      if (!raw) {
-        for (const lk of LEGACY_SAVE_KEYS) {
-          raw = localStorage.getItem(lk);
-          if (raw) { migratedFromLegacy = true; break; }
-        }
-      }
-      if (!raw) return createInitialState();
-      const parsed = JSON.parse(raw);
-      if (!parsed || !parsed.fields || !parsed.stations) return createInitialState();
-      const base = createInitialState();
-      const merged = {
-        ...base,
-        ...parsed,
-        version: 7,
-        // On legacy v5/v6 migration, adopt the verified WorldGrid positions while preserving all progression!
-        ...(migratedFromLegacy ? {
-          chalet: base.chalet,
-          christmasTree: base.christmasTree,
-          wishlistBoard: base.wishlistBoard,
-          sleighPos: base.sleighPos,
-          mailbox: base.mailbox,
-          fields: base.fields,
-          animals: base.animals.map((a, i) => ({ ...a, ...(parsed.animals?.[i] ? { nick: parsed.animals[i].nick, state: parsed.animals[i].state } : {}) })),
-          decorations: base.decorations
-        } : {}),
-        storedDecos: parsed.storedDecos || {},
-        claimedChapters: parsed.claimedChapters || [],
-        lastDailyChestDate: parsed.lastDailyChestDate || null,
-        dailyStreak: parsed.dailyStreak || 0,
-        stats: { ...base.stats, ...(parsed.stats || {}) },
-        settings: { ...base.settings, ...(parsed.settings || {}) }
-      };
-      merged.stations = merged.stations
-        .filter((st) => STATIONS[st.type])
-        .map((st) => ({ wrapped: false, craftedCount: 0, ...st }));
-      const used = Object.values(merged.inventory || {}).reduce((sum, q) => sum + (q > 0 ? q : 0), 0);
-      merged.barnCapacity = Math.max(
-        parsed.barnCapacity || BARN_CONFIG.baseCapacity,
-        used > BARN_CONFIG.baseCapacity ? Math.min(BARN_CONFIG.maxCapacity, Math.ceil((used + 15) / 25) * 25) : BARN_CONFIG.baseCapacity
-      );
-      const disc = new Set(parsed.discoveredItems || base.discoveredItems);
-      for (const [id, q] of Object.entries(merged.inventory || {})) {
-        if (q > 0 && ITEMS[id]) disc.add(id);
-      }
-      merged.discoveredItems = [...disc];
-      return merged;
-    } catch {
-      return createInitialState();
-    }
-  }
-
+  /** Für Tests und alte Aufrufe: sofort speichern. */
   saveState() {
-    clearTimeout(this._saveTimer);
-    this._saveTimer = null;
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(this.state));
-    } catch {}
+    if (!this._saveBlocked) this.session.saveNow();
   }
 
-  scheduleSave(delayMs = 1500) {
-    if (this._saveTimer) return;
-    this._saveTimer = setTimeout(() => {
-      this._saveTimer = null;
-      this.saveState();
-    }, delayMs);
-  }
-
-  // ---- Main 60 FPS Loop ----
+  // ---- 60-FPS-Schleife: nur Darstellung, keine Spiellogik ----
   loop(now) {
     const dt = Math.min(0.033, Math.max(0, (now - this.lastFrame) / 1000));
     this.lastFrame = now;
 
-    this.tickSimulation(Date.now());
+    const view = this.state;
     this.ui.dailyChestReady = this.isDailyChestReady();
-    this.world.update(dt, this.state);
-    this.world.render(this.state, this.ui);
+    this.syncVillagerOffer();
+    this.world.update(dt, view);
+    this.world.render(view, this.ui);
 
     if (
       this.ui.activeModal &&
-      (this.ui.activeModal.kind === 'station' || (this.ui.activeModal.kind === 'barn' && this.ui.activeModal.tab === 'stand')) &&
+      (this.ui.activeModal.kind === 'station' || this.ui.activeModal.kind === 'orders' || (this.ui.activeModal.kind === 'barn' && this.ui.activeModal.tab === 'stand')) &&
       now - this.lastModalRefresh > 600
     ) {
       this.lastModalRefresh = now;
@@ -342,216 +290,278 @@ class WinterhofGame {
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  tickSimulation(nowMs) {
-    let changed = false;
+  // ---- Ereignisse des Kerns -> Animation, Ton, Anzeige ----
+  posOf(id, lift = 0) {
+    if (!id) return null;
+    const o = this.core.objects.find((x) => x.id === id);
+    if (!o) return null;
+    const fp = footprintOf(o);
+    let ox = 0, oy = 0;
+    if (o.kind === 'animal') {
+      const mot = this.world.getAnimalMotion(this.state.animals.find((a) => a.id === id) || o);
+      ox = mot.ox; oy = mot.oy;
+    }
+    const p = gridToWorld(o.gx + fp.w * 0.5 + ox, o.gy + fp.h * 0.5 + oy);
+    const defaultLift = o.kind === 'station' ? 88 : o.kind === 'field' ? 18 : 32;
+    return { x: p.x, y: p.y - (lift || defaultLift), obj: o };
+  }
 
-    for (const st of this.state.stations) {
-      if (!st.built || st.wrapped || st.queue.length === 0) continue;
-      const mastery = getStationMastery(st.craftedCount || 0);
-      while (st.queue.length > 0 && nowMs >= st.queue[0].finishAt) {
-        const done = st.queue.shift();
-        st.ready.push(done.itemId);
-        changed = true;
-        if (st.queue.length > 0 && !st.queue[0].started) {
-          const nextRecipe = ITEMS[st.queue[0].itemId];
-          st.queue[0].started = true;
-          st.queue[0].finishAt = done.finishAt + Math.round(nextRecipe.craftTime * mastery.speedMult) * 1000;
+  onEvents(events) {
+    let levelUp = null;
+    for (const ev of events) {
+      switch (ev.type) {
+        case 'harvested': {
+          const crop = ITEMS[ev.crop];
+          const p = this.posOf(ev.fieldId, 14);
+          audio.playHarvest();
+          this.world.triggerBounce(ev.fieldId);
+          if (p) {
+            this.world.spawnBurst(p.x, p.y, crop?.color || '#FDE047', 8, 'star');
+            this.world.spawnFloater(p.x, p.y - 12, `+${ev.qty} ${crop?.name || ''}`, ev.crop, '#FFFDF7');
+            this.world.spawnFlyingHudItem(p.x, p.y - 4, ev.crop, 'barn');
+          }
+          break;
         }
-      }
-    }
-
-    for (const an of this.state.animals) {
-      if (an.state === 'producing' && nowMs >= an.readyAt) {
-        an.state = 'ready';
-        changed = true;
-      }
-    }
-
-    for (let i = 0; i < this.state.standSlots.length; i++) {
-      const slot = this.state.standSlots[i];
-      if (slot && !slot.sold && nowMs >= slot.sellAt) {
-        slot.sold = true;
-        const buyer = NPCS[Math.floor(Math.random() * NPCS.length)];
-        slot.buyerName = buyer.name;
-        changed = true;
-        this.showToast(`${buyer.name} hat im Hofladen eingekauft.`, 3000);
-      }
-    }
-
-    if (changed) {
-      this.saveState();
-      this.updateHUD();
-    }
-
-    // Periodic calm doorstep buy offers (never on frame 1!)
-    if (nowMs - this._lastVillagerOfferCheck > 32000) {
-      this._lastVillagerOfferCheck = nowMs;
-      for (const v of this.world.villagers) {
-        if (v.offer && (this.state.inventory[v.offer.itemId] || 0) < v.offer.qty) {
-          v.offer = null;
+        case 'planted': {
+          const p = this.posOf(ev.fieldId, 6);
+          audio.playPlant();
+          this.world.triggerBounce(ev.fieldId);
+          if (p) this.world.spawnBurst(p.x, p.y, '#86EFAC', 5, 'star');
+          break;
         }
+        case 'animalCollected': {
+          const it = ITEMS[ev.item];
+          const p = this.posOf(ev.animalId, 30);
+          audio.playCollect();
+          this.world.triggerBounce(ev.animalId);
+          if (p) {
+            this.world.spawnBurst(p.x, p.y, '#FDE047', 9, 'star');
+            this.world.spawnFloater(p.x, p.y - 10, `+1 ${it?.name || ''}`, ev.item, '#FFFDF7');
+            this.world.spawnFlyingHudItem(p.x, p.y - 2, ev.item, 'barn');
+          }
+          break;
+        }
+        case 'animalFed': {
+          const p = this.posOf(ev.animalId, 28);
+          const o = p?.obj;
+          const def = o ? ANIMALS[o.type] : null;
+          audio.playPet(def?.soundPitch);
+          this.world.triggerBounce(ev.animalId);
+          if (p) {
+            this.world.spawnBurst(p.x, p.y, '#FCA5A5', 6, 'heart');
+            this.world.spawnFloater(p.x, p.y - 12, `${o.nick || def?.name} gefüttert`, def?.feedItem, '#FFFDF7');
+          }
+          break;
+        }
+        case 'animalPetted': {
+          const p = this.posOf(ev.animalId, 30);
+          const o = p?.obj;
+          audio.playPet(o ? ANIMALS[o.type]?.soundPitch : 1);
+          this.world.triggerBounce(ev.animalId);
+          if (p) {
+            this.world.spawnBurst(p.x, p.y, '#FCA5A5', 6, 'heart');
+            this.world.spawnFloater(p.x, p.y - 14, `${o.nick || ANIMALS[o.type]?.name} freut sich`, null, '#FFFDF7');
+          }
+          break;
+        }
+        case 'productionStarted': {
+          const p = this.posOf(ev.stationId, 82);
+          audio.playBakeStart();
+          this.world.triggerBounce(ev.stationId);
+          if (p) this.world.spawnBurst(p.x, p.y, '#FDBA74', 7, 'star');
+          break;
+        }
+        case 'productCollected': {
+          const it = ITEMS[ev.item];
+          const p = this.posOf(ev.stationId, 88);
+          audio.playCollect();
+          this.world.triggerBounce(ev.stationId);
+          if (p) {
+            this.world.spawnBurst(p.x, p.y, '#FDE047', 12, 'star');
+            this.world.spawnFloater(p.x, p.y - 14, `+1 ${it?.name || ''}`, ev.item, '#FFFDF7');
+            this.world.spawnFlyingHudItem(p.x, p.y, ev.item, 'barn');
+          }
+          break;
+        }
+        case 'stationUnwrapped': {
+          const p = this.posOf(ev.stationId, 72);
+          const st = p?.obj;
+          audio.playUnwrap();
+          this.world.triggerBounce(ev.stationId);
+          if (p) {
+            this.world.spawnBurst(p.x, p.y, '#DC2626', 14, 'star');
+            this.world.spawnBurst(p.x, p.y - 16, '#FDE047', 14, 'star');
+            this.world.spawnFloater(p.x, p.y - 38, `${STATIONS[st.type]?.name} eröffnet`, null, '#FEF08A');
+          }
+          break;
+        }
+        case 'objectPlaced': {
+          const p = this.posOf(ev.objectId, 22);
+          audio.playCollect();
+          this.world.triggerBounce(ev.objectId);
+          if (p) this.world.spawnBurst(p.x, p.y, '#FDE047', 12, 'star');
+          if (p?.obj.kind === 'station') {
+            this.showToast(`Tippe auf die Schleife, um "${STATIONS[p.obj.type]?.name}" zu eröffnen.`, 3200);
+          }
+          break;
+        }
+        case 'objectMoved':
+          audio.playPlant();
+          this.world.triggerBounce(ev.objectId);
+          break;
+        case 'objectStored':
+          audio.playTap();
+          break;
+        case 'coinsChanged': {
+          if (ev.delta > 0 && ev.at) {
+            const p = this.posOf(ev.at, ev.at === 'sleigh' ? 72 : 42);
+            if (p) {
+              this.world.spawnFloater(p.x, p.y, `+${ev.delta}`, 'coin', '#FEF08A');
+              this.world.spawnFlyingHudItem(p.x, p.y, 'coin', 'coins');
+            }
+          }
+          break;
+        }
+        case 'orderFulfilled': {
+          audio.playSleighBells();
+          this.world.launchSleigh(this.state);
+          const p = this.posOf('sleigh', 54);
+          if (p) this.world.spawnBurst(p.x, p.y, '#FDE047', 16, 'star');
+          break;
+        }
+        case 'xpGained': {
+          if (ev.at === 'sleigh') {
+            const p = this.posOf('sleigh', 102);
+            if (p) this.world.spawnFloater(p.x, p.y, `+${ev.amount} XP`, null, '#A7F3D0');
+          }
+          break;
+        }
+        case 'levelUp':
+          levelUp = ev;
+          break;
+        case 'standSold':
+          this.showToast(`${ev.buyer} hat im Hofladen eingekauft.`, 3000);
+          break;
+        case 'standCollected':
+          audio.playCoin();
+          this.showToast(`+${ev.coins} Münzen aus dem Hofladen.`);
+          break;
+        case 'storageUpgraded':
+          audio.playLevelUp();
+          this.showToast(`${STORAGE_LABEL[ev.storage]} erweitert auf ${ev.capacity} Plätze.`);
+          break;
+        case 'zoneUnlocked': {
+          const z = LAND_ZONES.find((x) => x.id === ev.zoneId);
+          audio.playLevelUp();
+          if (z) {
+            const sp = gridToWorld(z.signPos.gx + 0.5, z.signPos.gy + 0.5);
+            this.world.spawnBurst(sp.x, sp.y - 20, '#FDE047', 18, 'star');
+            this.world.spawnFloater(sp.x, sp.y - 42, `${z.name} frei`, null, '#A7F3D0');
+          }
+          break;
+        }
+        case 'dailyClaimed': {
+          audio.playLevelUp();
+          const p = this.posOf('dailyChest', 28);
+          if (p) this.world.spawnBurst(p.x, p.y, '#FDE047', 18, 'star');
+          this.openModal('daily_chest', { reward: { streak: ev.streak, coins: ev.coins, xp: 10, items: ev.items } });
+          break;
+        }
+        case 'goalClaimed': {
+          const g = [...CHAPTERS, ...ACHIEVEMENTS].find((x) => x.id === ev.goalId);
+          audio.playLevelUp();
+          if (g) this.showToast(`${g.title} abgeschlossen (+${g.coins} Münzen).`, 3000);
+          break;
+        }
+        case 'discovered':
+          if (ITEMS[ev.item]) this.showToast(`Neu im Sammelbuch: ${ITEMS[ev.item].name}`, 2400);
+          break;
+        case 'offerClosed':
+          if (this.ui.activeModal?.kind === 'villager_offer') this.closeModal();
+          break;
+        case 'giftPacked':
+        case 'giftReceived':
+          audio.playGiftOpen();
+          break;
+        default:
+          break;
       }
-      const hasAnyOffer = this.world.villagers.some((v) => v.offer);
-      if (!hasAnyOffer && this.world.villagers.length > 0) {
-        const v = this.world.villagers[Math.floor(Math.random() * this.world.villagers.length)];
-        this.generateVillagerOffer(v);
-      }
     }
-  }
 
-  // ---- Economy, Barn Capacity, Daily Chest, Offers & Chapters ----
-  getBarnUsed() {
-    let total = 0;
-    for (const q of Object.values(this.state.inventory || {})) {
-      if (q > 0) total += q;
+    if (levelUp) {
+      audio.playLevelUp();
+      const tree = this.posOf('christmasTree', 105);
+      if (tree) this.world.spawnBurst(tree.x, tree.y, '#FDE047', 20, 'star');
+      const lvlInfo = { ...(LEVELS.find((l) => l.level === levelUp.level) || getLevelInfo(this.core.xp)), coinBonus: levelUp.coinBonus };
+      // Belohnungsfenster (z. B. Truhe) nicht überdecken: Level-Fenster danach zeigen
+      if (this.ui.activeModal && this.ui.activeModal.kind !== 'levelup') this.ui.pendingLevelUp = lvlInfo;
+      else this.openModal('levelup', { lvlInfo });
     }
-    return total;
-  }
 
-  getBarnCapacity() {
-    return this.state.barnCapacity || BARN_CONFIG.baseCapacity;
-  }
-
-  hasBarnSpace(qty = 1) {
-    return this.getBarnUsed() + qty <= this.getBarnCapacity();
-  }
-
-  notifyBarnFull() {
-    audio.playTap();
-    this.showToast(`Scheune voll (${this.getBarnUsed()}/${this.getBarnCapacity()}). Im Vorrat erweitern oder verkaufen.`, 3200);
-  }
-
-  upgradeBarn() {
-    const cap = this.getBarnCapacity();
-    if (cap >= BARN_CONFIG.maxCapacity) {
-      this.showToast('Scheunen-Lager ist bereits maximal ausgebaut.');
-      return false;
-    }
-    const cost = getBarnUpgradeCost(cap);
-    if (this.state.coins < cost) {
-      this.showToast(`Nicht genug Münzen (${cost} benötigt).`);
-      return false;
-    }
-    this.state.coins -= cost;
-    this.state.barnCapacity = Math.min(BARN_CONFIG.maxCapacity, cap + BARN_CONFIG.stepCapacity);
-    this.incStat('barnUpgrades', 1);
-    this.addXp(25);
-    audio.playLevelUp();
-    this.showToast(`Scheune erweitert auf ${this.state.barnCapacity} Plätze.`);
-    this.saveState();
     this.updateHUD();
-    this.renderActiveModal();
-    return true;
   }
 
-  addItem(itemId, qty = 1) {
-    this.state.inventory[itemId] = (this.state.inventory[itemId] || 0) + qty;
-    if (ITEMS[itemId]) {
-      if (!this.state.discoveredItems) this.state.discoveredItems = [];
-      if (!this.state.discoveredItems.includes(itemId)) {
-        this.state.discoveredItems.push(itemId);
+  // ---- Dorfbewohner-Angebot: Kern hat 1 Angebot, Grafik zeigt es an einem Bewohner ----
+  offerVillager() {
+    const off = this.core.villagerOffer;
+    const vils = this.world.villagers || [];
+    if (!off || vils.length === 0) return null;
+    const idx = Math.max(0, CONTENT.npcs.findIndex((n) => n.id === off.npc));
+    return vils[idx % vils.length];
+  }
+
+  syncVillagerOffer() {
+    const off = this.core.villagerOffer;
+    const target = this.offerVillager();
+    for (const v of this.world.villagers || []) {
+      if (v === target && off) {
+        if (!v.offer || v.offer._src !== off) v.offer = { itemId: off.item, qty: off.qty, price: off.coins, xp: off.xp, _src: off };
+      } else if (v.offer) {
+        v.offer = null;
       }
     }
   }
 
-  removeItem(itemId, qty = 1) {
-    const cur = this.state.inventory[itemId] || 0;
-    if (cur < qty) return false;
-    this.state.inventory[itemId] = cur - qty;
-    if (this.state.inventory[itemId] <= 0) delete this.state.inventory[itemId];
-    return true;
-  }
-
-  incStat(key, delta = 1) {
-    this.state.stats[key] = (this.state.stats[key] || 0) + delta;
-  }
-
-  getTodayKey() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
-
-  isDailyChestReady() {
-    return this.state.lastDailyChestDate !== this.getTodayKey();
-  }
-
-  claimDailyChest() {
-    if (!this.isDailyChestReady()) {
-      this.showToast('Die heutige Schatztruhe wurde bereits geöffnet.');
-      return null;
+  greetVillager(v) {
+    if (v.offer) {
+      audio.playTap();
+      this.openModal('villager_offer', { villagerId: v.id });
+      return;
     }
-    const today = this.getTodayKey();
-    const yd = new Date(Date.now() - 86400000);
-    const yesterdayKey = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, '0')}-${String(yd.getDate()).padStart(2, '0')}`;
-    const streak = this.state.lastDailyChestDate === yesterdayKey ? (this.state.dailyStreak || 0) + 1 : 1;
-    this.state.lastDailyChestDate = today;
-    this.state.dailyStreak = streak;
-    this.ui.dailyChestReady = false;
-
-    const lvl = getLevelInfo(this.state.xp).level;
-    const coins = 45 + Math.min(streak, 7) * 10;
-    const xp = 20 + Math.min(streak, 7) * 4;
-    const unlockedPool = Object.values(ITEMS).filter((it) => it.unlockLevel <= lvl);
-    const rewardItems = {};
-    for (let i = 0; i < 2 && unlockedPool.length > 0; i++) {
-      const pick = unlockedPool[Math.floor(Math.random() * unlockedPool.length)];
-      rewardItems[pick.id] = (rewardItems[pick.id] || 0) + (pick.category === 'crop' ? 2 : 1);
+    const p = gridToWorld(v.gx, v.gy);
+    audio.playPet(1.12);
+    this.world.spawnBurst(p.x, p.y - 34, '#FDE047', 6, 'star');
+    const res = this.act({ type: 'greetVillager' }, { quiet: true });
+    if (res.ok) {
+      v.quote = 'Ein kleines Trinkgeld für dich.';
+      v.quoteTimer = 3.0;
+      this.world.spawnFloater(p.x, p.y - 42, '+5', 'coin', '#FEF08A');
+      this.world.spawnFlyingHudItem(p.x, p.y - 42, 'coin', 'coins');
+    } else {
+      v.quote = 'Schönen Wintertag auf dem Hof.';
+      v.quoteTimer = 2.6;
     }
-
-    const pos = gridToWorld(DAILY_CHEST_POS.gx, DAILY_CHEST_POS.gy);
-    this.addCoins(coins, pos.x, pos.y - 32);
-    for (const [id, q] of Object.entries(rewardItems)) this.addItem(id, q);
-    this.incStat('chestsOpened', 1);
-    this.addXp(xp);
-    audio.playLevelUp();
-    this.world.spawnBurst(pos.x, pos.y - 28, '#FDE047', 18, 'star');
-    this.saveState();
-    this.updateHUD();
-    const reward = { streak, coins, xp, items: rewardItems };
-    this.openModal('daily_chest', { reward });
-    return reward;
-  }
-
-  generateVillagerOffer(villager) {
-    if (!villager) return null;
-    const entries = Object.entries(this.state.inventory || {}).filter(([id, q]) => q >= 1 && ITEMS[id]);
-    if (entries.length === 0) return null;
-    const [itemId, have] = entries[Math.floor(Math.random() * entries.length)];
-    const qty = Math.min(have, ITEMS[itemId].category === 'crop' ? 2 : 1);
-    const price = Math.round(ITEMS[itemId].sellPrice * qty * 1.22) + 4;
-    const xp = Math.max(8, Math.round(ITEMS[itemId].xp * qty * 0.8));
-    villager.offer = { itemId, qty, price, xp };
-    return villager.offer;
   }
 
   acceptVillagerOffer(villagerId) {
     const v = this.world.villagers.find((x) => x.id === villagerId);
-    if (!v || !v.offer) return false;
-    const { itemId, qty, price, xp } = v.offer;
-    if ((this.state.inventory[itemId] || 0) < qty) {
-      this.showToast(`Es fehlen ${ITEMS[itemId]?.name || 'Waren'} im Vorrat.`);
-      return false;
+    const res = this.act({ type: 'acceptOffer' });
+    if (!res.ok) return false;
+    if (v) {
+      v.quote = 'Vielen Dank, das duftet wunderbar.';
+      v.quoteTimer = 3.0;
+      const p = gridToWorld(v.gx, v.gy);
+      audio.playCoin();
+      this.world.spawnBurst(p.x, p.y - 32, '#FDE047', 10, 'star');
     }
-    this.removeItem(itemId, qty);
-    v.offer = null;
-    v.quote = 'Vielen Dank, das duftet wunderbar.';
-    v.quoteTimer = 3.0;
-    this.incStat('villagerDeals', 1);
-    const p = gridToWorld(v.gx, v.gy);
-    audio.playCoin();
-    this.world.spawnBurst(p.x, p.y - 32, '#FDE047', 10, 'star');
-    this.addCoins(price, p.x, p.y - 42);
-    this.addXp(xp);
     this.closeModal();
-    this.saveState();
-    this.updateHUD();
     return true;
   }
 
   declineVillagerOffer(villagerId) {
     const v = this.world.villagers.find((x) => x.id === villagerId);
+    this.act({ type: 'declineOffer' }, { quiet: true });
     if (v) {
-      v.offer = null;
       v.quote = 'Kein Problem, bis bald.';
       v.quoteTimer = 2.4;
     }
@@ -559,105 +569,33 @@ class WinterhofGame {
     this.closeModal();
   }
 
-  harvestAllReadyFields() {
-    const lvl = getLevelInfo(this.state.xp).level;
-    if (lvl < 3) {
-      this.showToast('Die Alles-ernten-Sense wird ab Level 3 freigeschaltet.');
-      return 0;
-    }
-    const readyFields = this.state.fields.filter((f) => this.isFieldReady(f));
-    if (readyFields.length === 0) return 0;
-    let count = 0;
-    let stoppedByBarn = false;
-    for (const f of readyFields) {
-      if (!this.hasBarnSpace(2)) {
-        stoppedByBarn = true;
-        break;
-      }
-      if (this.harvestField(f, true)) count++;
-    }
-    this.saveState();
-    this.updateHUD();
-    if (stoppedByBarn) {
-      this.showToast(`${count} Felder geerntet – Scheune voll (${this.getBarnUsed()}/${this.getBarnCapacity()}).`, 3200);
-    } else if (count > 0) {
-      this.showToast(`${count} reife Felder mit der Sense geerntet.`, 2500);
-    }
-    return count;
+  // ---- Abgeleitete Werte ----
+  isDailyChestReady() {
+    return this.core.daily.lastDay !== dayKey(Date.now());
   }
 
-  getActiveChapter() {
-    for (const ch of CHAPTERS) {
-      if (!this.state.claimedChapters.includes(ch.id)) return ch;
-    }
-    return null;
+  isFieldReady(f) {
+    if (!f || !f.cropId || !ITEMS[f.cropId]) return false;
+    return (Date.now() - f.plantedAt) / 1000 >= ITEMS[f.cropId].growTime;
   }
 
-  claimChapter(chId) {
-    const ch = CHAPTERS.find((c) => c.id === chId);
-    if (!ch || this.state.claimedChapters.includes(chId) || !ch.check(this.state)) return;
-    this.state.claimedChapters.push(chId);
-    audio.playLevelUp();
-    this.addCoins(ch.coins);
-    this.addXp(ch.xp);
-    this.showToast(`${ch.title} abgeschlossen (+${ch.coins} Münzen).`, 3000);
-    this.saveState();
-    this.updateHUD();
-    this.renderActiveModal();
+  readyOrderCount() {
+    return this.state.orders.filter((o) =>
+      Object.entries(o.req).every(([id, q]) => (this.core.inventory[id] || 0) >= q)
+    ).length;
   }
 
   getClaimableAchievements() {
-    return ACHIEVEMENTS.filter(
-      (a) => !this.state.claimedAchievements.includes(a.id) && (this.state.stats[a.stat] || 0) >= a.goal
-    );
+    return ACHIEVEMENTS.filter((a) => goalReady(this.core, a));
   }
 
-  claimAchievement(achId) {
-    const ach = ACHIEVEMENTS.find((a) => a.id === achId);
-    if (!ach || this.state.claimedAchievements.includes(achId)) return;
-    if ((this.state.stats[ach.stat] || 0) < ach.goal) return;
-    this.state.claimedAchievements.push(achId);
-    audio.playLevelUp();
-    this.addCoins(ach.coins);
-    this.addXp(ach.xp);
-    this.showToast(`Erfolg "${ach.title}" abgeholt (+${ach.coins} Münzen).`, 2800);
-    this.saveState();
-    this.updateHUD();
-    this.renderActiveModal();
-  }
-
-  addXp(amount) {
-    this.state.xp += amount;
-    const lvlInfo = getLevelInfo(this.state.xp);
-    if (lvlInfo.level > (this.state.lastLevel || 1)) {
-      this.state.lastLevel = lvlInfo.level;
-      if (lvlInfo.coinBonus > 0) this.state.coins += lvlInfo.coinBonus;
-      audio.playLevelUp();
-      const treePos = gridToWorld(this.state.christmasTree.gx + 1, this.state.christmasTree.gy + 1);
-      this.world.spawnBurst(treePos.x, treePos.y - 105, '#FDE047', 20, 'star');
-      this.openModal('levelup', { lvlInfo });
-    }
-    this.updateHUD();
-  }
-
-  addCoins(amount, wx = null, wy = null) {
-    this.state.coins += amount;
-    if (wx !== null && wy !== null) {
-      this.world.spawnFloater(wx, wy, `+${amount}`, 'coin', '#FEF08A');
-      this.world.spawnFlyingHudItem(wx, wy, 'coin', 'coins');
-    }
-    this.updateHUD();
-  }
-
-  // ---- Land Expansion & Single-Source-of-Truth Grid Occupancy ----
-  isTileUnlocked(gx, gy) {
-    const unlocked = new Set(this.state.unlockedLands || []);
-    const tile = this.world.grid.getTile(gx, gy);
-    return !!(tile && tile.zone !== 'border' && this.world.grid.isZoneUnlocked(tile.zone, unlocked));
+  getActiveChapter() {
+    const ch = activeChapter(this.core);
+    return ch ? CHAPTERS.find((c) => c.id === ch.id) : null;
   }
 
   getLockedZoneAt(gx, gy) {
-    const unlocked = new Set(this.state.unlockedLands || []);
+    const unlocked = new Set(this.core.unlockedZones);
     for (const z of LAND_ZONES) {
       if (unlocked.has(z.id)) continue;
       const b = z.bounds;
@@ -666,42 +604,680 @@ class WinterhofGame {
     return null;
   }
 
-  unlockLandZone(zoneId) {
-    const zone = LAND_ZONES.find((z) => z.id === zoneId);
-    if (!zone || (this.state.unlockedLands || []).includes(zoneId)) return false;
-    const lvl = getLevelInfo(this.state.xp).level;
-    if (lvl < zone.unlockLevel) {
-      this.showToast(`"${zone.name}" wird ab Level ${zone.unlockLevel} freischaltbar.`);
-      return false;
-    }
-    if (this.state.coins < zone.cost) {
-      this.showToast(`Nicht genug Münzen (${zone.cost} benötigt).`);
-      return false;
-    }
-    this.state.coins -= zone.cost;
-    this.state.unlockedLands.push(zoneId);
-    this.incStat('landsUnlocked', 1);
-    this.addXp(45);
-    audio.playLevelUp();
-    const sp = gridToWorld(zone.signPos.gx + 0.5, zone.signPos.gy + 0.5);
-    this.world.spawnBurst(sp.x, sp.y - 20, '#FDE047', 18, 'star');
-    this.world.spawnFloater(sp.x, sp.y - 42, `${zone.name} frei`, null, '#A7F3D0');
-    this.saveState();
-    this.updateHUD();
-    return true;
+  /** Platz frei? Gleiche Regel wie der Kern (keine zweite Wahrheit). */
+  isAreaFree(gx, gy, size = 1, ignoreId = null) {
+    return canPlace(this.core, gx, gy, size, size, ignoreId).ok;
   }
 
-  isAreaFree(gx, gy, size = 1, ignoreId = null) {
-    this.world.grid.syncFromState(this.state, DAILY_CHEST_POS);
-    const unlocked = new Set(this.state.unlockedLands || []);
-    for (let dx = 0; dx < size; dx++) {
-      for (let dy = 0; dy < size; dy++) {
-        if (!this.world.grid.isTileBuildable(gx + dx, gy + dy, unlocked, ignoreId)) {
-          return false;
+  // ---- Aktionen (alle über Befehle) ----
+  harvestField(f, { quiet = false } = {}) {
+    const res = this.act({ type: 'harvest', fieldId: f.id }, { quiet: true });
+    if (!res.ok && !quiet) this.showError(res.error);
+    return res;
+  }
+
+  plantField(f, cropId, { quiet = false } = {}) {
+    return this.act({ type: 'plant', fieldId: f.id, crop: cropId }, { quiet }).ok;
+  }
+
+  harvestAllReadyFields() {
+    const before = this.core.stats.harvests;
+    const res = this.act({ type: 'harvestAll' });
+    if (!res.ok) return 0;
+    const count = this.core.stats.harvests - before;
+    const stillReady = this.state.fields.filter((f) => this.isFieldReady(f)).length;
+    if (stillReady > 0) this.showToast(`${count} Felder geerntet – Silo voll (${storageUsed(this.core, 'silo')}/${this.core.storage.silo}).`, 3200);
+    else this.showToast(`${count} reife Felder mit der Sense geerntet.`, 2500);
+    return count;
+  }
+
+  interactAnimal(an) {
+    if (an.state === 'ready') return this.act({ type: 'collectAnimal', animalId: an.id }).ok;
+    if (an.state === 'hungry') {
+      const def = ANIMALS[an.type];
+      const have = this.core.inventory[def.feedItem] || 0;
+      if (have < def.feedQty) {
+        audio.playTap();
+        this.world.triggerBounce(an.id);
+        this.showToast(`${an.nick || def.name} braucht ${def.feedQty}× ${ITEMS[def.feedItem].name}.`);
+        return false;
+      }
+      return this.act({ type: 'feedAnimal', animalId: an.id }).ok;
+    }
+    const res = this.act({ type: 'petAnimal', animalId: an.id }, { quiet: true });
+    if (!res.ok) {
+      audio.playTap();
+      this.world.triggerBounce(an.id);
+      const left = Math.max(1, Math.ceil((an.readyAt - Date.now()) / 1000));
+      this.showToast(`${an.nick || ANIMALS[an.type].name} ist zufrieden (fertig in ${formatDuration(left)}).`);
+    }
+    return res.ok;
+  }
+
+  interactStation(st) {
+    if (st.wrapped) {
+      this.act({ type: 'unwrapStation', stationId: st.id });
+      return;
+    }
+    if (st.ready.length > 0) {
+      let n = 0;
+      while (true) {
+        const cur = this.core.objects.find((o) => o.id === st.id);
+        if (!cur || cur.ready.length === 0) break;
+        const res = this.act({ type: 'collectProduct', stationId: st.id }, { quiet: n > 0 });
+        if (!res.ok) break;
+        n++;
+      }
+      return;
+    }
+    audio.playTap();
+    this.world.triggerBounce(st.id);
+    this.openModal('station', { stationId: st.id });
+  }
+
+  startCraft(stationId, itemId) {
+    if (this.act({ type: 'startProduction', stationId, item: itemId }).ok) this.renderActiveModal();
+  }
+
+  claimDailyChest() {
+    if (!this.isDailyChestReady()) {
+      this.showToast('Die heutige Schatztruhe wurde bereits geöffnet.');
+      return null;
+    }
+    const res = this.act({ type: 'claimDaily' });
+    return res.ok ? res.events.find((e) => e.type === 'dailyClaimed') : null;
+  }
+
+  claimChapter(id) {
+    if (this.act({ type: 'claimGoal', goalId: id }).ok) this.renderActiveModal();
+  }
+
+  claimAchievement(id) {
+    if (this.act({ type: 'claimGoal', goalId: id }).ok) this.renderActiveModal();
+  }
+
+  upgradeStorage(kind) {
+    const ok = this.act({ type: 'upgradeStorage', storage: kind }).ok;
+    if (ok) this.renderActiveModal();
+    return ok;
+  }
+
+  unlockLandZone(zoneId) {
+    return this.act({ type: 'unlockZone', zoneId }).ok;
+  }
+
+  sellItem(itemId) {
+    if (this.act({ type: 'sellItem', item: itemId, qty: 1 }).ok) {
+      audio.playCoin();
+      this.renderActiveModal();
+    }
+  }
+
+  standOffer(itemId) {
+    const have = this.core.inventory[itemId] || 0;
+    const qty = Math.min(have, 2);
+    const price = Math.round(ITEMS[itemId].sellPrice * qty * 1.25);
+    return { qty, price };
+  }
+
+  listItemOnStand(slotIdx, itemId) {
+    const { qty, price } = this.standOffer(itemId);
+    if (qty <= 0) return;
+    if (this.act({ type: 'listOnStand', slot: slotIdx, item: itemId, qty, price }).ok) {
+      audio.playBakeStart();
+      this.renderActiveModal();
+    }
+  }
+
+  collectStandSlot(slotIdx) {
+    if (this.act({ type: 'collectStand', slot: slotIdx }).ok) this.renderActiveModal();
+  }
+
+  fulfillOrder(orderId) {
+    if (this.act({ type: 'fulfillOrder', orderId }).ok) this.closeModal();
+  }
+
+  skipOrder(orderId) {
+    audio.playTap();
+    if (this.act({ type: 'skipOrder', orderId }).ok) this.renderActiveModal();
+  }
+
+  receiveGiftParcel(parcel) {
+    if (this.core.claimedGifts.includes(parcel.id)) {
+      this.showToast('Dieses Päckchen wurde bereits ausgepackt.');
+      return;
+    }
+    this.closeModal();
+    audio.playSleighBells();
+    this.showToast(`Winterpost von ${parcel.from} ist unterwegs.`);
+    this.world.launchGiftParachute(parcel.from, () => {
+      if (this.act({ type: 'receiveGift', parcelId: parcel.id, items: parcel.items }).ok) {
+        this.openModal('gift_opened', { parcel });
+      }
+    });
+  }
+
+  // ---- Bauen, Verschieben, Einlagern ----
+  enterPlaceMode(purchase) {
+    this.closeModal();
+    this.closeSeedTray();
+    this.ui.mode = 'place';
+    this.ui.pendingPurchase = purchase;
+    this.ui.selectedMoveId = null;
+    this.ui.previewTile = null;
+    this.showModeBanner(`Freien Platz tippen für: ${purchase.label}`, 'Abbrechen', false);
+  }
+
+  enterMoveMode() {
+    this.closeModal();
+    this.closeSeedTray();
+    if (this.ui.mode === 'move') {
+      this.exitSpecialMode();
+      return;
+    }
+    this.ui.mode = 'move';
+    this.ui.selectedMoveId = null;
+    this.ui.pendingPurchase = null;
+    this.ui.previewTile = null;
+    document.getElementById('dock-move').classList.add('active');
+    this.showModeBanner('Feld, Tier, Gebäude oder Deko zum Verschieben antippen', 'Fertig', false);
+  }
+
+  storeSelectedDeco() {
+    const id = this.ui.selectedMoveId;
+    if (!id) return;
+    const deco = this.core.objects.find((o) => o.id === id && o.kind === 'deco');
+    if (!deco) return;
+    if (this.act({ type: 'storeDeco', decoId: id }).ok) {
+      this.ui.selectedMoveId = null;
+      this.ui.previewTile = null;
+      this.showModeBanner(`${DECORATIONS[deco.type].name} eingelagert (im Shop gratis platzierbar)`, 'Fertig', false);
+    }
+  }
+
+  exitSpecialMode() {
+    this.ui.mode = 'normal';
+    this.ui.selectedMoveId = null;
+    this.ui.pendingPurchase = null;
+    this.ui.previewTile = null;
+    document.getElementById('dock-move').classList.remove('active');
+    document.getElementById('mode-banner').classList.add('hidden');
+  }
+
+  showModeBanner(text, btnText = 'Fertig', showStore = false) {
+    document.getElementById('mode-banner-text').textContent = text;
+    document.getElementById('mode-banner-cancel').textContent = btnText;
+    document.getElementById('mode-banner-store').classList.toggle('hidden', !showStore);
+    document.getElementById('mode-banner').classList.remove('hidden');
+  }
+
+  openSeedTray() {
+    this.ui.seedTrayOpen = true;
+    const lvl = this.core.level;
+    if (!this.ui.selectedSeed || ITEMS[this.ui.selectedSeed].unlockLevel > lvl) {
+      this.ui.selectedSeed = 'wheat';
+    }
+    this.renderSeedTray();
+    document.getElementById('seed-tray').classList.remove('hidden');
+  }
+
+  closeSeedTray() {
+    this.ui.seedTrayOpen = false;
+    this.ui.selectedSeed = null;
+    document.getElementById('seed-tray').classList.add('hidden');
+  }
+
+  renderSeedTray() {
+    const tray = document.getElementById('seed-tray');
+    const lvl = this.core.level;
+    tray.innerHTML = CROP_IDS.map((id) => {
+      const c = ITEMS[id];
+      const locked = c.unlockLevel > lvl;
+      const active = this.ui.selectedSeed === id;
+      const have = this.core.inventory[id] || 0;
+      const meta = locked ? `Lv.${c.unlockLevel}` : `${have > 0 ? `Silo ${have}` : c.seedCost} · ${formatDuration(c.growTime)}`;
+      return `
+        <button class="seed-chip ${active ? 'active' : ''} ${locked ? 'locked' : ''}" data-seed="${id}">
+          <img src="${sprites.getIconUrl(id)}" alt="${c.name}" />
+          <span class="s-name">${c.name}</span>
+          <span class="s-meta">${meta}</span>
+        </button>`;
+    }).join('');
+
+    tray.querySelectorAll('.seed-chip').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.seed;
+        if (ITEMS[id].unlockLevel > lvl) {
+          this.showToast(`${ITEMS[id].name} wird ab Level ${ITEMS[id].unlockLevel} freigeschaltet.`);
+          return;
+        }
+        audio.playTap();
+        this.ui.selectedSeed = id;
+        this.renderSeedTray();
+      });
+    });
+  }
+
+  showToast(msg, duration = 2600) {
+    const el = document.getElementById('toast-tip');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => el.classList.add('hidden'), duration);
+  }
+
+  updateHUD() {
+    const s = this.core;
+    const info = getLevelInfo(s.xp);
+    document.getElementById('hud-level').textContent = s.level;
+    document.getElementById('hud-village-name').textContent = s.villageName;
+    document.getElementById('hud-xp-fill').style.width = `${Math.round(info.progress * 100)}%`;
+    document.getElementById('hud-coins').textContent = s.coins;
+
+    const lightEl = document.getElementById('btn-light');
+    if (lightEl) {
+      const iconKey = this.world.lightingMode === 'day' ? 'sun' : this.world.lightingMode === 'dusk' ? 'dusk' : this.world.lightingMode === 'night' ? 'moon' : 'auto';
+      lightEl.innerHTML = sprites.getUiIcon(iconKey);
+    }
+
+    const ch = this.getActiveChapter();
+    const chPill = document.getElementById('chapter-pill');
+    if (ch) {
+      const done = goalReady(s, ch);
+      chPill.classList.remove('hidden');
+      chPill.classList.toggle('ready', done);
+      document.getElementById('chapter-pill-text').textContent = done ? `Kapitel ${ch.num} bereit` : `Kapitel ${ch.num}`;
+      document.getElementById('chapter-pill-dot').classList.toggle('hidden', !done);
+    } else {
+      chPill.classList.add('hidden');
+    }
+
+    const totalOrderBadge = this.readyOrderCount() + this.getClaimableAchievements().length;
+    const badgeOrd = document.getElementById('badge-orders');
+    badgeOrd.textContent = totalOrderBadge;
+    badgeOrd.classList.toggle('hidden', totalOrderBadge === 0);
+
+    const soldStand = s.stand.filter((x) => x && x.sold).length;
+    const badgeBarn = document.getElementById('badge-barn');
+    badgeBarn.textContent = soldStand;
+    badgeBarn.classList.toggle('hidden', soldStand === 0);
+
+    const barnMini = document.getElementById('hud-barn-mini');
+    if (barnMini) {
+      // Das vollere Lager zeigen (Silo oder Scheune)
+      const fill = (k) => storageUsed(s, k) / s.storage[k];
+      const k = fill('silo') >= fill('barn') ? 'silo' : 'barn';
+      barnMini.textContent = `${storageUsed(s, k)}/${s.storage[k]}`;
+    }
+
+    const scytheBtn = document.getElementById('btn-scythe');
+    const scytheCountEl = document.getElementById('scythe-count');
+    if (scytheBtn && scytheCountEl) {
+      const readyFieldsCount = this.state.fields.filter((f) => this.isFieldReady(f)).length;
+      scytheBtn.classList.toggle('hidden', !(s.level >= 3 && readyFieldsCount > 0));
+      scytheCountEl.textContent = String(readyFieldsCount);
+    }
+
+    this.ui.dailyChestReady = this.isDailyChestReady();
+  }
+
+  bindUI() {
+    window.addEventListener('resize', () => this.world.resize());
+
+    document.getElementById('btn-village').addEventListener('click', () => {
+      audio.playTap();
+      this.openModal('village', {}, 'overview');
+    });
+
+    document.getElementById('chapter-pill').addEventListener('click', () => {
+      audio.playTap();
+      this.openModal('chapters');
+    });
+
+    document.getElementById('btn-coins').addEventListener('click', () => {
+      audio.playTap();
+      this.openModal('barn', {}, 'stand');
+    });
+
+    document.getElementById('btn-light').addEventListener('click', () => {
+      audio.playTap();
+      const cycle = ['day', 'dusk', 'night', 'auto'];
+      const labels = {
+        auto: 'Tageszeit: Automatisch',
+        day: 'Tageszeit: Wintertag',
+        dusk: 'Tageszeit: Abenddämmerung',
+        night: 'Tageszeit: Sternennacht'
+      };
+      const next = cycle[(cycle.indexOf(this.world.lightingMode) + 1) % cycle.length];
+      this.world.lightingMode = next;
+      this.act({ type: 'setSetting', key: 'lighting', value: next }, { quiet: true });
+      this.updateHUD();
+      this.showToast(labels[next]);
+    });
+
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      audio.playTap();
+      this.openModal('settings');
+    });
+
+    document.getElementById('btn-scythe')?.addEventListener('click', () => {
+      this.harvestAllReadyFields();
+    });
+
+    document.getElementById('mode-banner-store').addEventListener('click', () => this.storeSelectedDeco());
+    document.getElementById('mode-banner-cancel').addEventListener('click', () => {
+      audio.playTap();
+      this.exitSpecialMode();
+    });
+
+    document.getElementById('dock-shop').addEventListener('click', () => {
+      audio.playTap();
+      this.exitSpecialMode();
+      this.closeSeedTray();
+      this.openModal('shop', {}, 'buildings');
+    });
+    document.getElementById('dock-barn').addEventListener('click', () => {
+      audio.playTap();
+      const hasSold = this.core.stand.some((x) => x && x.sold);
+      this.openModal('barn', {}, hasSold ? 'stand' : 'inv');
+    });
+    document.getElementById('dock-orders').addEventListener('click', () => {
+      audio.playTap();
+      const hasAch = this.getClaimableAchievements().length > 0;
+      this.openModal('orders', {}, this.readyOrderCount() === 0 && hasAch ? 'achievements' : 'wishlist');
+    });
+    document.getElementById('dock-gifts').addEventListener('click', () => {
+      audio.playTap();
+      this.openModal('gifts', {}, 'send');
+    });
+    document.getElementById('dock-move').addEventListener('click', () => {
+      audio.playTap();
+      this.enterMoveMode();
+    });
+
+    document.getElementById('modal-close').addEventListener('click', () => {
+      audio.playTap();
+      this.closeModal();
+    });
+    document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-backdrop') {
+        audio.playTap();
+        this.closeModal();
+      }
+    });
+  }
+
+  // ---- Zeiger / Touch ----
+  bindCanvasEvents() {
+    const c = this.canvas;
+    c.addEventListener('pointerdown', (e) => {
+      audio.unlock();
+      this.world.cam.targetZoom = null;
+      c.setPointerCapture(e.pointerId);
+      this.pointers.set(e.pointerId, { x: vx(e), y: vy(e) });
+
+      if (this.pointers.size === 2) {
+        const pts = [...this.pointers.values()];
+        this.pinchStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        this.pinchStartZoom = this.world.cam.zoom;
+        this.dragMode = 'pinch';
+        return;
+      }
+
+      this.world.cam.vx = 0;
+      this.world.cam.vy = 0;
+      this.dragStart = { x: vx(e), y: vy(e), time: performance.now() };
+      this.lastPanPos = { x: vx(e), y: vy(e) };
+      this.lastPanTime = performance.now();
+      this.swipedFieldIds.clear();
+      this._swipeFullWarned = false;
+      this.dragMode = null;
+
+      if (this.ui.mode === 'place' || (this.ui.mode === 'move' && this.ui.selectedMoveId)) {
+        this._updatePlacementPreview(vx(e), vy(e));
+      }
+
+      if (this.ui.mode === 'normal') {
+        const wp = this.world.screenToWorld(vx(e), vy(e));
+        const f = this.getFieldAtWorld(wp.x, wp.y);
+        if (f && this.isFieldReady(f)) {
+          this.dragMode = 'swipe-harvest';
+          this._swipeHarvest(f);
+          this.world.addSwipePoint(vx(e), vy(e), 'harvest');
+        } else if (f && !f.cropId && this.ui.seedTrayOpen && this.ui.selectedSeed) {
+          this.dragMode = 'swipe-plant';
+          this.plantField(f, this.ui.selectedSeed);
+          this.swipedFieldIds.add(f.id);
+          this.world.addSwipePoint(vx(e), vy(e), 'plant');
         }
       }
+    });
+
+    c.addEventListener('pointermove', (e) => {
+      if (!this.pointers.has(e.pointerId)) {
+        if (this.ui.mode === 'place' || (this.ui.mode === 'move' && this.ui.selectedMoveId)) {
+          this._updatePlacementPreview(vx(e), vy(e));
+        }
+        return;
+      }
+      this.pointers.set(e.pointerId, { x: vx(e), y: vy(e) });
+
+      if (this.pointers.size === 2 && this.pinchStartDist > 0) {
+        const pts = [...this.pointers.values()];
+        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+        this.world.cam.zoom = Math.max(0.52, Math.min(1.55, this.pinchStartZoom * (dist / this.pinchStartDist)));
+        this.world.clampCamera();
+        return;
+      }
+
+      if (this.dragMode === 'swipe-harvest') {
+        this.world.addSwipePoint(vx(e), vy(e), 'harvest');
+        const wp = this.world.screenToWorld(vx(e), vy(e));
+        const f = this.getFieldAtWorld(wp.x, wp.y);
+        if (f && !this.swipedFieldIds.has(f.id) && this.isFieldReady(f)) this._swipeHarvest(f);
+        return;
+      }
+
+      if (this.dragMode === 'swipe-plant') {
+        this.world.addSwipePoint(vx(e), vy(e), 'plant');
+        const wp = this.world.screenToWorld(vx(e), vy(e));
+        const f = this.getFieldAtWorld(wp.x, wp.y);
+        if (f && !this.swipedFieldIds.has(f.id) && !f.cropId && this.ui.selectedSeed) {
+          this.swipedFieldIds.add(f.id);
+          this.plantField(f, this.ui.selectedSeed, { quiet: true });
+        }
+        return;
+      }
+
+      if (this.dragStart) {
+        const dist = Math.hypot(vx(e) - this.dragStart.x, vy(e) - this.dragStart.y);
+        if (dist > 7 || this.dragMode === 'pan') {
+          this.dragMode = 'pan';
+          const dx = (vx(e) - this.lastPanPos.x) / this.world.cam.zoom;
+          const dy = (vy(e) - this.lastPanPos.y) / this.world.cam.zoom;
+          this.world.cam.x -= dx;
+          this.world.cam.y -= dy;
+          this.world.clampCamera();
+
+          const now = performance.now();
+          const dt = Math.max(8, now - this.lastPanTime) / 1000;
+          this.world.cam.vx = (-dx / dt) * 0.5;
+          this.world.cam.vy = (-dy / dt) * 0.5;
+          this.lastPanPos = { x: vx(e), y: vy(e) };
+          this.lastPanTime = now;
+        }
+      }
+    });
+
+    const onEnd = (e) => {
+      this.pointers.delete(e.pointerId);
+      if (this.pointers.size === 0) {
+        const wasTap = this.dragStart && !this.dragMode;
+        if (wasTap) this.handleCanvasTap(vx(e), vy(e));
+        this.dragStart = null;
+        this.dragMode = null;
+        this.pinchStartDist = 0;
+      }
+    };
+    c.addEventListener('pointerup', onEnd);
+    c.addEventListener('pointercancel', onEnd);
+
+    c.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      this.world.cam.targetZoom = null;
+      const factor = e.deltaY < 0 ? 1.09 : 0.92;
+      this.world.cam.zoom = Math.max(0.52, Math.min(1.55, this.world.cam.zoom * factor));
+      this.world.clampCamera();
+    }, { passive: false });
+  }
+
+  /** Wisch-Ernte: Silo-voll-Hinweis nur einmal pro Wisch. */
+  _swipeHarvest(f) {
+    this.swipedFieldIds.add(f.id);
+    const res = this.harvestField(f, { quiet: true });
+    if (!res.ok && res.error.code === 'storage_full' && !this._swipeFullWarned) {
+      this._swipeFullWarned = true;
+      this.showError(res.error);
     }
-    return true;
+  }
+
+  getFieldAtWorld(wx, wy) {
+    const { gx, gy } = worldToGrid(wx, wy);
+    const tx = Math.floor(gx), ty = Math.floor(gy);
+    return this.state.fields.find((f) => f.gx === tx && f.gy === ty) || null;
+  }
+
+  _updatePlacementPreview(sx, sy) {
+    const wp = this.world.screenToWorld(sx, sy);
+    const { gx, gy } = worldToGrid(wp.x, wp.y);
+    const tx = Math.floor(gx), ty = Math.floor(gy);
+    let size = 1, ignoreId = null;
+    if (this.ui.mode === 'place' && this.ui.pendingPurchase) {
+      size = this.ui.pendingPurchase.size || 1;
+    } else if (this.ui.mode === 'move' && this.ui.selectedMoveId) {
+      const m = this._findMovable(this.ui.selectedMoveId);
+      if (m) { size = m.size; ignoreId = m.id; }
+    }
+    this.ui.previewTile = { gx: tx, gy: ty, size, valid: this.isAreaFree(tx, ty, size, ignoreId) };
+  }
+
+  _findMovable(id) {
+    const o = this.core.objects.find((x) => x.id === id);
+    if (!o || o.kind === 'prop') return null;
+    const size = footprintOf(o).w;
+    const label =
+      o.kind === 'field' ? 'Ackerfeld'
+        : o.kind === 'animal' ? (o.nick || ANIMALS[o.type]?.name)
+          : o.kind === 'deco' ? DECORATIONS[o.type]?.name
+            : STATIONS[o.type]?.name;
+    return { id, kind: o.kind, size, label };
+  }
+
+  _placeError(tx, ty) {
+    const lz = this.getLockedZoneAt(tx, ty);
+    this.showToast(lz ? `Schalte zuerst "${lz.name}" frei.` : 'Hier ist kein freier Platz.');
+  }
+
+  handleCanvasTap(sx, sy) {
+    const wp = this.world.screenToWorld(sx, sy);
+    const { gx, gy } = worldToGrid(wp.x, wp.y);
+    const tx = Math.floor(gx), ty = Math.floor(gy);
+
+    // 1. Bauen
+    if (this.ui.mode === 'place' && this.ui.pendingPurchase) {
+      const p = this.ui.pendingPurchase;
+      if (!this.isAreaFree(tx, ty, p.size || 1)) {
+        audio.playTap();
+        this._placeError(tx, ty);
+        return;
+      }
+      let cmd;
+      if (p.kind === 'field') cmd = { type: 'buyField', gx: tx, gy: ty };
+      else if (p.kind === 'animal') cmd = { type: 'buyAnimal', animalType: p.type, gx: tx, gy: ty };
+      else if (p.kind === 'station') cmd = { type: 'buyStation', stationType: p.type, gx: tx, gy: ty };
+      else if (p.kind === 'deco') {
+        cmd = (this.core.storedDecos[p.type] || 0) > 0
+          ? { type: 'placeStoredDeco', decoType: p.type, gx: tx, gy: ty }
+          : { type: 'buyDeco', decoType: p.type, gx: tx, gy: ty };
+      }
+      const res = this.act(cmd);
+      if (res.ok || res.error.code === 'no_coins' || res.error.code === 'limit') this.exitSpecialMode();
+      return;
+    }
+
+    // 2. Verschieben
+    if (this.ui.mode === 'move') {
+      if (!this.ui.selectedMoveId) {
+        const hit = this.hitTestWorld(wp.x, wp.y);
+        const m = ['field', 'animal', 'deco', 'station'].includes(hit.kind) ? this._findMovable(hit.entity.id) : null;
+        if (m) {
+          this.ui.selectedMoveId = m.id;
+          audio.playTap();
+          this.showModeBanner(`Neuen Platz tippen für: ${m.label}`, 'Fertig', m.kind === 'deco');
+        } else {
+          this.showToast('Tippe ein Feld, Tier, Gebäude oder Deko an.');
+        }
+      } else {
+        const m = this._findMovable(this.ui.selectedMoveId);
+        if (!m) { this.ui.selectedMoveId = null; return; }
+        if (!this.isAreaFree(tx, ty, m.size, m.id)) {
+          audio.playTap();
+          this._placeError(tx, ty);
+          return;
+        }
+        if (this.act({ type: 'moveObject', objectId: m.id, gx: tx, gy: ty }).ok) {
+          this.ui.selectedMoveId = null;
+          this.ui.previewTile = null;
+          this.showModeBanner('Verschoben. Nächstes Objekt tippen oder Fertig.', 'Fertig', false);
+        }
+      }
+      return;
+    }
+
+    // 3. Normales Spielen
+    const hit = this.hitTestWorld(wp.x, wp.y);
+
+    if (hit.kind === 'daily_chest') { this.claimDailyChest(); return; }
+    if (hit.kind === 'villager') { this.greetVillager(hit.entity); return; }
+    if (hit.kind === 'land_sign') { audio.playTap(); this.openModal('shop', {}, 'land'); return; }
+
+    if (hit.kind === 'field') {
+      const f = hit.entity;
+      if (this.isFieldReady(f)) {
+        this.harvestField(f);
+      } else if (!f.cropId) {
+        if (this.ui.seedTrayOpen && this.ui.selectedSeed) this.plantField(f, this.ui.selectedSeed);
+        else { audio.playTap(); this.openSeedTray(); }
+      } else {
+        const crop = ITEMS[f.cropId];
+        const left = Math.max(1, Math.ceil(crop.growTime - (Date.now() - f.plantedAt) / 1000));
+        audio.playTap();
+        this.world.triggerBounce(f.id);
+        this.showToast(`${crop.name} ist in ${formatDuration(left)} erntereif.`);
+      }
+      return;
+    }
+
+    if (this.ui.seedTrayOpen) this.closeSeedTray();
+
+    if (hit.kind === 'animal') this.interactAnimal(hit.entity);
+    else if (hit.kind === 'station') this.interactStation(hit.entity);
+    else if (hit.kind === 'wishlist' || hit.kind === 'sleigh') {
+      audio.playTap();
+      this.world.triggerBounce('wishlistBoard');
+      this.openModal('orders', {}, 'wishlist');
+    } else if (hit.kind === 'mailbox') {
+      audio.playTap();
+      this.world.triggerBounce('mailbox');
+      this.openModal('gifts', {}, 'send');
+    } else if (hit.kind === 'tree' || hit.kind === 'chalet') {
+      audio.playTap();
+      this.world.triggerBounce(hit.kind === 'tree' ? 'christmasTree' : 'chalet');
+      this.openModal('village', {}, 'overview');
+    } else if (hit.kind === 'deco') {
+      audio.playTap();
+      this.world.triggerBounce(hit.entity.id);
+    }
   }
 
   // ---- Hit Testing ----
@@ -798,952 +1374,7 @@ class WinterhofGame {
     return { kind: 'ground', gx: tx, gy: ty };
   }
 
-  getFieldAtWorld(wx, wy) {
-    const { gx, gy } = worldToGrid(wx, wy);
-    const tx = Math.floor(gx), ty = Math.floor(gy);
-    return this.state.fields.find((f) => f.gx === tx && f.gy === ty) || null;
-  }
 
-  isFieldReady(f) {
-    if (!f || !f.cropId || !ITEMS[f.cropId]) return false;
-    return (Date.now() - f.plantedAt) / 1000 >= ITEMS[f.cropId].growTime;
-  }
-
-  // ---- Core Gameplay Actions ----
-  harvestField(f, skipImmediateSave = false) {
-    if (!this.isFieldReady(f)) return false;
-    if (!this.hasBarnSpace(2)) {
-      this.notifyBarnFull();
-      return false;
-    }
-    const crop = ITEMS[f.cropId];
-    const p = gridToWorld(f.gx + 0.5, f.gy + 0.5);
-    f.cropId = null;
-    f.plantedAt = 0;
-
-    this.addItem(crop.id, 2);
-    this.incStat('harvests', 1);
-    this.addXp(crop.xp);
-    audio.playHarvest();
-    this.world.triggerBounce(f.id);
-    this.world.spawnBurst(p.x, p.y - 14, crop.color, 8, 'star');
-    this.world.spawnFloater(p.x, p.y - 26, `+2 ${crop.name}`, crop.id, '#FFFDF7');
-    this.world.spawnFlyingHudItem(p.x, p.y - 18, crop.id, 'barn');
-    if (skipImmediateSave) this.scheduleSave();
-    else this.saveState();
-    this.updateHUD();
-    return true;
-  }
-
-  plantField(f, cropId) {
-    if (!f || f.cropId) return false;
-    const crop = ITEMS[cropId];
-    if (!crop) return false;
-    const lvl = getLevelInfo(this.state.xp).level;
-    if (crop.unlockLevel > lvl) {
-      this.showToast(`Ab Level ${crop.unlockLevel} freigeschaltet.`);
-      return false;
-    }
-    if (this.state.coins < crop.seedCost) {
-      this.showToast(`Nicht genug Münzen (${crop.seedCost} benötigt).`);
-      return false;
-    }
-    this.state.coins -= crop.seedCost;
-    f.cropId = cropId;
-    f.plantedAt = Date.now();
-
-    const p = gridToWorld(f.gx + 0.5, f.gy + 0.5);
-    audio.playPlant();
-    this.world.triggerBounce(f.id);
-    this.world.spawnBurst(p.x, p.y - 6, '#86EFAC', 5, 'star');
-    this.saveState();
-    this.updateHUD();
-    return true;
-  }
-
-  greetVillager(v) {
-    if (v.offer) {
-      audio.playTap();
-      this.openModal('villager_offer', { villagerId: v.id });
-      return;
-    }
-    const p = gridToWorld(v.gx, v.gy);
-    audio.playPet(1.12);
-    this.world.spawnBurst(p.x, p.y - 34, '#FDE047', 6, 'star');
-    const now = Date.now();
-    if (now - (v.lastTipAt || 0) > 45000) {
-      v.lastTipAt = now;
-      v.quote = 'Ein kleines Trinkgeld für dich.';
-      v.quoteTimer = 3.0;
-      this.addCoins(5, p.x, p.y - 42);
-      this.saveState();
-    } else {
-      v.quote = 'Schönen Wintertag auf dem Hof.';
-      v.quoteTimer = 2.6;
-    }
-  }
-
-  interactAnimal(an) {
-    const def = ANIMALS[an.type];
-    const nick = an.nick || def.defaultNick;
-    const mot = this.world.getAnimalMotion(an);
-    const p = gridToWorld(an.gx + 0.5 + mot.ox, an.gy + 0.5 + mot.oy);
-    this.world.triggerBounce(an.id);
-
-    if (an.state === 'ready') {
-      if (!this.hasBarnSpace(1)) {
-        this.notifyBarnFull();
-        return;
-      }
-      const prod = ITEMS[def.produceItem];
-      an.state = 'hungry';
-      an.readyAt = 0;
-      this.addItem(prod.id, 1);
-      this.addXp(prod.xp);
-      audio.playCollect();
-      this.world.spawnBurst(p.x, p.y - 30, '#FDE047', 9, 'star');
-      this.world.spawnFloater(p.x, p.y - 40, `+1 ${prod.name}`, prod.id, '#FFFDF7');
-      this.world.spawnFlyingHudItem(p.x, p.y - 32, prod.id, 'barn');
-      this.saveState();
-      this.updateHUD();
-      return;
-    }
-
-    if (an.state === 'hungry') {
-      const feed = ITEMS[def.feedItem];
-      if ((this.state.inventory[def.feedItem] || 0) >= def.feedQty) {
-        this.removeItem(def.feedItem, def.feedQty);
-        an.state = 'producing';
-        an.readyAt = Date.now() + def.produceTime * 1000;
-        audio.playPet(def.soundPitch);
-        this.world.spawnBurst(p.x, p.y - 28, '#FCA5A5', 6, 'heart');
-        this.world.spawnFloater(p.x, p.y - 40, `${nick} gefüttert`, def.feedItem, '#FFFDF7');
-        this.saveState();
-        this.updateHUD();
-      } else {
-        audio.playTap();
-        this.showToast(`${nick} benötigt ${def.feedQty}x ${feed.name}.`);
-      }
-      return;
-    }
-
-    audio.playPet(def.soundPitch);
-    this.world.spawnBurst(p.x, p.y - 30, '#FCA5A5', 6, 'heart');
-    const now = Date.now();
-    if (now - (an.lastPet || 0) > 12000) {
-      an.lastPet = now;
-      this.incStat('pets', 1);
-      this.addXp(3);
-      this.world.spawnFloater(p.x, p.y - 44, `${nick} freut sich (+3 XP)`, null, '#FFFDF7');
-      this.saveState();
-    } else {
-      const left = Math.max(1, Math.ceil((an.readyAt - now) / 1000));
-      this.showToast(`${nick} ist zufrieden (fertig in ${formatDuration(left)}).`);
-    }
-  }
-
-  unwrapStation(st) {
-    if (!st.wrapped) return;
-    st.wrapped = false;
-    const def = STATIONS[st.type];
-    const p = gridToWorld(st.gx + 1, st.gy + 1);
-    audio.playUnwrap();
-    this.world.triggerBounce(st.id);
-    this.world.spawnBurst(p.x, p.y - 72, '#DC2626', 14, 'star');
-    this.world.spawnBurst(p.x, p.y - 88, '#FDE047', 14, 'star');
-    this.world.spawnFloater(p.x, p.y - 110, `${def.name} eröffnet`, null, '#FEF08A');
-    this.addXp(35);
-    this.saveState();
-    this.updateHUD();
-  }
-
-  interactStation(st) {
-    if (st.wrapped) {
-      this.unwrapStation(st);
-      return;
-    }
-
-    const p = gridToWorld(st.gx + 1, st.gy + 1);
-    this.world.triggerBounce(st.id);
-
-    if (st.ready.length > 0) {
-      if (!this.hasBarnSpace(st.ready.length)) {
-        this.notifyBarnFull();
-        return;
-      }
-      const collected = [...st.ready];
-      st.ready = [];
-      let totalXp = 0;
-      for (const id of collected) {
-        this.addItem(id, 1);
-        totalXp += ITEMS[id].xp;
-        st.craftedCount = (st.craftedCount || 0) + 1;
-        this.incStat('crafted', 1);
-      }
-      this.addXp(totalXp);
-      audio.playCollect();
-      this.world.spawnBurst(p.x, p.y - 88, '#FDE047', 12, 'star');
-      const first = ITEMS[collected[0]];
-      const label = collected.length === 1 ? `+1 ${first.name}` : `+${collected.length} eingesammelt`;
-      this.world.spawnFloater(p.x, p.y - 102, label, first.id, '#FFFDF7');
-      this.world.spawnFlyingHudItem(p.x, p.y - 88, first.id, 'barn');
-      this.saveState();
-      this.updateHUD();
-      return;
-    }
-
-    audio.playTap();
-    this.openModal('station', { stationId: st.id });
-  }
-
-  startCraft(stationId, itemId) {
-    const st = this.state.stations.find((s) => s.id === stationId);
-    const recipe = ITEMS[itemId];
-    if (!st || !recipe || st.wrapped) return;
-    if (st.queue.length >= 4) {
-      this.showToast('Alle 4 Produktionsplätze sind belegt.');
-      return;
-    }
-    for (const [ingId, qty] of Object.entries(recipe.ingredients)) {
-      if ((this.state.inventory[ingId] || 0) < qty) {
-        this.showToast(`Es fehlt: ${ITEMS[ingId].name}`);
-        return;
-      }
-    }
-    for (const [ingId, qty] of Object.entries(recipe.ingredients)) {
-      this.removeItem(ingId, qty);
-    }
-
-    const mastery = getStationMastery(st.craftedCount || 0);
-    const craftSec = Math.round(recipe.craftTime * mastery.speedMult);
-    const now = Date.now();
-    const isFirst = st.queue.length === 0;
-    st.queue.push({
-      itemId,
-      started: isFirst,
-      finishAt: isFirst ? now + craftSec * 1000 : 0
-    });
-    audio.playBakeStart();
-    const p = gridToWorld(st.gx + 1, st.gy + 1);
-    this.world.triggerBounce(st.id);
-    this.world.spawnBurst(p.x, p.y - 82, '#FDBA74', 7, 'star');
-    this.saveState();
-    this.updateHUD();
-    this.renderActiveModal();
-  }
-
-  // ---- Hofladen ----
-  listItemOnStand(slotIdx, itemId) {
-    if (this.state.standSlots[slotIdx]) return;
-    const have = this.state.inventory[itemId] || 0;
-    if (have <= 0) return;
-    const qty = Math.min(have, 2);
-    this.removeItem(itemId, qty);
-    const price = Math.round(ITEMS[itemId].sellPrice * qty * 1.25);
-    const waitMs = (28 + Math.floor(Math.random() * 28)) * 1000;
-    this.state.standSlots[slotIdx] = {
-      itemId, qty, price,
-      sellAt: Date.now() + waitMs,
-      sold: false, buyerName: null
-    };
-    audio.playBakeStart();
-    this.saveState();
-    this.updateHUD();
-    this.renderActiveModal();
-  }
-
-  collectStandSlot(slotIdx) {
-    const slot = this.state.standSlots[slotIdx];
-    if (!slot || !slot.sold) return;
-    this.state.standSlots[slotIdx] = null;
-    this.incStat('standSales', 1);
-    audio.playCoin();
-    this.addCoins(slot.price);
-    this.addXp(8);
-    this.showToast(`+${slot.price} Münzen von ${slot.buyerName} erhalten.`);
-    this.saveState();
-    this.updateHUD();
-    this.renderActiveModal();
-  }
-
-  // ---- Wishlist Orders ----
-  generateOrder() {
-    const lvl = getLevelInfo(this.state.xp).level;
-    const npc = NPCS[Math.floor(Math.random() * NPCS.length)];
-    const quote = npc.quotes[Math.floor(Math.random() * npc.quotes.length)];
-    const builtTypes = new Set(this.state.stations.filter((s) => s.built && !s.wrapped).map((s) => s.type));
-
-    const pool = Object.values(ITEMS).filter((it) => {
-      if (it.unlockLevel > lvl) return false;
-      if (it.category === 'crafted' && !builtTypes.has(it.station)) return false;
-      if (it.category === 'animal') {
-        const hasAnimal = this.state.animals.some((a) => ANIMALS[a.type].produceItem === it.id);
-        if (!hasAnimal) return false;
-      }
-      return true;
-    });
-
-    const craftedPool = pool.filter((i) => i.category === 'crafted');
-    const req = {};
-    const numTypes = Math.random() < 0.6 || pool.length < 3 ? 2 : 3;
-
-    if (craftedPool.length > 0 && Math.random() < 0.78) {
-      const c = craftedPool[Math.floor(Math.random() * craftedPool.length)];
-      req[c.id] = 1;
-    }
-
-    let guard = 0;
-    while (Object.keys(req).length < Math.min(numTypes, pool.length) && guard++ < 25) {
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      if (req[pick.id]) continue;
-      req[pick.id] = pick.category === 'crop' ? 2 + Math.floor(Math.random() * 2) : 1;
-    }
-
-    let coinReward = 0, xpReward = 0;
-    for (const [id, q] of Object.entries(req)) {
-      coinReward += ITEMS[id].sellPrice * q;
-      xpReward += ITEMS[id].xp * q;
-    }
-
-    return {
-      id: 'ord_' + Math.random().toString(36).slice(2, 8),
-      npcId: npc.id, quote, req,
-      coins: Math.round(coinReward * 1.42) + 15,
-      xp: Math.round(xpReward * 1.35) + 10
-    };
-  }
-
-  fulfillOrder(orderId) {
-    const idx = this.state.orders.findIndex((o) => o.id === orderId);
-    if (idx === -1) return;
-    const ord = this.state.orders[idx];
-
-    for (const [id, q] of Object.entries(ord.req)) {
-      if ((this.state.inventory[id] || 0) < q) return;
-    }
-    for (const [id, q] of Object.entries(ord.req)) this.removeItem(id, q);
-
-    this.closeModal();
-    this.incStat('ordersDone', 1);
-    audio.playSleighBells();
-    this.world.launchSleigh(this.state);
-
-    const sp = gridToWorld(this.state.sleighPos.gx + 0.5, this.state.sleighPos.gy + 0.5);
-    this.world.spawnBurst(sp.x, sp.y - 54, '#FDE047', 16, 'star');
-    this.addCoins(ord.coins, sp.x, sp.y - 72);
-    this.addXp(ord.xp);
-    this.world.spawnFloater(sp.x, sp.y - 102, `+${ord.xp} XP`, null, '#A7F3D0');
-
-    this.state.orders.splice(idx, 1);
-    this.state.orders.push(this.generateOrder());
-    this.saveState();
-    this.updateHUD();
-  }
-
-  skipOrder(orderId) {
-    const idx = this.state.orders.findIndex((o) => o.id === orderId);
-    if (idx === -1) return;
-    audio.playTap();
-    this.state.orders[idx] = this.generateOrder();
-    this.saveState();
-    this.renderActiveModal();
-    this.updateHUD();
-  }
-
-  receiveGiftParcel(parcel) {
-    if (this.state.claimedGifts.includes(parcel.id)) {
-      this.showToast('Dieses Päckchen wurde bereits ausgepackt.');
-      return;
-    }
-    this.closeModal();
-    audio.playSleighBells();
-    this.showToast(`Winterpost von ${parcel.from} ist unterwegs.`);
-    this.world.launchGiftParachute(parcel.from, () => {
-      this.state.claimedGifts.push(parcel.id);
-      for (const [id, qty] of Object.entries(parcel.items)) {
-        if (ITEMS[id]) this.addItem(id, qty);
-      }
-      this.addXp(18);
-      audio.playGiftOpen();
-      this.saveState();
-      this.updateHUD();
-      this.openModal('gift_opened', { parcel });
-    });
-  }
-
-  // ---- Place, Move & Store-Deco Modes ----
-  enterPlaceMode(purchase) {
-    this.closeModal();
-    this.closeSeedTray();
-    this.ui.mode = 'place';
-    this.ui.pendingPurchase = purchase;
-    this.ui.selectedMoveId = null;
-    this.ui.previewTile = null;
-    this.showModeBanner(`Freien Platz tippen für: ${purchase.label}`, 'Abbrechen', false);
-  }
-
-  enterMoveMode() {
-    this.closeModal();
-    this.closeSeedTray();
-    if (this.ui.mode === 'move') {
-      this.exitSpecialMode();
-      return;
-    }
-    this.ui.mode = 'move';
-    this.ui.selectedMoveId = null;
-    this.ui.pendingPurchase = null;
-    this.ui.previewTile = null;
-    document.getElementById('dock-move').classList.add('active');
-    this.showModeBanner('Feld, Tier, Gebäude oder Deko zum Verschieben antippen', 'Fertig', false);
-  }
-
-  storeSelectedDeco() {
-    if (!this.ui.selectedMoveId) return;
-    const idx = this.state.decorations.findIndex((d) => d.id === this.ui.selectedMoveId);
-    if (idx === -1) return;
-    const deco = this.state.decorations[idx];
-    this.state.decorations.splice(idx, 1);
-    this.state.storedDecos[deco.type] = (this.state.storedDecos[deco.type] || 0) + 1;
-    audio.playTap();
-    this.ui.selectedMoveId = null;
-    this.ui.previewTile = null;
-    this.showModeBanner(`${DECORATIONS[deco.type].name} eingelagert (im Shop gratis platzierbar)`, 'Fertig', false);
-    this.saveState();
-  }
-
-  exitSpecialMode() {
-    this.ui.mode = 'normal';
-    this.ui.selectedMoveId = null;
-    this.ui.pendingPurchase = null;
-    this.ui.previewTile = null;
-    document.getElementById('dock-move').classList.remove('active');
-    document.getElementById('mode-banner').classList.add('hidden');
-  }
-
-  showModeBanner(text, btnText = 'Fertig', showStore = false) {
-    document.getElementById('mode-banner-text').textContent = text;
-    document.getElementById('mode-banner-cancel').textContent = btnText;
-    document.getElementById('mode-banner-store').classList.toggle('hidden', !showStore);
-    document.getElementById('mode-banner').classList.remove('hidden');
-  }
-
-  openSeedTray() {
-    this.ui.seedTrayOpen = true;
-    const lvl = getLevelInfo(this.state.xp).level;
-    if (!this.ui.selectedSeed || ITEMS[this.ui.selectedSeed].unlockLevel > lvl) {
-      this.ui.selectedSeed = 'wheat';
-    }
-    this.renderSeedTray();
-    document.getElementById('seed-tray').classList.remove('hidden');
-  }
-
-  closeSeedTray() {
-    this.ui.seedTrayOpen = false;
-    this.ui.selectedSeed = null;
-    document.getElementById('seed-tray').classList.add('hidden');
-  }
-
-  renderSeedTray() {
-    const tray = document.getElementById('seed-tray');
-    const lvl = getLevelInfo(this.state.xp).level;
-    tray.innerHTML = CROP_IDS.map((id) => {
-      const c = ITEMS[id];
-      const locked = c.unlockLevel > lvl;
-      const active = this.ui.selectedSeed === id;
-      return `
-        <button class="seed-chip ${active ? 'active' : ''} ${locked ? 'locked' : ''}" data-seed="${id}">
-          <img src="${sprites.getIconUrl(id)}" alt="${c.name}" />
-          <span class="s-name">${c.name}</span>
-          <span class="s-meta">${locked ? `Lv.${c.unlockLevel}` : `${c.seedCost} · ${formatDuration(c.growTime)}`}</span>
-        </button>`;
-    }).join('');
-
-    tray.querySelectorAll('.seed-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.seed;
-        if (ITEMS[id].unlockLevel > lvl) {
-          this.showToast(`${ITEMS[id].name} wird ab Level ${ITEMS[id].unlockLevel} freigeschaltet.`);
-          return;
-        }
-        audio.playTap();
-        this.ui.selectedSeed = id;
-        this.renderSeedTray();
-      });
-    });
-  }
-
-  showToast(msg, duration = 2600) {
-    const el = document.getElementById('toast-tip');
-    el.textContent = msg;
-    el.classList.remove('hidden');
-    clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => el.classList.add('hidden'), duration);
-  }
-
-  updateHUD() {
-    const info = getLevelInfo(this.state.xp);
-    document.getElementById('hud-level').textContent = info.level;
-    document.getElementById('hud-village-name').textContent = this.state.villageName;
-    document.getElementById('hud-xp-fill').style.width = `${Math.round(info.progress * 100)}%`;
-    document.getElementById('hud-coins').textContent = this.state.coins;
-
-    const lightEl = document.getElementById('btn-light');
-    if (lightEl) {
-      const iconKey = this.world.lightingMode === 'day' ? 'sun' : this.world.lightingMode === 'dusk' ? 'dusk' : this.world.lightingMode === 'night' ? 'moon' : 'auto';
-      lightEl.innerHTML = sprites.getUiIcon(iconKey);
-    }
-
-    const ch = this.getActiveChapter();
-    const chPill = document.getElementById('chapter-pill');
-    if (ch) {
-      const done = ch.check(this.state);
-      chPill.classList.remove('hidden');
-      chPill.classList.toggle('ready', done);
-      document.getElementById('chapter-pill-text').textContent = done ? `Kapitel ${ch.num} bereit` : `Kapitel ${ch.num}`;
-      document.getElementById('chapter-pill-dot').classList.toggle('hidden', !done);
-    } else {
-      chPill.classList.add('hidden');
-    }
-
-    const readyOrders = this.state.orders.filter((o) =>
-      Object.entries(o.req).every(([id, q]) => (this.state.inventory[id] || 0) >= q)
-    ).length;
-    const claimableAch = this.getClaimableAchievements().length;
-    const totalOrderBadge = readyOrders + claimableAch;
-    const badgeOrd = document.getElementById('badge-orders');
-    if (totalOrderBadge > 0) {
-      badgeOrd.textContent = totalOrderBadge;
-      badgeOrd.classList.remove('hidden');
-    } else {
-      badgeOrd.classList.add('hidden');
-    }
-
-    const soldStand = this.state.standSlots.filter((s) => s && s.sold).length;
-    const badgeBarn = document.getElementById('badge-barn');
-    if (soldStand > 0) {
-      badgeBarn.textContent = soldStand;
-      badgeBarn.classList.remove('hidden');
-    } else {
-      badgeBarn.classList.add('hidden');
-    }
-
-    const barnMini = document.getElementById('hud-barn-mini');
-    if (barnMini) {
-      barnMini.textContent = `${this.getBarnUsed()}/${this.getBarnCapacity()}`;
-    }
-
-    const scytheBtn = document.getElementById('btn-scythe');
-    const scytheCountEl = document.getElementById('scythe-count');
-    if (scytheBtn && scytheCountEl) {
-      const readyFieldsCount = this.state.fields.filter((f) => this.isFieldReady(f)).length;
-      const showScythe = info.level >= 3 && readyFieldsCount > 0;
-      scytheBtn.classList.toggle('hidden', !showScythe);
-      scytheCountEl.textContent = String(readyFieldsCount);
-    }
-
-    this.ui.dailyChestReady = this.isDailyChestReady();
-  }
-
-  bindUI() {
-    window.addEventListener('resize', () => this.world.resize());
-
-    document.getElementById('btn-village').addEventListener('click', () => {
-      audio.playTap();
-      this.openModal('village', {}, 'overview');
-    });
-
-    document.getElementById('chapter-pill').addEventListener('click', () => {
-      audio.playTap();
-      this.openModal('chapters');
-    });
-
-    document.getElementById('btn-coins').addEventListener('click', () => {
-      audio.playTap();
-      this.openModal('barn', {}, 'stand');
-    });
-
-    document.getElementById('btn-light').addEventListener('click', () => {
-      audio.playTap();
-      const cycle = ['day', 'dusk', 'night', 'auto'];
-      const labels = {
-        auto: 'Tageszeit: Automatisch',
-        day: 'Tageszeit: Wintertag',
-        dusk: 'Tageszeit: Abenddämmerung',
-        night: 'Tageszeit: Sternennacht'
-      };
-      const next = cycle[(cycle.indexOf(this.world.lightingMode) + 1) % cycle.length];
-      this.world.lightingMode = next;
-      this.state.settings.lighting = next;
-      this.saveState();
-      this.updateHUD();
-      this.showToast(labels[next]);
-    });
-
-    document.getElementById('btn-settings').addEventListener('click', () => {
-      audio.playTap();
-      this.openModal('settings');
-    });
-
-    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
-      this.world.cam.targetZoom = null;
-      this.world.cam.zoom = Math.min(1.55, this.world.cam.zoom * 1.16);
-      this.world.clampCamera();
-    });
-    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
-      this.world.cam.targetZoom = null;
-      this.world.cam.zoom = Math.max(0.52, this.world.cam.zoom / 1.16);
-      this.world.clampCamera();
-    });
-    document.getElementById('btn-scythe')?.addEventListener('click', () => {
-      this.harvestAllReadyFields();
-    });
-
-    document.getElementById('mode-banner-store').addEventListener('click', () => this.storeSelectedDeco());
-    document.getElementById('mode-banner-cancel').addEventListener('click', () => {
-      audio.playTap();
-      this.exitSpecialMode();
-    });
-
-    document.getElementById('dock-shop').addEventListener('click', () => {
-      audio.playTap();
-      this.exitSpecialMode();
-      this.closeSeedTray();
-      this.openModal('shop', {}, 'buildings');
-    });
-    document.getElementById('dock-barn').addEventListener('click', () => {
-      audio.playTap();
-      const hasSold = this.state.standSlots.some((s) => s && s.sold);
-      this.openModal('barn', {}, hasSold ? 'stand' : 'inv');
-    });
-    document.getElementById('dock-orders').addEventListener('click', () => {
-      audio.playTap();
-      const hasAch = this.getClaimableAchievements().length > 0;
-      const hasOrd = this.state.orders.some((o) =>
-        Object.entries(o.req).every(([id, q]) => (this.state.inventory[id] || 0) >= q)
-      );
-      this.openModal('orders', {}, !hasOrd && hasAch ? 'achievements' : 'wishlist');
-    });
-    document.getElementById('dock-gifts').addEventListener('click', () => {
-      audio.playTap();
-      this.openModal('gifts', {}, 'send');
-    });
-    document.getElementById('dock-move').addEventListener('click', () => {
-      audio.playTap();
-      this.enterMoveMode();
-    });
-
-    document.getElementById('modal-close').addEventListener('click', () => {
-      audio.playTap();
-      this.closeModal();
-    });
-    document.getElementById('modal-backdrop').addEventListener('click', (e) => {
-      if (e.target.id === 'modal-backdrop') {
-        audio.playTap();
-        this.closeModal();
-      }
-    });
-  }
-
-  // ---- Canvas Pointer / Touch Gestures ----
-  bindCanvasEvents() {
-    const c = this.canvas;
-
-    c.addEventListener('pointerdown', (e) => {
-      audio.unlock();
-      this.world.cam.targetZoom = null;
-      c.setPointerCapture(e.pointerId);
-      this.pointers.set(e.pointerId, { x: vx(e), y: vy(e) });
-
-      if (this.pointers.size === 2) {
-        const pts = [...this.pointers.values()];
-        this.pinchStartDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-        this.pinchStartZoom = this.world.cam.zoom;
-        this.dragMode = 'pinch';
-        return;
-      }
-
-      this.world.cam.vx = 0;
-      this.world.cam.vy = 0;
-      this.dragStart = { x: vx(e), y: vy(e), time: performance.now() };
-      this.lastPanPos = { x: vx(e), y: vy(e) };
-      this.lastPanTime = performance.now();
-      this.swipedFieldIds.clear();
-      this.dragMode = null;
-
-      if (this.ui.mode === 'place' || (this.ui.mode === 'move' && this.ui.selectedMoveId)) {
-        this._updatePlacementPreview(vx(e), vy(e));
-      }
-
-      if (this.ui.mode === 'normal') {
-        const wp = this.world.screenToWorld(vx(e), vy(e));
-        const f = this.getFieldAtWorld(wp.x, wp.y);
-        if (f && this.isFieldReady(f)) {
-          this.dragMode = 'swipe-harvest';
-          this.harvestField(f, true);
-          this.swipedFieldIds.add(f.id);
-          this.world.addSwipePoint(vx(e), vy(e), 'harvest');
-        } else if (f && !f.cropId && this.ui.seedTrayOpen && this.ui.selectedSeed) {
-          this.dragMode = 'swipe-plant';
-          this.plantField(f, this.ui.selectedSeed);
-          this.swipedFieldIds.add(f.id);
-          this.world.addSwipePoint(vx(e), vy(e), 'plant');
-        }
-      }
-    });
-
-    c.addEventListener('pointermove', (e) => {
-      if (!this.pointers.has(e.pointerId)) {
-        if (this.ui.mode === 'place' || (this.ui.mode === 'move' && this.ui.selectedMoveId)) {
-          this._updatePlacementPreview(vx(e), vy(e));
-        }
-        return;
-      }
-      this.pointers.set(e.pointerId, { x: vx(e), y: vy(e) });
-
-      if (this.pointers.size === 2 && this.pinchStartDist > 0) {
-        const pts = [...this.pointers.values()];
-        const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-        this.world.cam.zoom = Math.max(0.52, Math.min(1.55, this.pinchStartZoom * (dist / this.pinchStartDist)));
-        this.world.clampCamera();
-        return;
-      }
-
-      if (this.dragMode === 'swipe-harvest') {
-        this.world.addSwipePoint(vx(e), vy(e), 'harvest');
-        const wp = this.world.screenToWorld(vx(e), vy(e));
-        const f = this.getFieldAtWorld(wp.x, wp.y);
-        if (f && !this.swipedFieldIds.has(f.id) && this.isFieldReady(f)) {
-          this.swipedFieldIds.add(f.id);
-          this.harvestField(f, true);
-        }
-        return;
-      }
-
-      if (this.dragMode === 'swipe-plant') {
-        this.world.addSwipePoint(vx(e), vy(e), 'plant');
-        const wp = this.world.screenToWorld(vx(e), vy(e));
-        const f = this.getFieldAtWorld(wp.x, wp.y);
-        if (f && !this.swipedFieldIds.has(f.id) && !f.cropId && this.ui.selectedSeed) {
-          this.swipedFieldIds.add(f.id);
-          this.plantField(f, this.ui.selectedSeed);
-        }
-        return;
-      }
-
-      if (this.dragStart) {
-        const dist = Math.hypot(vx(e) - this.dragStart.x, vy(e) - this.dragStart.y);
-        if (dist > 7 || this.dragMode === 'pan') {
-          this.dragMode = 'pan';
-          const dx = (vx(e) - this.lastPanPos.x) / this.world.cam.zoom;
-          const dy = (vy(e) - this.lastPanPos.y) / this.world.cam.zoom;
-          this.world.cam.x -= dx;
-          this.world.cam.y -= dy;
-          this.world.clampCamera();
-
-          const now = performance.now();
-          const dt = Math.max(8, now - this.lastPanTime) / 1000;
-          this.world.cam.vx = (-dx / dt) * 0.5;
-          this.world.cam.vy = (-dy / dt) * 0.5;
-          this.lastPanPos = { x: vx(e), y: vy(e) };
-          this.lastPanTime = now;
-        }
-      }
-    });
-
-    const onEnd = (e) => {
-      this.pointers.delete(e.pointerId);
-      if (this.pointers.size === 0) {
-        const wasTap = this.dragStart && !this.dragMode;
-        if (wasTap) this.handleCanvasTap(vx(e), vy(e));
-        this.dragStart = null;
-        this.dragMode = null;
-        this.pinchStartDist = 0;
-      }
-    };
-    c.addEventListener('pointerup', onEnd);
-    c.addEventListener('pointercancel', onEnd);
-
-    c.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      this.world.cam.targetZoom = null;
-      const factor = e.deltaY < 0 ? 1.09 : 0.92;
-      this.world.cam.zoom = Math.max(0.52, Math.min(1.55, this.world.cam.zoom * factor));
-      this.world.clampCamera();
-    }, { passive: false });
-  }
-
-  _updatePlacementPreview(sx, sy) {
-    const wp = this.world.screenToWorld(sx, sy);
-    const { gx, gy } = worldToGrid(wp.x, wp.y);
-    const tx = Math.floor(gx), ty = Math.floor(gy);
-    let size = 1, ignoreId = null;
-    if (this.ui.mode === 'place' && this.ui.pendingPurchase) {
-      size = this.ui.pendingPurchase.size || 1;
-    } else if (this.ui.mode === 'move' && this.ui.selectedMoveId) {
-      const m = this._findMovable(this.ui.selectedMoveId);
-      if (m) { size = m.size; ignoreId = m.id; }
-    }
-    this.ui.previewTile = {
-      gx: tx, gy: ty, size,
-      valid: this.isAreaFree(tx, ty, size, ignoreId)
-    };
-  }
-
-  _findMovable(id) {
-    const f = this.state.fields.find((x) => x.id === id);
-    if (f) return { id, kind: 'field', obj: f, size: 1, label: 'Ackerfeld' };
-    const a = this.state.animals.find((x) => x.id === id);
-    if (a) return { id, kind: 'animal', obj: a, size: 1, label: a.nick || ANIMALS[a.type].name };
-    const d = this.state.decorations.find((x) => x.id === id);
-    if (d) return { id, kind: 'deco', obj: d, size: 1, label: DECORATIONS[d.type].name };
-    const s = this.state.stations.find((x) => x.id === id && x.built);
-    if (s) return { id, kind: 'station', obj: s, size: 2, label: STATIONS[s.type].name };
-    return null;
-  }
-
-  handleCanvasTap(sx, sy) {
-    const wp = this.world.screenToWorld(sx, sy);
-    const { gx, gy } = worldToGrid(wp.x, wp.y);
-    const tx = Math.floor(gx), ty = Math.floor(gy);
-
-    // 1. Place Mode
-    if (this.ui.mode === 'place' && this.ui.pendingPurchase) {
-      const p = this.ui.pendingPurchase;
-      const size = p.size || 1;
-      if (!this.isAreaFree(tx, ty, size)) {
-        const lockedZone = this.getLockedZoneAt(tx, ty);
-        this.showToast(lockedZone ? `Schalte zuerst "${lockedZone.name}" frei.` : 'Hier ist kein freier Platz.');
-        return;
-      }
-      const fromStorage = p.kind === 'deco' && (this.state.storedDecos[p.type] || 0) > 0;
-      const actualCost = fromStorage ? 0 : p.cost;
-      if (this.state.coins < actualCost) {
-        this.showToast('Nicht genug Münzen.');
-        this.exitSpecialMode();
-        return;
-      }
-      this.state.coins -= actualCost;
-      const worldP = gridToWorld(tx + size * 0.5, ty + size * 0.5);
-
-      if (p.kind === 'field') {
-        const nf = { id: 'f_' + Date.now(), gx: tx, gy: ty, cropId: null, plantedAt: 0 };
-        this.state.fields.push(nf);
-        this.world.triggerBounce(nf.id);
-      } else if (p.kind === 'animal') {
-        const def = ANIMALS[p.type];
-        const na = { id: 'a_' + Date.now(), type: p.type, nick: def.defaultNick, gx: tx, gy: ty, state: 'hungry', readyAt: 0, lastPet: 0 };
-        this.state.animals.push(na);
-        this.world.triggerBounce(na.id);
-      } else if (p.kind === 'deco') {
-        if (fromStorage) {
-          this.state.storedDecos[p.type]--;
-          if (this.state.storedDecos[p.type] <= 0) delete this.state.storedDecos[p.type];
-        } else {
-          this.addXp(DECORATIONS[p.type].xp || 12);
-        }
-        const nd = { id: 'd_' + Date.now(), type: p.type, gx: tx, gy: ty };
-        this.state.decorations.push(nd);
-        this.world.triggerBounce(nd.id);
-      } else if (p.kind === 'station') {
-        const st = this.state.stations.find((s) => s.type === p.type);
-        if (st) {
-          st.built = true;
-          st.wrapped = true;
-          st.gx = tx;
-          st.gy = ty;
-          this.world.triggerBounce(st.id);
-          this.showToast(`Tippe auf die Schleife, um "${STATIONS[p.type].name}" zu eröffnen.`, 3200);
-        }
-      }
-
-      audio.playCollect();
-      this.world.spawnBurst(worldP.x, worldP.y - 22, '#FDE047', 12, 'star');
-      this.saveState();
-      this.updateHUD();
-      this.exitSpecialMode();
-      return;
-    }
-
-    // 2. Move Mode
-    if (this.ui.mode === 'move') {
-      if (!this.ui.selectedMoveId) {
-        const hit = this.hitTestWorld(wp.x, wp.y);
-        if (['field', 'animal', 'deco', 'station'].includes(hit.kind)) {
-          this.ui.selectedMoveId = hit.entity.id;
-          audio.playTap();
-          const m = this._findMovable(hit.entity.id);
-          this.showModeBanner(`Neuen Platz tippen für: ${m.label}`, 'Fertig', m.kind === 'deco');
-        } else {
-          this.showToast('Tippe ein Feld, Tier, Gebäude oder Deko an.');
-        }
-      } else {
-        const m = this._findMovable(this.ui.selectedMoveId);
-        if (!m) { this.ui.selectedMoveId = null; return; }
-        if (!this.isAreaFree(tx, ty, m.size, m.id)) {
-          const lz = this.getLockedZoneAt(tx, ty);
-          this.showToast(lz ? `Grundstück "${lz.name}" ist noch gesperrt.` : 'Dort ist nicht genug Platz.');
-          return;
-        }
-        m.obj.gx = tx;
-        m.obj.gy = ty;
-        audio.playPlant();
-        this.world.triggerBounce(m.id);
-        this.ui.selectedMoveId = null;
-        this.ui.previewTile = null;
-        this.showModeBanner('Verschoben. Nächstes Objekt tippen oder Fertig.', 'Fertig', false);
-        this.saveState();
-      }
-      return;
-    }
-
-    // 3. Normal Play Mode
-    const hit = this.hitTestWorld(wp.x, wp.y);
-
-    if (hit.kind === 'daily_chest') { this.claimDailyChest(); return; }
-    if (hit.kind === 'villager') { this.greetVillager(hit.entity); return; }
-    if (hit.kind === 'land_sign') { audio.playTap(); this.openModal('shop', {}, 'land'); return; }
-
-    if (hit.kind === 'field') {
-      const f = hit.entity;
-      if (this.isFieldReady(f)) {
-        this.harvestField(f);
-      } else if (!f.cropId) {
-        if (this.ui.seedTrayOpen && this.ui.selectedSeed) this.plantField(f, this.ui.selectedSeed);
-        else { audio.playTap(); this.openSeedTray(); }
-      } else {
-        const crop = ITEMS[f.cropId];
-        const left = Math.max(1, Math.ceil(crop.growTime - (Date.now() - f.plantedAt) / 1000));
-        audio.playTap();
-        this.world.triggerBounce(f.id);
-        this.showToast(`${crop.name} ist in ${formatDuration(left)} erntereif.`);
-      }
-      return;
-    }
-
-    if (this.ui.seedTrayOpen) this.closeSeedTray();
-
-    if (hit.kind === 'animal') this.interactAnimal(hit.entity);
-    else if (hit.kind === 'station') this.interactStation(hit.entity);
-    else if (hit.kind === 'wishlist' || hit.kind === 'sleigh') {
-      audio.playTap();
-      this.world.triggerBounce('wishlistBoard');
-      this.openModal('orders', {}, 'wishlist');
-    } else if (hit.kind === 'mailbox') {
-      audio.playTap();
-      this.world.triggerBounce('mailbox');
-      this.openModal('gifts', {}, 'send');
-    } else if (hit.kind === 'tree' || hit.kind === 'chalet') {
-      audio.playTap();
-      this.world.triggerBounce(hit.kind === 'tree' ? 'christmasTree' : 'chalet');
-      this.openModal('village', {}, 'overview');
-    } else if (hit.kind === 'deco') {
-      audio.playTap();
-      this.world.triggerBounce(hit.entity.id);
-    }
-  }
-
-  // ============================================================================
-  // MODALS (Clean Commercial Minimalism · Zero Emojis)
   // ============================================================================
   openModal(kind, data = {}, tab = null) {
     this.ui.activeModal = { kind, data, tab };
@@ -1754,6 +1385,11 @@ class WinterhofGame {
   closeModal() {
     this.ui.activeModal = null;
     document.getElementById('modal-backdrop').classList.add('hidden');
+    if (this.ui.pendingLevelUp) {
+      const lvlInfo = this.ui.pendingLevelUp;
+      this.ui.pendingLevelUp = null;
+      this.openModal('levelup', { lvlInfo });
+    }
   }
 
   renderActiveModal() {
@@ -1783,7 +1419,7 @@ class WinterhofGame {
     titleEl.textContent = 'Hof-Kapitel';
     bodyEl.innerHTML = CHAPTERS.map((ch) => {
       const claimed = this.state.claimedChapters.includes(ch.id);
-      const ready = !claimed && ch.check(this.state);
+      const ready = goalReady(this.core, ch);
       const iconKey = claimed ? 'check' : ready ? 'star' : 'scroll';
       return `
         <div class="cozy-card" style="${ready ? 'border-color:var(--pine);background:#F4FFF7' : ''}">
@@ -1806,7 +1442,9 @@ class WinterhofGame {
 
   _renderStationModal(titleEl, bodyEl, stationId) {
     const st = this.state.stations.find((s) => s.id === stationId);
+    if (!st) { this.closeModal(); return; }
     const def = STATIONS[st.type];
+    const slots = def.queueSlots || 4;
     const lvl = getLevelInfo(this.state.xp).level;
     const mastery = getStationMastery(st.craftedCount || 0);
     titleEl.textContent = def.name;
@@ -1818,7 +1456,7 @@ class WinterhofGame {
       </div>`;
 
     let queueHtml = '<div class="queue-strip">';
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < slots; i++) {
       const job = st.queue[i];
       if (job) {
         const left = i === 0 ? formatDuration(Math.max(1, Math.ceil((job.finishAt - Date.now()) / 1000))) : 'Wartet';
@@ -1832,7 +1470,7 @@ class WinterhofGame {
     const recipesHtml = def.recipes.map((rid) => {
       const r = ITEMS[rid];
       const locked = r.unlockLevel > lvl;
-      let canMake = !locked && st.queue.length < 4;
+      let canMake = !locked && st.queue.length < slots;
       const ingHtml = Object.entries(r.ingredients).map(([ingId, qty]) => {
         const have = this.state.inventory[ingId] || 0;
         const ok = have >= qty;
@@ -1906,14 +1544,20 @@ class WinterhofGame {
               </div>
             </div>
           </div>`;
-      }).join('');
+      }).join('') + this.core.orders.filter((o) => o.availableAt > Date.now()).map((o) => `
+          <div class="order-card" style="opacity:0.6">
+            <div class="card-info">
+              <div class="card-title">Neuer Auftrag unterwegs</div>
+              <div class="card-sub">Kommt in ${formatDuration(Math.max(1, Math.ceil((o.availableAt - Date.now()) / 1000)))}</div>
+            </div>
+          </div>`).join('');
       bodyEl.querySelectorAll('[data-deliver]').forEach((b) => b.addEventListener('click', () => this.fulfillOrder(b.dataset.deliver)));
       bodyEl.querySelectorAll('[data-skip]').forEach((b) => b.addEventListener('click', () => this.skipOrder(b.dataset.skip)));
     } else {
       bodyEl.innerHTML = ACHIEVEMENTS.map((a) => {
         const cur = Math.min(a.goal, this.state.stats[a.stat] || 0);
         const claimed = this.state.claimedAchievements.includes(a.id);
-        const ready = !claimed && cur >= a.goal;
+        const ready = goalReady(this.core, a);
         return `
           <div class="cozy-card" style="${ready ? 'border-color:var(--pine);background:#F4FFF7' : ''}">
             <div class="card-thumb">${sprites.getUiIcon(a.icon || 'star')}</div>
@@ -1951,35 +1595,41 @@ class WinterhofGame {
     const entries = Object.entries(this.state.inventory).filter(([id, q]) => q > 0 && ITEMS[id]);
 
     if (tab === 'inv') {
-      const used = this.getBarnUsed();
-      const cap = this.getBarnCapacity();
-      const pct = Math.min(100, Math.round((used / cap) * 100));
-      const fillCls = used >= cap ? 'full' : pct >= 80 ? 'warn' : '';
-      const isMaxCap = cap >= BARN_CONFIG.maxCapacity;
-      const upCost = getBarnUpgradeCost(cap);
-      const capHtml = `
+      const capCard = (kind) => {
+        const s = this.core;
+        const used = storageUsed(s, kind);
+        const cap = s.storage[kind];
+        const pct = Math.min(100, Math.round((used / cap) * 100));
+        const fillCls = used >= cap ? 'full' : pct >= 80 ? 'warn' : '';
+        const upCost = storageUpgradeCost(s, kind);
+        const step = CONTENT.storage[kind].stepCapacity;
+        const what = kind === 'silo' ? 'Ernte' : 'Tierprodukte und Waren';
+        return `
         <div class="barn-cap-card">
           <div class="barn-cap-top">
             <div>
-              <div class="card-title">Scheunen-Lager: ${used} / ${cap}</div>
-              <div class="card-sub">${isMaxCap ? 'Maximale Kapazität erreicht.' : `Erweitern bringt +${BARN_CONFIG.stepCapacity} Plätze.`}</div>
+              <div class="card-title">${STORAGE_LABEL[kind]}: ${used} / ${cap}</div>
+              <div class="card-sub">${upCost === null ? 'Maximal ausgebaut.' : `Für ${what}. Ausbau: +${step} Plätze.`}</div>
             </div>
-            ${isMaxCap
+            ${upCost === null
               ? `<button class="btn-wood" disabled>Max</button>`
-              : `<button id="btn-upgrade-barn" class="btn-green" ${this.state.coins >= upCost ? '' : 'disabled'}>+${BARN_CONFIG.stepCapacity} (${upCost})</button>`
+              : `<button class="btn-green" data-upgrade="${kind}" ${s.coins >= upCost ? '' : 'disabled'}>+${step} (${upCost})</button>`
             }
           </div>
           <div class="barn-cap-track"><div class="barn-cap-fill ${fillCls}" style="width:${pct}%"></div></div>
         </div>`;
+      };
+      const capHtml = capCard('silo') + capCard('barn');
+      const bindUpgrade = () => bodyEl.querySelectorAll('[data-upgrade]').forEach((b) => b.addEventListener('click', () => this.upgradeStorage(b.dataset.upgrade)));
 
       if (entries.length === 0) {
         bodyEl.innerHTML = `${capHtml}<div class="cozy-card"><div class="card-info"><div class="card-title">Dein Vorrat ist leer</div><div class="card-sub">Ernte Felder oder backe Leckereien in deiner Backstube.</div></div></div>`;
-        bodyEl.querySelector('#btn-upgrade-barn')?.addEventListener('click', () => this.upgradeBarn());
+        bindUpgrade();
         return;
       }
       bodyEl.innerHTML = `
         ${capHtml}
-        <div class="card-sub">Im <b>Hofladen</b> zahlen Dorfbewohner 25 % mehr Münzen als beim Direktverkauf.</div>
+        <div class="card-sub">Der Händler zahlt wenig. Im <b>Hofladen</b> und mit <b>Aufträgen</b> verdienst du deutlich mehr.</div>
         <div class="inv-grid">
           ${entries.map(([id, qty]) => {
             const it = ITEMS[id];
@@ -1988,21 +1638,13 @@ class WinterhofGame {
                 <img src="${sprites.getIconUrl(id)}" alt="${it.name}" />
                 <div style="font-weight:800;font-size:12.5px">${it.name}</div>
                 <div class="inv-qty">${qty}x im Vorrat</div>
-                <button class="btn-gold" style="padding:5px 9px;font-size:11px;margin-top:3px" data-sell="${id}">Verkauf: ${it.sellPrice}</button>
+                <button class="btn-gold" style="padding:5px 9px;font-size:11px;margin-top:3px" data-sell="${id}">Händler: ${Math.max(1, Math.floor(it.sellPrice * CONTENT.market.sellFactor))}</button>
               </div>`;
           }).join('')}
         </div>`;
-      bodyEl.querySelector('#btn-upgrade-barn')?.addEventListener('click', () => this.upgradeBarn());
+      bindUpgrade();
       bodyEl.querySelectorAll('[data-sell]').forEach((btn) =>
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.sell;
-          if (this.removeItem(id, 1)) {
-            audio.playCoin();
-            this.addCoins(ITEMS[id].sellPrice);
-            this.saveState();
-            this.renderActiveModal();
-          }
-        })
+        btn.addEventListener('click', () => this.sellItem(btn.dataset.sell))
       );
     } else {
       const cratesHtml = this.state.standSlots.map((slot, idx) => {
@@ -2038,8 +1680,7 @@ class WinterhofGame {
             <div class="card-title">Ware für Kiste #${sIdx + 1} wählen:</div>
             <div class="ing-row">
               ${entries.map(([id, q]) => {
-                const qty = Math.min(q, 2);
-                const price = Math.round(ITEMS[id].sellPrice * qty * 1.25);
+                const { qty, price } = this.standOffer(id);
                 return `<button class="ing-pill ok" style="cursor:pointer;padding:6px 10px" data-put-item="${id}" data-put-slot="${sIdx}">
                   <img src="${sprites.getIconUrl(id)}" alt="" />${qty}x ${ITEMS[id].name} (${price})
                 </button>`;
@@ -2048,7 +1689,7 @@ class WinterhofGame {
           </div>`;
       }
 
-      bodyEl.innerHTML = `<div class="card-sub">Stelle Waren in deinen Hofladen – Dorfbewohner kaufen sie für +25 % Bonus-Münzen.</div>${pickerHtml}<div class="inv-grid">${cratesHtml}</div>`;
+      bodyEl.innerHTML = `<div class="card-sub">Stelle Waren in deinen Hofladen – Dorfbewohner zahlen viel mehr als der Händler.</div>${pickerHtml}<div class="inv-grid">${cratesHtml}</div>`;
       bodyEl.querySelectorAll('[data-pick-slot]').forEach((b) => b.addEventListener('click', () => { audio.playTap(); this.ui.activeModal.data = { pickingSlot: Number(b.dataset.pickSlot) }; this.renderActiveModal(); }));
       bodyEl.querySelectorAll('[data-put-item]').forEach((b) => b.addEventListener('click', () => { const sIdx = Number(b.dataset.putSlot); this.ui.activeModal.data = {}; this.listItemOnStand(sIdx, b.dataset.putItem); }));
       bodyEl.querySelectorAll('[data-collect-slot]').forEach((b) => b.addEventListener('click', () => this.collectStandSlot(Number(b.dataset.collectSlot))));
@@ -2077,20 +1718,22 @@ class WinterhofGame {
     );
 
     if (tab === 'buildings') {
-      const fieldCost = 25 + Math.max(0, this.state.fields.length - 4) * 18;
-      const canMoreFields = this.state.fields.length < 20;
+      const fcfg = CONTENT.field;
+      const nFields = this.state.fields.length;
+      const fieldCost = fcfg.cost + fcfg.costStep * nFields;
+      const canMoreFields = nFields < fcfg.maxCount;
       let html = `
         <div class="cozy-card">
           <div class="card-thumb"><img src="${sprites.getIconUrl('snow_field_plot')}" alt="Ackerfeld" /></div>
           <div class="card-info">
-            <div class="card-title">Neues Ackerfeld <span style="font-size:11px;color:var(--ink-muted)">(${this.state.fields.length}/20)</span></div>
+            <div class="card-title">Neues Ackerfeld <span style="font-size:11px;color:var(--ink-muted)">(${nFields}/${fcfg.maxCount})</span></div>
             <div class="card-sub">Für Goldweizen, Winterbeeren, Matcha, Kakao, Zimt und Zuckerstangen.</div>
           </div>
           <button class="btn-green" id="buy-field" ${canMoreFields && this.state.coins >= fieldCost ? '' : 'disabled'}>${canMoreFields ? `${fieldCost}` : 'Max'}</button>
         </div>`;
 
-      for (const st of this.state.stations) {
-        const def = STATIONS[st.type];
+      for (const def of Object.values(STATIONS)) {
+        const built = this.state.stations.some((x) => x.type === def.id);
         const locked = def.unlockLevel > lvl;
         html += `
           <div class="cozy-card ${locked ? 'locked' : ''}">
@@ -2099,11 +1742,11 @@ class WinterhofGame {
               <div class="card-title">${def.name}</div>
               <div class="card-sub">${def.desc}</div>
             </div>
-            ${st.built
+            ${built
               ? `<button class="btn-wood" disabled>Gebaut</button>`
               : locked
                 ? `<button class="btn-wood" disabled>Lv.${def.unlockLevel}</button>`
-                : `<button class="btn-green" data-buy-st="${st.type}" ${this.state.coins >= def.cost ? '' : 'disabled'}>${def.cost}</button>`
+                : `<button class="btn-green" data-buy-st="${def.id}" ${this.state.coins >= def.cost ? '' : 'disabled'}>${def.cost}</button>`
             }
           </div>`;
       }
@@ -2211,7 +1854,7 @@ class WinterhofGame {
         <div class="card-sub">Packe bis zu 3 Waren mit einer persönlichen Nachricht als Link oder Code.</div>
         <div>
           <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Absender:</label>
-          <input id="gift-from" class="cozy-input" value="${this._esc(this.state.playerName)}" maxlength="24" />
+          <input id="gift-from" class="cozy-input" value="${this._esc(draft.from ?? this.state.playerName)}" maxlength="24" />
         </div>
         <div>
           <label style="font-size:12px;font-weight:800;display:block;margin-bottom:4px">Nachricht:</label>
@@ -2258,16 +1901,18 @@ class WinterhofGame {
       }
 
       bodyEl.innerHTML = html;
-      bodyEl.querySelector('#gift-from')?.addEventListener('input', (e) => { this.state.playerName = e.target.value; });
+      bodyEl.querySelector('#gift-from')?.addEventListener('input', (e) => { draft.from = e.target.value; });
       bodyEl.querySelector('#gift-note')?.addEventListener('input', (e) => { draft.note = e.target.value; });
       bodyEl.querySelectorAll('[data-ginc]').forEach((b) => b.addEventListener('click', () => { const id = b.dataset.ginc; draft.items[id] = (draft.items[id] || 0) + 1; draft.generatedCode = null; this.renderActiveModal(); }));
       bodyEl.querySelectorAll('[data-gdec]').forEach((b) => b.addEventListener('click', () => { const id = b.dataset.gdec; draft.items[id] = Math.max(0, (draft.items[id] || 0) - 1); if (draft.items[id] === 0) delete draft.items[id]; draft.generatedCode = null; this.renderActiveModal(); }));
       bodyEl.querySelector('#btn-pack-gift')?.addEventListener('click', () => {
-        for (const [id, q] of Object.entries(draft.items)) if ((this.state.inventory[id] || 0) < q) return;
-        for (const [id, q] of Object.entries(draft.items)) this.removeItem(id, q);
-        const code = encodeGiftParcel({ from: this.state.playerName || 'Winterhof-Gast', note: draft.note || 'Ein kleines Päckchen für dich.', items: draft.items });
-        draft.items = {}; draft.generatedCode = code;
-        audio.playGiftOpen(); this.addXp(12); this.saveState(); this.updateHUD(); this.renderActiveModal();
+        const from = (draft.from ?? this.core.playerName).trim();
+        if (from && from !== this.core.playerName) this.act({ type: 'rename', playerName: from }, { quiet: true });
+        const items = { ...draft.items };
+        if (!this.act({ type: 'packGift', items }).ok) return;
+        const code = encodeGiftParcel({ from: this.core.playerName || 'Winterhof-Gast', note: draft.note || 'Ein kleines Päckchen für dich.', items });
+        draft.items = {}; draft.from = null; draft.generatedCode = code;
+        this.renderActiveModal();
       });
     } else {
       bodyEl.innerHTML = `
@@ -2382,10 +2027,9 @@ class WinterhofGame {
       bodyEl.querySelector('#btn-claim-chest-modal')?.addEventListener('click', () => this.claimDailyChest());
       bodyEl.querySelector('#btn-save-vname').addEventListener('click', () => {
         const val = bodyEl.querySelector('#inp-village-name').value.trim();
-        if (val) {
-          this.state.villageName = val.slice(0, 24);
-          this.saveState(); this.updateHUD();
-          this.showToast(`Hofname gespeichert: "${this.state.villageName}".`);
+        if (val && this.act({ type: 'rename', villageName: val }).ok) {
+          this.updateHUD();
+          this.showToast(`Hofname gespeichert: "${this.core.villageName}".`);
           this.closeModal();
         }
       });
@@ -2460,11 +2104,9 @@ class WinterhofGame {
         b.addEventListener('click', () => {
           const id = b.dataset.saveNick;
           const inp = bodyEl.querySelector(`[data-an-nick="${id}"]`);
-          const an = this.state.animals.find((x) => x.id === id);
-          if (an && inp && inp.value.trim()) {
-            an.nick = inp.value.trim().slice(0, 18);
-            audio.playPet(1.1); this.saveState();
-            this.showToast(`Name gespeichert: "${an.nick}".`);
+          if (inp && this.act({ type: 'renameAnimal', animalId: id, nick: inp.value }).ok) {
+            audio.playPet(1.1);
+            this.showToast(`Name gespeichert: "${this.state.animals.find((x) => x.id === id)?.nick}".`);
           }
         })
       );
@@ -2499,36 +2141,40 @@ class WinterhofGame {
       </div>`;
 
     bodyEl.querySelector('#tog-sfx').addEventListener('click', () => {
-      this.state.settings.sfx = !this.state.settings.sfx;
-      audio.setSfx(this.state.settings.sfx);
-      if (this.state.settings.sfx) audio.playTap();
-      this.saveState(); this.renderActiveModal();
+      this.act({ type: 'setSetting', key: 'sfx', value: !this.core.settings.sfx });
+      audio.setSfx(this.core.settings.sfx);
+      if (this.core.settings.sfx) audio.playTap();
+      this.renderActiveModal();
     });
     bodyEl.querySelector('#tog-music').addEventListener('click', () => {
-      this.state.settings.music = !this.state.settings.music;
-      audio.setMusic(this.state.settings.music);
-      this.saveState(); this.renderActiveModal();
+      this.act({ type: 'setSetting', key: 'music', value: !this.core.settings.music });
+      audio.setMusic(this.core.settings.music);
+      this.renderActiveModal();
     });
     bodyEl.querySelector('#btn-export-save').addEventListener('click', () => {
-      const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(this.state))));
+      const b64 = btoa(unescape(encodeURIComponent(serialize(this.core))));
       navigator.clipboard?.writeText(b64).then(() => this.showToast('Spielstand-Backup kopiert.'));
     });
     bodyEl.querySelector('#btn-import-save').addEventListener('click', () => {
       const raw = prompt('Backup-Code einfügen:');
       if (!raw) return;
       try {
-        const parsed = JSON.parse(decodeURIComponent(escape(atob(raw.trim()))));
-        if (parsed && parsed.fields && parsed.stations) {
-          localStorage.setItem(SAVE_KEY, JSON.stringify(parsed));
-          location.reload();
-        } else this.showToast('Ungültiger Backup-Code.');
+        // Prüfen und (bei Altformat) umwandeln, bevor irgendetwas überschrieben wird
+        const report = deserialize(decodeURIComponent(escape(atob(raw.trim()))), Date.now());
+        this.session.saveNow(); // aktueller Stand wird zur Sicherungskopie
+        this._saveBlocked = true;
+        localStorage.setItem(SAVE_KEY, serialize(report.state));
+        location.reload();
       } catch {
         this.showToast('Backup-Code konnte nicht gelesen werden.');
       }
     });
     bodyEl.querySelector('#btn-reset-save').addEventListener('click', () => {
       if (confirm('Wirklich einen neuen Winterhof starten?')) {
-        localStorage.removeItem(SAVE_KEY);
+        this.session.saveNow(); // alter Hof bleibt als Sicherungskopie
+        this._saveBlocked = true;
+        const now = Date.now();
+        localStorage.setItem(SAVE_KEY, serialize(createNewGame(now, (now ^ 0x9e3779b9) | 0)));
         location.reload();
       }
     });

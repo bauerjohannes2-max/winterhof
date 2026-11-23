@@ -314,3 +314,33 @@ describe('Speicherstand', () => {
     expect(s2.state.stats.harvests).toBe(1);
   });
 });
+
+describe('Winterpost, Dorfbewohner, Tiernamen', () => {
+  it('Päckchen packen: max. 3 Waren, Waren werden abgezogen', () => {
+    const s = createNewGame(T0);
+    expect(err(s, { type: 'packGift', items: { wheat: 4 } })).toBe('limit');
+    expect(err(s, { type: 'packGift', items: {} })).toBe('invalid');
+    const s2 = ok(s, { type: 'packGift', items: { wheat: 2, egg: 1 } });
+    expect(s2.inventory.wheat).toBe((s.inventory.wheat ?? 0) - 2);
+    expect(s2.inventory.egg).toBe((s.inventory.egg ?? 0) - 1);
+  });
+  it('Päckchen empfangen: nur einmal, unbekannte Waren ignoriert', () => {
+    const s = createNewGame(T0);
+    const s2 = ok(s, { type: 'receiveGift', parcelId: 'p1', items: { wheat: 2, gibtsnicht: 5 } });
+    expect(s2.inventory.wheat).toBe((s.inventory.wheat ?? 0) + 2);
+    expect(s2.inventory.gibtsnicht).toBeUndefined();
+    expect(err(s2, { type: 'receiveGift', parcelId: 'p1', items: { wheat: 2 } })).toBe('already_done');
+    expect(err(s, { type: 'receiveGift', parcelId: 'p2', items: { wheat: 99 } })).toBe('invalid');
+  });
+  it('Trinkgeld höchstens alle 45 Sekunden', () => {
+    const s = ok(createNewGame(T0), { type: 'greetVillager' });
+    expect(s.coins).toBe(createNewGame(T0).coins + 5);
+    expect(err(s, { type: 'greetVillager' }, T0 + 10_000)).toBe('busy');
+    ok(s, { type: 'greetVillager' }, T0 + 46_000);
+  });
+  it('Tier umbenennen', () => {
+    const s = ok(createNewGame(T0), { type: 'renameAnimal', animalId: 'a_1', nick: '  Gacki<b>  ' });
+    expect(getObject(s, 'a_1', 'animal')!.nick).toBe('Gackib');
+    expect(err(s, { type: 'renameAnimal', animalId: 'a_1', nick: '   ' })).toBe('invalid');
+  });
+});

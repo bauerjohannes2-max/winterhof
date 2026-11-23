@@ -6,7 +6,6 @@
 // ============================================================================
 import content from './content/winterhof.json';
 
-export const GRID_SIZE = 14;
 export const LAND_ZONES = content.landZones;
 export const ITEMS = content.items;
 export const CROP_IDS = content.cropIds;
@@ -16,37 +15,15 @@ export const DECORATIONS = content.decorations;
 export const LEVELS = content.levels;
 export const NPCS = content.npcs;
 
-// Alte Oberfläche erwartet { stat, goal } statt conditions; Statistik hieß dort barnUpgrades.
+// Anzeige erwartet { stat, goal } statt conditions; Statistik hieß dort barnUpgrades.
 const legacyStat = (s) => (s === 'storageUpgrades' ? 'barnUpgrades' : s);
 export const ACHIEVEMENTS = content.achievements.map((a) => {
   const c = a.conditions[0];
   return { ...a, stat: legacyStat(c.stat), goal: c.goal };
 });
 
-function legacyConditionMet(s, c) {
-  if (c.kind === 'stat') return (s.stats?.[legacyStat(c.stat)] || 0) >= c.goal;
-  if (c.objectKind === 'station') return (s.stations || []).some((st) => st.type === c.type && st.built && (!c.ready || !st.wrapped));
-  if (c.objectKind === 'animal') return (s.animals || []).some((a) => a.type === c.type);
-  return false;
-}
-export const CHAPTERS = content.chapters.map((ch) => ({
-  ...ch,
-  check: (s) => ch.conditions.every((c) => legacyConditionMet(s, c))
-}));
-
-const barn = content.storage.barn;
-export const BARN_CONFIG = {
-  baseCapacity: barn.baseCapacity,
-  stepCapacity: barn.stepCapacity,
-  maxCapacity: barn.maxCapacity,
-  baseCost: barn.baseCost,
-  costStep: barn.costStep
-};
-
-export function getBarnUpgradeCost(currentCapacity = BARN_CONFIG.baseCapacity) {
-  const tier = Math.max(0, Math.floor((currentCapacity - BARN_CONFIG.baseCapacity) / BARN_CONFIG.stepCapacity));
-  return BARN_CONFIG.baseCost + tier * BARN_CONFIG.costStep;
-}
+// Kapitel: Bedingungen prüft der Logik-Kern (goalReady); hier nur Anzeige-Daten.
+export const CHAPTERS = content.chapters;
 
 export const ALBUM_SECRETS = [
   { id: 'secret_chest', title: 'Tages-Schatztruhe', desc: 'Öffne die goldene Schatztruhe am Teichsteg.', check: (s) => (s.stats.chestsOpened || 0) > 0 },

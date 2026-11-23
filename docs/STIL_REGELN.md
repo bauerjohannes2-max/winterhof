@@ -51,8 +51,19 @@ Geprüft wird automatisch mit `python scripts/qa/pruefe_assets.py`. Es wird nur 
 - Freigestellt (durchsichtiger Hintergrund), kein Rand und kein Farbsaum, kein Text im Bild, keine Wasserzeichen und kein „Made with AI“.
 - Jahreszeiten-fähig: Schnee und Deko möglichst als eigene Ebene, damit später Herbst/Frühling-Varianten möglich sind.
 
+## 6a. Mut und Charakter (Hannes 23.11.2026: „alles gleich ist langweilig“)
+Gleich bleibt nur die **Handschrift** (Kamera, Licht, Linienstärke, Farbwelt, Maßstab). Das **Was** darf und soll überraschen. So machen es die großen Aufbauspiele:
+- **Eigene Silhouette:** Jedes Gebäude ist als Umriss allein (schwarz ausgefüllt, daumengroß) erkennbar. Keine zwei Gebäude mit gleichem Grundkörper „Box + Satteldach“.
+- **Ein Star-Merkmal je Objekt, übertrieben:** z. B. Backstube mit riesiger Brezel als Schild und schiefem Schornstein, Käserei mit Käselaib-Dach, Schmiede mit glühendem Amboss vor der Tür. Das Merkmal verrät die Funktion ohne Text.
+- **Übertriebene Proportionen:** dicke Dächer, schiefe Türme, zu große Türen, Bäuche statt gerader Wände. Lieber knuffig-schräg als korrekt-gerade.
+- **Eigene Akzentfarbe je Gebäude** innerhalb der warmen Farbwelt (Käserei Gelb, Schmiede Glutorange, Bäckerei Zimtbraun-Rot), damit man Gebäude am Farbklecks findet.
+- **Kleine Geschichte im Bild:** ein vergessener Besen, eine Katze im Fenster, Schnee rutscht vom Dach, Rauch in Kringeln. Pro Objekt 1–2 solche Details, nicht mehr.
+- **Steigerung mit Fortschritt:** Was später kommt, ist spektakulärer. Stufe 1–5 schlicht und gemütlich, ab Stufe 10 auffälliger (Stein, Messing, Lichter), ab Stufe 20 echte Hingucker (Glühen, Bewegung, Gold, ungewöhnliche Formen). Ausbaustufen eines Gebäudes sehen sichtbar besser aus.
+- **Wahrzeichen dürfen aus der Reihe tanzen:** 1–2 Objekte je Stufenblock sind bewusst groß und besonders (Eisschloss, Seilbahn, Riesen-Schneemann) – das sind die Motive, für die man weiterspielt.
+- **Grenze:** Mut heißt Form und Idee, nicht anderer Zeichenstil. Kein Fotorealismus, keine anderen Lichtrichtungen, kein düsterer Ton.
+
 ## 7. Ablauf für neue Bilder (Gemini)
-1. Claude schreibt den Auftrag mit Grundfläche, Zielhöhe, Blickwinkel, Licht und Stil-Referenz (Aufstellungsbild).
+1. Claude schreibt den Auftrag mit Grundfläche, Zielhöhe, Blickwinkel, Licht und Stil-Referenz (Aufstellungsbild). **Jeder Auftrag enthält zusätzlich:** Star-Merkmal, Akzentfarbe, 1–2 Geschichts-Details, Silhouetten-Idee und den Satz an Gemini: „Sei mutig und verspielt in Form und Idee: übertreibe das Star-Merkmal, mach die Silhouette einzigartig. Liefere 3 Varianten von zurückhaltend bis wild.“ Hannes wählt per Bild.
 2. Gemini liefert das Bild nach `assets/sprites/`.
 3. Claude trägt es in die Größentabelle ein und startet `pruefe_assets.py`.
 4. Das Aufstellungsbild geht an Hannes. Er entscheidet, wie es aussieht.

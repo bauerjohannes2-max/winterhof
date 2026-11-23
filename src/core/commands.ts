@@ -543,6 +543,51 @@ function run(c: Ctx, cmd: Command): void {
       if (cmd.playerName !== undefined) { const v = clean(cmd.playerName); if (!v) fail('invalid', 'Name leer.'); s.playerName = v; }
       return;
     }
+    case 'renameAnimal': {
+      const a = getObject(s, cmd.animalId, 'animal') ?? fail('not_found', 'Tier nicht gefunden.');
+      const v = cmd.nick.replace(/[<>]/g, '').trim().slice(0, 18);
+      if (!v) fail('invalid', 'Name leer.');
+      a.nick = v;
+      return;
+    }
+    case 'greetVillager': {
+      // Kleines Trinkgeld, höchstens alle 45 Sekunden
+      if (c.now - s.lastTipAt < 45_000) fail('busy', 'Schönen Wintertag auf dem Hof.');
+      s.lastTipAt = c.now;
+      addCoins(c, 5);
+      c.ev.push({ type: 'villagerTipped', coins: 5 });
+      return;
+    }
+    case 'packGift': {
+      const entries = Object.entries(cmd.items).filter(([, q]) => q > 0);
+      const total = entries.reduce((a, [, q]) => a + q, 0);
+      if (total === 0) fail('invalid', 'Päckchen ist leer.');
+      if (total > 3) fail('limit', 'Höchstens 3 Waren pro Päckchen.');
+      for (const [id, q] of entries) if (!CONTENT.items[id] || !Number.isInteger(q)) fail('invalid', 'Ungültige Ware.');
+      const items = Object.fromEntries(entries);
+      spend(c, items);
+      addXp(c, 12);
+      c.ev.push({ type: 'giftPacked', items });
+      return;
+    }
+    case 'receiveGift': {
+      if (!cmd.parcelId) fail('invalid', 'Päckchen ohne Kennung.');
+      if (s.claimedGifts.includes(cmd.parcelId)) fail('already_done', 'Dieses Päckchen wurde bereits ausgepackt.');
+      const items: Inventory = {};
+      let total = 0;
+      for (const [id, q] of Object.entries(cmd.items)) {
+        const n = Math.floor(Number(q));
+        if (!CONTENT.items[id] || !(n > 0)) continue;
+        items[id] = n;
+        total += n;
+      }
+      if (total === 0 || total > 3) fail('invalid', 'Päckchen ist ungültig.');
+      gain(c, items, 'mailbox');
+      s.claimedGifts.push(cmd.parcelId);
+      addXp(c, 18);
+      c.ev.push({ type: 'giftReceived', parcelId: cmd.parcelId, items });
+      return;
+    }
     default: {
       const never: never = cmd;
       fail('invalid', `Unbekannter Befehl ${(never as { type: string }).type}`);
