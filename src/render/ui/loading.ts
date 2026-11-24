@@ -9,8 +9,8 @@ import { CONTENT } from '../../core';
 const TIP_SECONDS = 4;
 /** Dauer des Ausblendens, wie in index.html (#laden transition) */
 const FADE_MS = 350;
-/** Einblenden dauert 0,3 s (index.html); danach steht das Ladebild mindestens so lange ganz da. */
-const MIN_VISIBLE_MS = 300 + 700;
+/** Einblenden (Scharfstellen) dauert 0,7 s (index.html); danach steht das Ladebild mindestens 0,7 s ganz da. */
+const MIN_VISIBLE_MS = 700 + 700;
 /** Wie im Inline-Skript: spätestens nach 4 s ist das Ladebild gezeigt (auch ohne Motiv). */
 const SHOW_DEADLINE_MS = 4000;
 /** Balken füllt sich in 0,2 s (index.html), dann 0,2 s voll stehen lassen. */

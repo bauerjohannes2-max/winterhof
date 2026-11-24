@@ -56,7 +56,8 @@ function loadingScreenPlugin() {
       if (!Array.isArray(tips) || tips.length === 0) throw new Error('winterhof.json: loadingTips fehlt oder leer');
       const { default: sharp } = await import('sharp');
       const src = sharp(path.join(root, SPLASH));
-      const preview = await src.clone().resize({ width: PREVIEW_WIDTH }).webp({ quality: 45 }).toBuffer();
+      // schon hier weichzeichnen: im Browser nur noch hochskaliert, ohne CSS-Filter, Ränder bleiben sauber
+      const preview = await src.clone().resize({ width: PREVIEW_WIDTH }).blur(1.2).webp({ quality: 50 }).toBuffer();
       const { channels } = await src.clone().stats();
       const hex = channels.slice(0, 3).map((c) => Math.round(c.mean).toString(16).padStart(2, '0')).join('');
       let out = replaceOnce(html, '<!--LADE-TIPPS-->', JSON.stringify(tips).replace(/</g, '\\u003c'));   // "<" maskieren
