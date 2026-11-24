@@ -12,7 +12,8 @@
     "typecheck": "node ./node_modules/typescript/bin/tsc -p tsconfig.json",
     "lint": "node ./node_modules/eslint/bin/eslint.js src/core src/render tests playwright.config.ts",
     "test:browser": "node ./node_modules/@playwright/test/cli.js test",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build && npm run test:browser"
+    "check": "npm run typecheck && npm run lint && npm test && npm run build && npm run test:browser",
+    "vorschau": "node ./scripts/vorschau.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.10.2"

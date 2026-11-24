@@ -86,3 +86,4 @@
 4. Danach Gemini-Aufträge für Animationen (Tiere, Gebäude).
 5. Ganz zum Schluss: Grafik-Runde „mutiger“ (STIL_REGELN §6a).
 - Hühnerstall = Variante 1 (Hannes 23.11. 18:50).
+23. **Handy-Vorschau über feste Seite** (Hannes 24.11., je Empfehlung): WLAN-Link (172.16.2.9:8090) scheitert an der Firmen-Firewall (Domänennetz). Stattdessen `npm run vorschau` → baut und lädt nach https://bauerjohannes2-max.github.io/winterhof-vorschau/ (eigenes Repo, nur gebaute Testversion, Stand in `version.txt`). Läuft in jedem Netz mit HTTPS; Live-Spiel bleibt eingefroren (Entscheidung 15). Geprüft: lädt auf iPhone-Emulation, langsames Netz + 4-fach gedrosselt, in rund 10 s ohne Fehler.
