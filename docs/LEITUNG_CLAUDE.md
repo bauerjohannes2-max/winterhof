@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Baustein 4 (Raster + Kamera) fertig, wartet auf Abnahme durch Hannes (lokal committet, nicht gepusht: Vergleichsbilder `b04-start` entstehen erst nach Abnahme, alte `b03-leere-szene` dann löschen). Prüfen: `npm run check`.
+- Niemand. Baustein 4 abgenommen (Hannes 24.11.). Nächstes: Baustein 5 Grundboden, erst Konzeptfragen an Hannes.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
