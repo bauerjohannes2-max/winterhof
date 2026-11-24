@@ -23,8 +23,8 @@ Anlass: Das Kartenbild aus Baustein 2 hat gezeigt, dass das bisherige Konzept ni
 | Startpaket | **1 Schaufel + 1 Spitzhacke.** Eispickel und Spaten sind das erste Sammelziel. |
 | Größen | **Klein 1 × 1 (1 Werkzeug), groß 2 × 2 (2 Werkzeuge derselben Art).** Große Tanne → große Deko-Tanne. |
 | Belohnung | **Erfahrung + Chance auf Fund** (Werkzeug oder Baumaterial). Eigene Funde wie Stein oder Eiskristall erst, wenn es eine Verwendung dafür gibt. |
-| See | **Rechts seitlich**, vom Start aus sichtbar. Ufer-Landstücke ab **Stufe 13** (Eisfischen, INHALTSPLAN). Name: offen (Rückfrage mit dem Kartenbild). |
-| Zufahrt | **Von vorn unten zum Hofplatz.** Am Hofplatz fest: **Lieferschlitten, Auftragstafel, Hofladen, Briefkasten**, dazu die Tagestruhe. **Chalet und alles andere frei verschiebbar.** |
+| See | **Rechts seitlich**, vom Start aus sichtbar. Ufer-Landstücke ab **Stufe 13** (Eisfischen, INHALTSPLAN). Name: **Sternsee** (Hannes 24.11.), Daten `map.places`. |
+| Zufahrt | **Von vorn unten zum Hofplatz.** Am Hofplatz fest: **Lieferschlitten, Auftragstafel, Hofladen, Briefkasten**, dazu die **Tagestruhe** (fest am Hofplatz, Hannes 24.11.). **Chalet und alles andere frei verschiebbar.** |
 | Startlage | **Mitte, eher vorn:** Hof wächst nach links, rechts (zum See) und hinten (zu den Bergen). |
 | Wegplatten | **Ab Start: Schneepfad, Kies, Holzbohlen** (billig, fester Preis). **Später: Kopfstein (8), Natursteinplatten (14), Sternenpflaster (20)**, Preis steigt je Kauf. |
 | Land-Material | **Grundbrief, Holzhammer, Grenzpflock** (statt Flurkarte, Schneeschaufel, Grenzpflock). Alte Bestände werden 1 : 1 umgerechnet. |
@@ -37,12 +37,12 @@ Raster wie bisher: Bildschirm-x = (gx − gy), Bildschirm-y = (gx + gy). „Hint
 |---|---|
 | Tal (bebaubar) | gx −13 … 16, gy −13 … 16, 6 × 6 Landstücke à 5 × 5 |
 | Start | Landstücke Spalte 3–4, Reihe 3–4 = gx 2 … 11, gy 2 … 11 (wie bisher, kein Objekt muss wandern) |
-| Berge | hinten: beide oberen Kartenränder (gx < −13 bzw. gy < −13) |
+| Berge | hinten: beide oberen Kartenränder (gx < −13 bzw. gy < −13), **14 Reihen tief** (Karte 60 × 49, gx −27 … 32, gy −27 … 21). Baumgrenze unregelmäßig: Waldzungen ziehen hinauf, Felsrippen herunter, zu den Seitenecken mehr Wald (Hannes 24.11.: „schmaler Streifen“ reicht nicht) |
 | Tannenwald | vorn links und vorn rechts, rings um den See |
 | See (Eis) | rechts neben dem Tal (gx > 16, gy klein), grenzt an die Ufer-Landstücke |
 | Zufahrt | 2 Felder breit, vom vorderen linken Kartenrand bis zum Hofplatz im Start-Hof |
 | Hofplatz | vorn im Start-Hof, daneben die festen Stationen |
-| Hindernisse | Objekt-Ebene wie in Tiled (Liste mit Art + Feld), verteilt nach Gegend: hinten mehr Felsen, am See Eis, an den Waldrändern Tannen, überall Schneewehen |
+| Hindernisse | Objekt-Ebene wie in Tiled (Liste mit Art + Feld), **in Gruppen** (Hannes 24.11.: gleichmäßig gestreut ist nicht Hay-Day-Niveau): Gruppen-Mittelpunkte mit Mindestabstand (Poisson-Scheibe), je Gruppe ein oft großer Kern + 2–6 kleine Glieder. Art nach Gegend: Felsnester zu den Bergen (hinten), Tannenhaine an den Waldrändern, Eis nur am Ufer; Schneewehen locker überall dazwischen. Je kaufbares Landstück 5–9 Hindernisse. Messbar im Test: über 75 % der Felsen/Tannen/Eis haben einen Nachbarn derselben Art (zufällig verteilt rund 40 %) |
 
 ## Regeln im Kern
 - **Landstück kaufen** (`unlockPlot`): ab Stufe 3, nur angrenzend an eigenes Land, Ufer-Stücke ab Stufe 13. Preis steigt mit der Zahl gekaufter Stücke (berechenbar, fair). Ab dem 4. Stück zusätzlich Grundbrief, Holzhammer, Grenzpflock in gleicher Menge (Hay Day).

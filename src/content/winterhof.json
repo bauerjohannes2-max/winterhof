@@ -1,10 +1,10 @@
 {
   "version": 1,
   "map": {
-    "note": "Alpental (KARTEN_KONZEPT.md). Ebenen wie im Tiled-Format: je Ebene eine Zeile pro gy (von oben = kleinstes gy), ein Zeichen pro gx, Zeichen siehe legend. Bildschirm: x ~ gx-gy, y ~ gx+gy (hinten = klein, vorn = groß). plots: Tal aus gleich großen Landstücken (Spalte,Reihe), start = eigene Stücke zu Beginn, levels = Mindeststufe je Stück. obstacles: Objekt-Ebene (Hindernisse), erzeugt mit scripts/karte_erzeugen.py. fixed: Stationen am Hofplatz, nicht verschiebbar.",
+    "note": "Alpental (KARTEN_KONZEPT.md). Ebenen wie im Tiled-Format: je Ebene eine Zeile pro gy (von oben = kleinstes gy), ein Zeichen pro gx, Zeichen siehe legend. Bildschirm: x ~ gx-gy, y ~ gx+gy (hinten = klein, vorn = groß). plots: Tal aus gleich großen Landstücken (Spalte,Reihe), start = eigene Stücke zu Beginn, levels = Mindeststufe je Stück. obstacles: Objekt-Ebene (Hindernisse), erzeugt mit scripts/karte_erzeugen.py. fixed: Stationen am Hofplatz, nicht verschiebbar. places: besondere Orte mit Namen (z. B. Sternsee), gx/gy = Platz für das Namensschild in der Kulisse.",
     "origin": {
-      "gx": -21,
-      "gy": -21
+      "gx": -27,
+      "gy": -27
     },
     "legend": {
       "terrain": {
@@ -47,379 +47,391 @@
       "dailyChest"
     ],
     "terrain": [
-      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFF",
-      "MMMMMMMMMMMMMMMMMMMMMMFFFFFFFMMFFFFFFFFFFFFFFFFFFFFFFF",
-      "MMMMMMMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "MMMMMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFF...FFFFF",
-      "MMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFF........FFFF",
-      "MMMMFFFFFFMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.........FFF",
-      "MMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF....II.....FF",
-      "MMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF....IIII....FF",
-      "MMMMMFFF..............................F....IIIIII...FF",
-      "MMMMMFFF..............................F...IIIIIIII...F",
-      "MMMMMFFF..............................F...IIIIIIII...F",
-      "MMMMMFFF..............................F...IIIIIIIII...",
-      "MMMMMFFF..............................F..IIIIIIIIII...",
-      "MMMMFFFF..............................F..IIIIIIIIII...",
-      "MMMMFFFF.................................IIIIIIIIII..F",
-      "MMMMFFFF.................................IIIIIIIIII..F",
-      "MMMMFFFF.................................IIIIIIIIII..F",
-      "MMMMFFFF.................................IIIIIIIIII...",
-      "MMMFFFFF.................................IIIIIIIIII...",
-      "MMMFFFFF..............................F..IIIIIIIIII...",
-      "MMFFFFFF..............................F...IIIIIIII...F",
-      "MMFFFFFF..............................FF...IIIIIII...F",
-      "MFFFFFFF..............................FF....IIIII...FF",
-      "MMFFFFFF..............................FF............FF",
-      "MMFFFFFF..............................FFF...........FF",
-      "MMFFFFFF..............................FFFF.........FFF",
-      "MMFFFFFF..............................FFFFF......FFFFF",
-      "MFFFFFFF..............................FFFFFF...FFFFFFF",
-      "MFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "MFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "MFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF"
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFMMMMMMM",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFMMMMFFFFFFFFFFFFF",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFFFFFFMMFFFFFFFFFFFFFF",
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMFFFFMMMMMMFFFFFFFFFFFFFFFF...FFFFF",
+      "MMMMMMMMMMMMMMMMFFMMMMMMMMFFFFFFFFFFFFFFFFFFFFFF........FFFF",
+      "MMMMMMMMMMMMMFFFFFFFFMFFFFFFFFFFFFFFFFFFFFFFFFFF.........FFF",
+      "MMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF....II.....FF",
+      "MMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF....IIII....FF",
+      "MMMMMMMMMMMMFF..............................F....IIIIII...FF",
+      "MMMMMMMMMMMMFF..............................F...IIIIIIII...F",
+      "MMMMMMMMMMMMFF..............................F...IIIIIIII...F",
+      "MMMMMMMMMMMMFF..............................F...IIIIIIIII...",
+      "MMMMMMMMMMMFFF..............................F..IIIIIIIIII...",
+      "MMMMMMMMMMFFFF..............................F..IIIIIIIIII...",
+      "MMMMMMMMMFFFFF.................................IIIIIIIIII..F",
+      "MMMMMMMMMFFFFF.................................IIIIIIIIII..F",
+      "MMMMMMMMMFFFFF.................................IIIIIIIIII..F",
+      "MMMMMMMMMMFFFF.................................IIIIIIIIII...",
+      "MMMMMMMMMMFFFF.................................IIIIIIIIII...",
+      "MMMMMMMMMMMFFF..............................F..IIIIIIIIII...",
+      "MMMMMMMMMMMFFF..............................F...IIIIIIII...F",
+      "MMMMMMMMMMFFFF..............................FF...IIIIIII...F",
+      "MMMMMMMMMMFFFF..............................FF....IIIII...FF",
+      "MMMMMMMMMMFFFF..............................FF............FF",
+      "MMMMMMMMMMMFFF..............................FFF...........FF",
+      "MMMMMMMMMMMFFF..............................FFFF.........FFF",
+      "MMMMMMMMMMMFFF..............................FFFFF......FFFFF",
+      "MMMMMMMMMMMFFF..............................FFFFFF...FFFFFFF",
+      "MMMMMMMMMMMMFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMMFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMMFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMFFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMFFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMFFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMFFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMMFFFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMMFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMMFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "MMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "MMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "MMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "MMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "MMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF"
     ],
     "surface": [
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "......................................................",
-      "...........................PPPP.......................",
-      "...........................PPPP.......................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................",
-      "............................RR........................"
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      "............................................................",
+      ".................................PPPP.......................",
+      ".................................PPPP.......................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................",
+      "..................................RR........................"
     ],
     "obstacles": [
       {
-        "type": "pine_small",
+        "type": "rock_small",
         "gx": -13,
         "gy": -13
       },
       {
-        "type": "pine_large",
-        "gx": -11,
+        "type": "rock_large",
+        "gx": -12,
         "gy": -13
       },
       {
         "type": "rock_small",
-        "gx": -9,
+        "gx": -10,
         "gy": -13
       },
       {
-        "type": "pine_small",
-        "gx": -8,
+        "type": "drift_small",
+        "gx": -7,
         "gy": -13
       },
       {
-        "type": "rock_small",
+        "type": "drift_small",
         "gx": -5,
         "gy": -13
       },
       {
         "type": "rock_small",
-        "gx": -4,
-        "gy": -13
-      },
-      {
-        "type": "drift_small",
-        "gx": -2,
-        "gy": -13
-      },
-      {
-        "type": "rock_small",
         "gx": -1,
         "gy": -13
       },
       {
         "type": "rock_small",
-        "gx": 0,
+        "gx": 1,
         "gy": -13
       },
       {
         "type": "drift_small",
-        "gx": 3,
+        "gx": 4,
         "gy": -13
-      },
-      {
-        "type": "rock_small",
-        "gx": 10,
-        "gy": -13
-      },
-      {
-        "type": "rock_large",
-        "gx": -8,
-        "gy": -12
-      },
-      {
-        "type": "pine_large",
-        "gx": -6,
-        "gy": -12
-      },
-      {
-        "type": "pine_large",
-        "gx": -3,
-        "gy": -12
-      },
-      {
-        "type": "rock_large",
-        "gx": 7,
-        "gy": -12
-      },
-      {
-        "type": "rock_small",
-        "gx": 10,
-        "gy": -12
       },
       {
         "type": "drift_small",
-        "gx": 12,
+        "gx": 6,
+        "gy": -13
+      },
+      {
+        "type": "drift_large",
+        "gx": 9,
+        "gy": -13
+      },
+      {
+        "type": "pine_small",
+        "gx": 11,
+        "gy": -13
+      },
+      {
+        "type": "ice_small",
+        "gx": 15,
+        "gy": -13
+      },
+      {
+        "type": "ice_small",
+        "gx": 16,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": -13,
+        "gy": -12
+      },
+      {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": -12
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": -12
+      },
+      {
+        "type": "rock_large",
+        "gx": -1,
         "gy": -12
       },
       {
         "type": "pine_small",
+        "gx": 13,
+        "gy": -12
+      },
+      {
+        "type": "ice_small",
         "gx": 15,
         "gy": -12
       },
       {
-        "type": "drift_small",
+        "type": "ice_small",
         "gx": 16,
         "gy": -12
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
         "gx": -12,
         "gy": -11
       },
       {
         "type": "rock_small",
-        "gx": -1,
+        "gx": -10,
         "gy": -11
       },
       {
         "type": "drift_small",
-        "gx": 0,
+        "gx": -7,
         "gy": -11
       },
       {
-        "type": "pine_large",
-        "gx": 4,
+        "type": "rock_small",
+        "gx": 1,
         "gy": -11
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
         "gx": 6,
         "gy": -11
       },
       {
-        "type": "drift_small",
-        "gx": 9,
+        "type": "rock_small",
+        "gx": 7,
         "gy": -11
-      },
-      {
-        "type": "drift_small",
-        "gx": 10,
-        "gy": -11
-      },
-      {
-        "type": "drift_small",
-        "gx": -10,
-        "gy": -10
-      },
-      {
-        "type": "drift_large",
-        "gx": -7,
-        "gy": -10
       },
       {
         "type": "pine_small",
-        "gx": -4,
-        "gy": -10
-      },
-      {
-        "type": "rock_small",
-        "gx": 3,
-        "gy": -10
-      },
-      {
-        "type": "rock_small",
-        "gx": 6,
-        "gy": -10
-      },
-      {
-        "type": "drift_large",
-        "gx": 7,
-        "gy": -10
-      },
-      {
-        "type": "rock_small",
         "gx": 12,
-        "gy": -10
-      },
-      {
-        "type": "drift_small",
-        "gx": -13,
-        "gy": -9
-      },
-      {
-        "type": "rock_small",
-        "gx": -12,
-        "gy": -9
-      },
-      {
-        "type": "drift_small",
-        "gx": -2,
-        "gy": -9
+        "gy": -11
       },
       {
         "type": "ice_small",
         "gx": 15,
-        "gy": -9
+        "gy": -11
       },
       {
-        "type": "drift_large",
-        "gx": -11,
-        "gy": -8
+        "type": "drift_small",
+        "gx": -5,
+        "gy": -10
+      },
+      {
+        "type": "drift_small",
+        "gx": -3,
+        "gy": -10
       },
       {
         "type": "rock_small",
-        "gx": -7,
-        "gy": -8
-      },
-      {
-        "type": "drift_small",
         "gx": -1,
-        "gy": -8
+        "gy": -10
+      },
+      {
+        "type": "rock_large",
+        "gx": 5,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": 8,
+        "gy": -10
       },
       {
         "type": "drift_small",
-        "gx": 3,
-        "gy": -8
-      },
-      {
-        "type": "ice_small",
-        "gx": 13,
-        "gy": -8
-      },
-      {
-        "type": "pine_small",
-        "gx": -12,
-        "gy": -7
+        "gx": 10,
+        "gy": -10
       },
       {
         "type": "rock_small",
         "gx": -8,
-        "gy": -7
+        "gy": -9
+      },
+      {
+        "type": "drift_small",
+        "gx": 1,
+        "gy": -9
+      },
+      {
+        "type": "drift_small",
+        "gx": 3,
+        "gy": -9
+      },
+      {
+        "type": "rock_small",
+        "gx": 8,
+        "gy": -9
+      },
+      {
+        "type": "rock_small",
+        "gx": -13,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": -12,
+        "gy": -8
       },
       {
         "type": "rock_small",
         "gx": -7,
-        "gy": -7
+        "gy": -8
       },
       {
-        "type": "pine_small",
-        "gx": 0,
-        "gy": -7
+        "type": "drift_small",
+        "gx": 5,
+        "gy": -8
       },
       {
-        "type": "rock_large",
-        "gx": 2,
+        "type": "rock_small",
+        "gx": -11,
         "gy": -7
       },
       {
         "type": "drift_small",
-        "gx": 6,
+        "gx": -9,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": -6,
         "gy": -7
       },
       {
         "type": "drift_small",
+        "gx": -3,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
         "gx": 11,
         "gy": -7
       },
       {
-        "type": "ice_large",
+        "type": "rock_small",
         "gx": 12,
         "gy": -7
       },
       {
-        "type": "ice_small",
-        "gx": 16,
+        "type": "drift_small",
+        "gx": 15,
         "gy": -7
       },
       {
-        "type": "drift_small",
-        "gx": -11,
+        "type": "rock_small",
+        "gx": -13,
         "gy": -6
       },
       {
-        "type": "drift_large",
+        "type": "rock_small",
+        "gx": -12,
+        "gy": -6
+      },
+      {
+        "type": "drift_small",
+        "gx": 2,
+        "gy": -6
+      },
+      {
+        "type": "drift_small",
         "gx": 8,
         "gy": -6
       },
       {
-        "type": "ice_small",
-        "gx": 15,
+        "type": "drift_small",
+        "gx": 10,
+        "gy": -6
+      },
+      {
+        "type": "rock_small",
+        "gx": 12,
         "gy": -6
       },
       {
         "type": "drift_small",
-        "gx": -12,
-        "gy": -5
-      },
-      {
-        "type": "pine_small",
-        "gx": -11,
+        "gx": -8,
         "gy": -5
       },
       {
         "type": "drift_small",
-        "gx": -9,
+        "gx": -6,
         "gy": -5
       },
       {
@@ -428,68 +440,58 @@
         "gy": -5
       },
       {
-        "type": "pine_small",
-        "gx": -4,
+        "type": "rock_small",
+        "gx": -1,
         "gy": -5
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
         "gx": 0,
         "gy": -5
       },
       {
-        "type": "rock_large",
-        "gx": 4,
+        "type": "drift_small",
+        "gx": 5,
         "gy": -5
       },
       {
-        "type": "pine_small",
-        "gx": 7,
+        "type": "rock_small",
+        "gx": 6,
         "gy": -5
       },
       {
-        "type": "drift_large",
+        "type": "drift_small",
         "gx": 10,
         "gy": -5
       },
       {
         "type": "drift_small",
-        "gx": 12,
-        "gy": -5
-      },
-      {
-        "type": "rock_small",
-        "gx": 14,
+        "gx": 16,
         "gy": -5
       },
       {
         "type": "drift_small",
-        "gx": -4,
+        "gx": -13,
         "gy": -4
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
+        "gx": -3,
+        "gy": -4
+      },
+      {
+        "type": "rock_small",
         "gx": -2,
         "gy": -4
       },
       {
-        "type": "drift_small",
-        "gx": 0,
+        "type": "rock_small",
+        "gx": -1,
         "gy": -4
       },
       {
-        "type": "pine_small",
-        "gx": 1,
-        "gy": -4
-      },
-      {
-        "type": "drift_small",
-        "gx": 2,
-        "gy": -4
-      },
-      {
-        "type": "drift_small",
-        "gx": 3,
+        "type": "rock_small",
+        "gx": 5,
         "gy": -4
       },
       {
@@ -499,172 +501,117 @@
       },
       {
         "type": "rock_small",
-        "gx": 16,
+        "gx": 12,
         "gy": -4
       },
       {
-        "type": "pine_small",
-        "gx": -13,
+        "type": "rock_small",
+        "gx": -11,
+        "gy": -3
+      },
+      {
+        "type": "rock_large",
+        "gx": -10,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": -6,
+        "gy": -3
+      },
+      {
+        "type": "rock_small",
+        "gx": -3,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": 10,
+        "gy": -3
+      },
+      {
+        "type": "rock_small",
+        "gx": 13,
+        "gy": -3
+      },
+      {
+        "type": "ice_small",
+        "gx": 16,
         "gy": -3
       },
       {
         "type": "rock_small",
         "gx": -8,
-        "gy": -3
-      },
-      {
-        "type": "rock_small",
-        "gx": -5,
-        "gy": -3
-      },
-      {
-        "type": "drift_small",
-        "gx": 0,
-        "gy": -3
-      },
-      {
-        "type": "drift_small",
-        "gx": 4,
-        "gy": -3
-      },
-      {
-        "type": "drift_small",
-        "gx": 6,
-        "gy": -3
-      },
-      {
-        "type": "rock_small",
-        "gx": 9,
-        "gy": -3
-      },
-      {
-        "type": "pine_small",
-        "gx": 10,
-        "gy": -3
-      },
-      {
-        "type": "drift_small",
-        "gx": 14,
-        "gy": -3
-      },
-      {
-        "type": "pine_small",
-        "gx": -9,
         "gy": -2
-      },
-      {
-        "type": "drift_small",
-        "gx": -7,
-        "gy": -2
-      },
-      {
-        "type": "pine_small",
-        "gx": -6,
-        "gy": -2
-      },
-      {
-        "type": "pine_small",
-        "gx": -2,
-        "gy": -2
-      },
-      {
-        "type": "rock_large",
-        "gx": -1,
-        "gy": -2
-      },
-      {
-        "type": "pine_small",
-        "gx": 3,
-        "gy": -2
-      },
-      {
-        "type": "pine_small",
-        "gx": 9,
-        "gy": -2
-      },
-      {
-        "type": "drift_small",
-        "gx": 11,
-        "gy": -2
-      },
-      {
-        "type": "pine_small",
-        "gx": 13,
-        "gy": -2
-      },
-      {
-        "type": "ice_small",
-        "gx": 16,
-        "gy": -2
-      },
-      {
-        "type": "pine_large",
-        "gx": -11,
-        "gy": -1
-      },
-      {
-        "type": "pine_large",
-        "gx": -7,
-        "gy": -1
-      },
-      {
-        "type": "drift_small",
-        "gx": -4,
-        "gy": -1
-      },
-      {
-        "type": "drift_small",
-        "gx": 3,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": 9,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": 10,
-        "gy": -1
-      },
-      {
-        "type": "drift_small",
-        "gx": 11,
-        "gy": -1
-      },
-      {
-        "type": "ice_small",
-        "gx": 13,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": 14,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": -12,
-        "gy": 0
-      },
-      {
-        "type": "rock_small",
-        "gx": -5,
-        "gy": 0
-      },
-      {
-        "type": "pine_large",
-        "gx": -3,
-        "gy": 0
       },
       {
         "type": "rock_small",
         "gx": 1,
-        "gy": 0
+        "gy": -2
+      },
+      {
+        "type": "rock_small",
+        "gx": 3,
+        "gy": -2
       },
       {
         "type": "drift_small",
+        "gx": 7,
+        "gy": -2
+      },
+      {
+        "type": "ice_small",
+        "gx": 15,
+        "gy": -2
+      },
+      {
+        "type": "rock_small",
+        "gx": -11,
+        "gy": -1
+      },
+      {
+        "type": "drift_small",
+        "gx": -3,
+        "gy": -1
+      },
+      {
+        "type": "drift_large",
+        "gx": -1,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": 3,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
         "gx": 5,
+        "gy": -1
+      },
+      {
+        "type": "pine_small",
+        "gx": 9,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": 2,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": 3,
+        "gy": 0
+      },
+      {
+        "type": "pine_small",
+        "gx": 8,
         "gy": 0
       },
       {
@@ -673,428 +620,413 @@
         "gy": 0
       },
       {
-        "type": "rock_small",
+        "type": "drift_small",
         "gx": 16,
         "gy": 0
       },
       {
-        "type": "pine_small",
+        "type": "drift_small",
         "gx": -13,
         "gy": 1
       },
       {
-        "type": "pine_small",
+        "type": "drift_small",
         "gx": -10,
         "gy": 1
       },
       {
-        "type": "drift_small",
-        "gx": 0,
+        "type": "rock_small",
+        "gx": -8,
         "gy": 1
       },
       {
-        "type": "pine_small",
+        "type": "rock_small",
+        "gx": -7,
+        "gy": 1
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": 1
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": 1
+      },
+      {
+        "type": "rock_small",
         "gx": 3,
         "gy": 1
       },
       {
         "type": "rock_small",
-        "gx": -10,
-        "gy": 2
-      },
-      {
-        "type": "pine_large",
-        "gx": -3,
-        "gy": 2
-      },
-      {
-        "type": "rock_small",
-        "gx": 2,
-        "gy": 2
-      },
-      {
-        "type": "pine_small",
-        "gx": 11,
-        "gy": 2
-      },
-      {
-        "type": "pine_large",
-        "gx": 12,
-        "gy": 2
-      },
-      {
-        "type": "pine_small",
-        "gx": -13,
-        "gy": 3
-      },
-      {
-        "type": "rock_small",
-        "gx": -12,
-        "gy": 3
-      },
-      {
-        "type": "rock_small",
-        "gx": -9,
-        "gy": 3
-      },
-      {
-        "type": "rock_small",
-        "gx": -6,
-        "gy": 3
-      },
-      {
-        "type": "pine_small",
-        "gx": -1,
-        "gy": 3
-      },
-      {
-        "type": "drift_small",
-        "gx": 16,
-        "gy": 3
-      },
-      {
-        "type": "drift_small",
-        "gx": -11,
-        "gy": 4
-      },
-      {
-        "type": "rock_small",
-        "gx": -5,
-        "gy": 4
-      },
-      {
-        "type": "pine_small",
-        "gx": -4,
-        "gy": 4
-      },
-      {
-        "type": "pine_small",
-        "gx": -3,
-        "gy": 4
-      },
-      {
-        "type": "drift_small",
-        "gx": -2,
-        "gy": 4
-      },
-      {
-        "type": "drift_small",
-        "gx": 16,
-        "gy": 4
-      },
-      {
-        "type": "drift_small",
-        "gx": -7,
-        "gy": 5
-      },
-      {
-        "type": "drift_small",
-        "gx": -6,
-        "gy": 5
-      },
-      {
-        "type": "rock_large",
-        "gx": -5,
-        "gy": 5
-      },
-      {
-        "type": "drift_small",
-        "gx": -2,
-        "gy": 5
-      },
-      {
-        "type": "drift_small",
-        "gx": 1,
-        "gy": 5
-      },
-      {
-        "type": "pine_small",
-        "gx": 12,
-        "gy": 5
-      },
-      {
-        "type": "drift_small",
-        "gx": 13,
-        "gy": 5
-      },
-      {
-        "type": "rock_small",
-        "gx": -13,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": -3,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": 2,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": 11,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": 15,
-        "gy": 6
-      },
-      {
-        "type": "rock_small",
-        "gx": -13,
-        "gy": 7
-      },
-      {
-        "type": "rock_large",
-        "gx": -12,
-        "gy": 7
-      },
-      {
-        "type": "pine_large",
-        "gx": -7,
-        "gy": 7
-      },
-      {
-        "type": "rock_small",
-        "gx": 16,
-        "gy": 7
-      },
-      {
-        "type": "drift_small",
-        "gx": -2,
-        "gy": 8
-      },
-      {
-        "type": "drift_large",
-        "gx": -1,
-        "gy": 8
-      },
-      {
-        "type": "rock_small",
-        "gx": 15,
-        "gy": 8
-      },
-      {
-        "type": "rock_large",
-        "gx": -11,
-        "gy": 9
-      },
-      {
-        "type": "drift_small",
-        "gx": -8,
-        "gy": 9
-      },
-      {
-        "type": "rock_small",
-        "gx": -4,
-        "gy": 9
-      },
-      {
-        "type": "drift_small",
-        "gx": 12,
-        "gy": 9
-      },
-      {
-        "type": "pine_large",
-        "gx": 14,
-        "gy": 9
-      },
-      {
-        "type": "rock_small",
-        "gx": -13,
-        "gy": 10
-      },
-      {
-        "type": "drift_small",
-        "gx": -12,
-        "gy": 10
-      },
-      {
-        "type": "pine_small",
-        "gx": -9,
-        "gy": 10
-      },
-      {
-        "type": "drift_small",
-        "gx": -4,
-        "gy": 10
-      },
-      {
-        "type": "pine_large",
-        "gx": -3,
-        "gy": 10
-      },
-      {
-        "type": "drift_small",
-        "gx": 0,
-        "gy": 10
-      },
-      {
-        "type": "rock_small",
-        "gx": 12,
-        "gy": 10
-      },
-      {
-        "type": "drift_small",
-        "gx": 13,
-        "gy": 10
-      },
-      {
-        "type": "drift_small",
-        "gx": -7,
-        "gy": 11
-      },
-      {
-        "type": "rock_small",
-        "gx": -4,
-        "gy": 11
-      },
-      {
-        "type": "drift_small",
-        "gx": 0,
-        "gy": 11
-      },
-      {
-        "type": "drift_small",
-        "gx": 1,
-        "gy": 11
-      },
-      {
-        "type": "pine_small",
-        "gx": 2,
-        "gy": 11
-      },
-      {
-        "type": "pine_large",
-        "gx": -8,
-        "gy": 12
-      },
-      {
-        "type": "rock_large",
-        "gx": -6,
-        "gy": 12
-      },
-      {
-        "type": "rock_small",
-        "gx": -2,
-        "gy": 12
-      },
-      {
-        "type": "pine_small",
-        "gx": 0,
-        "gy": 12
-      },
-      {
-        "type": "pine_small",
-        "gx": 6,
-        "gy": 12
+        "gx": 4,
+        "gy": 1
       },
       {
         "type": "pine_small",
         "gx": 9,
-        "gy": 12
-      },
-      {
-        "type": "pine_small",
-        "gx": 10,
-        "gy": 12
-      },
-      {
-        "type": "rock_small",
-        "gx": 11,
-        "gy": 12
-      },
-      {
-        "type": "pine_large",
-        "gx": -13,
-        "gy": 13
-      },
-      {
-        "type": "rock_small",
-        "gx": -10,
-        "gy": 13
-      },
-      {
-        "type": "drift_large",
-        "gx": 0,
-        "gy": 13
-      },
-      {
-        "type": "pine_large",
-        "gx": 4,
-        "gy": 13
-      },
-      {
-        "type": "rock_small",
-        "gx": 14,
-        "gy": 13
-      },
-      {
-        "type": "pine_large",
-        "gx": 15,
-        "gy": 13
-      },
-      {
-        "type": "pine_small",
-        "gx": -11,
-        "gy": 14
-      },
-      {
-        "type": "rock_large",
-        "gx": -10,
-        "gy": 14
-      },
-      {
-        "type": "drift_large",
-        "gx": -3,
-        "gy": 14
-      },
-      {
-        "type": "pine_small",
-        "gx": 10,
-        "gy": 14
+        "gy": 1
       },
       {
         "type": "drift_small",
         "gx": 13,
-        "gy": 14
-      },
-      {
-        "type": "drift_small",
-        "gx": -12,
-        "gy": 15
-      },
-      {
-        "type": "rock_small",
-        "gx": -11,
-        "gy": 15
-      },
-      {
-        "type": "pine_small",
-        "gx": -7,
-        "gy": 15
+        "gy": 1
       },
       {
         "type": "rock_small",
         "gx": -6,
-        "gy": 15
+        "gy": 2
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": 2
+      },
+      {
+        "type": "rock_small",
+        "gx": 0,
+        "gy": 2
+      },
+      {
+        "type": "rock_small",
+        "gx": 2,
+        "gy": 2
+      },
+      {
+        "type": "pine_small",
+        "gx": 11,
+        "gy": 2
+      },
+      {
+        "type": "drift_small",
+        "gx": -6,
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": 0,
+        "gy": 3
+      },
+      {
+        "type": "pine_small",
+        "gx": -12,
+        "gy": 4
+      },
+      {
+        "type": "pine_small",
+        "gx": -11,
+        "gy": 4
+      },
+      {
+        "type": "drift_small",
+        "gx": -10,
+        "gy": 4
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": 4
+      },
+      {
+        "type": "drift_small",
+        "gx": -1,
+        "gy": 4
+      },
+      {
+        "type": "pine_large",
+        "gx": 12,
+        "gy": 4
+      },
+      {
+        "type": "pine_small",
+        "gx": 14,
+        "gy": 4
+      },
+      {
+        "type": "drift_small",
+        "gx": -8,
+        "gy": 5
+      },
+      {
+        "type": "drift_small",
+        "gx": 16,
+        "gy": 5
+      },
+      {
+        "type": "pine_small",
+        "gx": -12,
+        "gy": 6
+      },
+      {
+        "type": "pine_small",
+        "gx": -11,
+        "gy": 6
+      },
+      {
+        "type": "pine_small",
+        "gx": -5,
+        "gy": 6
+      },
+      {
+        "type": "pine_small",
+        "gx": -3,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": 6
+      },
+      {
+        "type": "rock_small",
+        "gx": 1,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": 2,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": 11,
+        "gy": 6
+      },
+      {
+        "type": "pine_small",
+        "gx": 12,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": 14,
+        "gy": 6
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
+        "gy": 7
+      },
+      {
+        "type": "drift_small",
+        "gx": -5,
+        "gy": 7
+      },
+      {
+        "type": "pine_small",
+        "gx": -4,
+        "gy": 7
+      },
+      {
+        "type": "rock_large",
+        "gx": 0,
+        "gy": 7
+      },
+      {
+        "type": "drift_small",
+        "gx": -12,
+        "gy": 8
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
+        "gy": 8
+      },
+      {
+        "type": "pine_small",
+        "gx": -5,
+        "gy": 8
       },
       {
         "type": "drift_large",
-        "gx": -1,
-        "gy": 15
+        "gx": -2,
+        "gy": 8
+      },
+      {
+        "type": "drift_small",
+        "gx": 12,
+        "gy": 8
+      },
+      {
+        "type": "drift_small",
+        "gx": 16,
+        "gy": 8
+      },
+      {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": 9
+      },
+      {
+        "type": "drift_small",
+        "gx": -7,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": 0,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": 1,
+        "gy": 9
+      },
+      {
+        "type": "pine_large",
+        "gx": 14,
+        "gy": 9
+      },
+      {
+        "type": "pine_small",
+        "gx": -3,
+        "gy": 10
+      },
+      {
+        "type": "pine_small",
+        "gx": 13,
+        "gy": 10
+      },
+      {
+        "type": "pine_small",
+        "gx": 16,
+        "gy": 10
+      },
+      {
+        "type": "drift_small",
+        "gx": -10,
+        "gy": 11
+      },
+      {
+        "type": "pine_small",
+        "gx": -6,
+        "gy": 11
       },
       {
         "type": "pine_small",
         "gx": 2,
-        "gy": 15
+        "gy": 11
+      },
+      {
+        "type": "drift_small",
+        "gx": -12,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": -5,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": -3,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": 3,
+        "gy": 12
+      },
+      {
+        "type": "drift_small",
+        "gx": 9,
+        "gy": 12
+      },
+      {
+        "type": "drift_small",
+        "gx": -9,
+        "gy": 13
+      },
+      {
+        "type": "pine_small",
+        "gx": -6,
+        "gy": 13
+      },
+      {
+        "type": "drift_small",
+        "gx": 1,
+        "gy": 13
+      },
+      {
+        "type": "pine_small",
+        "gx": 5,
+        "gy": 13
+      },
+      {
+        "type": "drift_small",
+        "gx": 9,
+        "gy": 13
+      },
+      {
+        "type": "pine_small",
+        "gx": 14,
+        "gy": 13
+      },
+      {
+        "type": "pine_small",
+        "gx": 16,
+        "gy": 13
+      },
+      {
+        "type": "drift_small",
+        "gx": -11,
+        "gy": 14
+      },
+      {
+        "type": "drift_small",
+        "gx": -2,
+        "gy": 14
+      },
+      {
+        "type": "pine_small",
+        "gx": 3,
+        "gy": 14
       },
       {
         "type": "pine_small",
         "gx": 4,
+        "gy": 14
+      },
+      {
+        "type": "pine_small",
+        "gx": 15,
+        "gy": 14
+      },
+      {
+        "type": "pine_small",
+        "gx": 16,
+        "gy": 14
+      },
+      {
+        "type": "pine_small",
+        "gx": -12,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": -10,
+        "gy": 15
+      },
+      {
+        "type": "drift_small",
+        "gx": -8,
+        "gy": 15
+      },
+      {
+        "type": "drift_small",
+        "gx": -6,
+        "gy": 15
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": 15
+      },
+      {
+        "type": "rock_small",
+        "gx": 1,
         "gy": 15
       },
       {
@@ -1104,12 +1036,27 @@
       },
       {
         "type": "pine_small",
+        "gx": 6,
+        "gy": 15
+      },
+      {
+        "type": "drift_small",
+        "gx": 9,
+        "gy": 15
+      },
+      {
+        "type": "pine_large",
         "gx": 10,
         "gy": 15
       },
       {
         "type": "pine_small",
-        "gx": 11,
+        "gx": 12,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 13,
         "gy": 15
       },
       {
@@ -1118,34 +1065,47 @@
         "gy": 15
       },
       {
-        "type": "pine_small",
-        "gx": -10,
+        "type": "rock_small",
+        "gx": 0,
         "gy": 16
       },
       {
         "type": "rock_small",
-        "gx": -5,
-        "gy": 16
-      },
-      {
-        "type": "rock_small",
-        "gx": -4,
-        "gy": 16
-      },
-      {
-        "type": "pine_small",
-        "gx": 10,
+        "gx": 2,
         "gy": 16
       },
       {
         "type": "drift_small",
-        "gx": 12,
+        "gx": 5,
+        "gy": 16
+      },
+      {
+        "type": "pine_small",
+        "gx": 6,
+        "gy": 16
+      },
+      {
+        "type": "drift_small",
+        "gx": 9,
         "gy": 16
       },
       {
         "type": "pine_small",
         "gx": 13,
         "gy": 16
+      },
+      {
+        "type": "pine_small",
+        "gx": 16,
+        "gy": 16
+      }
+    ],
+    "places": [
+      {
+        "id": "lake",
+        "name": "Sternsee",
+        "gx": 25,
+        "gy": -6
       }
     ]
   },

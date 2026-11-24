@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Baustein 2b fertig (24.11.), wartet auf Abnahme durch Hannes (Kartenbild `docs/qa/neustart/b02b_karte.png`, offen: Name des Sees). Danach Baustein 3. Prüfen: `npm run check`.
+- Niemand. Baustein 2b nachgebessert (24.11. spät: Berge tief, Hindernisse in Gruppen, Sternsee), wartet auf Abnahme durch Hannes (Kartenbild `docs/qa/neustart/b02b_karte.png`). Danach Baustein 3. Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -32,6 +32,8 @@
 14. **Karten-Konzept wie Hay Day + viel nachfragen** (Hannes 24.11.): feste Zufahrt statt Straße quer durch, Wege legt der Spieler, Land kaufen + Hindernisse mit Werkzeugen räumen, Tannen ausgraben statt fällen, keine Grundstücksnamen, Alpental mit Bergen/See, Start klein. Details `docs/KARTEN_KONZEPT.md`. Claude fragt Hannes bei jeder Konzeptfrage interaktiv (Auswahl mit Empfehlung).
 
 15. **Karten-Details + alte Oberfläche weg** (Hannes 24.11., Rückfragen Runde 2–4, je Empfehlung): Landstücke 5×5 im Tal 30×30, Hindernisse ab Start, Landkauf ab Stufe 3, nur Schneewehen wachsen nach, Werkzeuge per Fund + Sofortkauf, Startpaket Schaufel + Spitzhacke, Hindernisse klein 1×1 / groß 2×2, Räumen gibt XP + Fundchance, See rechts ab Stufe 13, Zufahrt zum Hofplatz mit festen Stationen (Chalet frei), Start Mitte eher vorn, 3 + 3 Wegplatten, Land-Material Grundbrief/Holzhammer/Grenzpflock. **Alte Oberfläche gelöscht, Live-Seite eingefroren** (Hochladen nur von Hand, erst wenn die neue Darstellung spielbar ist). Details `docs/KARTEN_KONZEPT.md`.
+
+16. **Karte nachbessern vor Abnahme 2b** (Hannes 24.11. spät, je Empfehlung): Berge breiter und gestaffelt, Hindernisse in natürlichen Gruppen statt gleichmäßig gestreut; See heißt **Sternsee**; Tagestruhe bleibt fest am Hofplatz.
 
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof, Karte, Landstücke, Hindernisse, Werkzeuge).

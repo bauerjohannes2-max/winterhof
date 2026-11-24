@@ -1,7 +1,7 @@
 // Baustein 2 + 2b: Karte als Daten – Alpental, Landstücke, Zufahrt, Hindernis-Ebene aus winterhof.json.
 import { describe, expect, it } from 'vitest';
 import {
-  CONTENT, ZONE_BORDER, buildTerrainMap, canPlace, createNewGame, plotIdAt, terrainMap, validateLayout, validateMap,
+  CONTENT, ZONE_BORDER, buildTerrainMap, canPlace, createNewGame, footprintOf, plotIdAt, terrainMap, validateLayout, validateMap,
   type ContentPack
 } from '../../src/core';
 
@@ -75,6 +75,60 @@ describe('Karte als Daten (Alpental)', () => {
     expect(m.plotById('5,3')!.minLevel).toBe(CONTENT.land.fromLevel);
   });
 
+  it('See heißt Sternsee (nur besondere Orte tragen Namen), Schild liegt auf dem Eis', () => {
+    expect(CONTENT.map.places.map((p) => p.name)).toEqual(['Sternsee']);
+    const lake = CONTENT.map.places[0]!;
+    expect(terrainMap().tileAt(lake.gx, lake.gy)).toMatchObject({ terrain: 'ice', zone: ZONE_BORDER });
+  });
+
+  it('Berge: tiefe Kulisse hinten, Baumgrenze unregelmäßig (Waldzungen, Felsrippen)', () => {
+    const t = terrainMap();
+    // hinter dem Tal mindestens 8 Reihen Berg
+    expect(t.tileAt(1, t.minGy + 7)?.terrain).toBe('mountain');
+    expect(t.tileAt(t.minGx + 7, 1)?.terrain).toBe('mountain');
+    // Waldtiefe entlang der hinteren rechten Talkante schwankt
+    const depth = Array.from({ length: 30 }, (_, i) => {
+      let d = 0;
+      while (t.tileAt(-13 + i, -14 - d)?.terrain === 'forest') d++;
+      return d;
+    });
+    expect(new Set(depth).size).toBeGreaterThanOrEqual(3);
+    expect(Math.max(...depth) - Math.min(...depth)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('Hindernisse liegen in Gruppen nach Gegend, nicht gleichmäßig gestreut', () => {
+    const obs = CONTENT.map.obstacles;
+    const kind = (type: string) => type.split('_')[0]!;
+    const cellsOf = (o: (typeof obs)[number]) => {
+      const fp = footprintOf({ kind: 'obstacle', type: o.type });
+      const out: [number, number][] = [];
+      for (let dy = 0; dy < fp.h; dy++) for (let dx = 0; dx < fp.w; dx++) out.push([o.gx + dx, o.gy + dy]);
+      return out;
+    };
+    const occ = new Map<string, number>();
+    obs.forEach((o, i) => cellsOf(o).forEach(([x, y]) => occ.set(`${x},${y}`, i)));
+    // Fels, Tanne, Eis: fast jedes hat einen Nachbarn derselben Art (zufällig verteilt wären es rund 40 %)
+    const grouped = obs.map((o, i) => ({ o, i })).filter(({ o }) => kind(o.type) !== 'drift');
+    const withNeighbour = grouped.filter(({ o, i }) => cellsOf(o).some(([x, y]) =>
+      [-1, 0, 1].some((dx) => [-1, 0, 1].some((dy) => {
+        const j = occ.get(`${x + dx},${y + dy}`);
+        return j !== undefined && j !== i && kind(obs[j]!.type) === kind(o.type);
+      }))));
+    expect(withNeighbour.length / grouped.length).toBeGreaterThan(0.75);
+    // Gegend: Felsen eher hinten (zu den Bergen), Tannen eher vorn, Eis nur am Ufer
+    const mean = (k: string) => { const l = obs.filter((o) => kind(o.type) === k); return l.reduce((a, o) => a + o.gx + o.gy, 0) / l.length; };
+    expect(mean('rock')).toBeLessThan(mean('pine'));
+    const ice = obs.filter((o) => kind(o.type) === 'ice');
+    expect(ice.length).toBeGreaterThan(0);
+    expect(ice.every((o) => ['5,0', '5,1', '5,2'].includes(plotIdAt(o.gx, o.gy)!))).toBe(true);
+    // jedes kaufbare Landstück lohnt sich und ist nicht überladen
+    for (const p of terrainMap().plots.filter((x) => !x.isStart)) {
+      const n = obs.filter((o) => plotIdAt(o.gx, o.gy) === p.id).length;
+      expect(n, p.id).toBeGreaterThanOrEqual(5);
+      expect(n, p.id).toBeLessThanOrEqual(9);
+    }
+  });
+
   it('Start-Hof passt auf die Karte', () => {
     expect(validateLayout(createNewGame(T0))).toEqual([]);
   });
@@ -112,6 +166,13 @@ describe('Karte als Daten (Alpental)', () => {
       expect(e).toMatch(/nicht in genau einem Landstück/);
       expect(e).toMatch(/kein freier Schnee/);
       expect(e).toMatch(/überlappen/);
+    });
+    it('Ort ohne Namen oder auf Bauland', () => {
+      const c = clone();
+      c.map.places = [{ id: 'a', name: ' ', gx: 25, gy: -6 }, { id: 'b', name: 'X', gx: 0, gy: 0 }];
+      const e = validateMap(c).join('\n');
+      expect(e).toMatch(/Ort a: Name fehlt/);
+      expect(e).toMatch(/Ort b: liegt auf einem Landstück/);
     });
     it('Start-Land muss zusammenhängen', () => {
       const c = clone();

@@ -141,6 +141,16 @@ export function validateMap(c: ContentPack = CONTENT): string[] {
   }
   if (reach.size !== startSet.size) errs.push('plots.start hängt nicht zusammen');
 
+  // Besondere Orte: Name gesetzt, IDs eindeutig, Schild liegt in der Kulisse (nicht auf Bauland)
+  const placeIds = new Set<string>();
+  for (const pl of m.places) {
+    if (!pl.name.trim()) errs.push(`Ort ${pl.id}: Name fehlt`);
+    if (placeIds.has(pl.id)) errs.push(`Ort ${pl.id}: doppelt`);
+    placeIds.add(pl.id);
+    if (terrainAt(pl.gx, pl.gy) === undefined) errs.push(`Ort ${pl.id}: außerhalb der Karte`);
+    else if (plotIdAt(pl.gx, pl.gy, c)) errs.push(`Ort ${pl.id}: liegt auf einem Landstück`);
+  }
+
   // Hindernisse: im Tal, auf freiem Schnee, ganz in einem Landstück, keine Überlappung
   const used = new Map<string, number>();
   m.obstacles.forEach((o, i) => {

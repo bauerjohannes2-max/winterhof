@@ -50,6 +50,8 @@ export interface ContentPack {
     surface: string[];
     /** Objekt-Ebene: Hindernisse beim Spielbeginn */
     obstacles: { type: string; gx: number; gy: number }[];
+    /** Besondere Orte mit Namen (nur diese tragen Namen, KARTEN_KONZEPT); gx/gy = Platz für das Namensschild */
+    places: { id: string; name: string; gx: number; gy: number }[];
   };
   start: {
     coins: number;

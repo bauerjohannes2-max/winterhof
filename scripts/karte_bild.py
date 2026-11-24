@@ -59,10 +59,9 @@ for o in c['start']['objects']:
     if fixed:
         cx, cy = iso(o['gx'] + fp['w'], o['gy'] + fp['h'] / 2); d.text((cx + 3, cy - 6), FIX[o['type']], fill=(120, 60, 0), font=font)
 cx, cy = iso(4 + 1, 3 + 1); d.text((cx - 18, cy - 24), 'Chalet', fill=(90, 30, 110), font=mid)
-# See-Name, Himmelsrichtungen
-lake = [(ox + x, oy + y) for y in range(H) for x in range(W) if m['terrain'][y][x] == 'I']
-lx = sum(p[0] for p in lake) / len(lake); ly = sum(p[1] for p in lake) / len(lake)
-cx, cy = iso(lx, ly); d.text((cx - 50, cy - 8), 'See (Name offen)', fill=(20, 70, 120), font=mid)
+# Namen besonderer Orte (map.places), Himmelsrichtungen
+for pl in m.get('places', []):
+    cx, cy = iso(pl['gx'] + 0.5, pl['gy'] + 0.5); d.text((cx - 32, cy - 8), pl['name'], fill=(20, 70, 120), font=mid)
 cx, cy = iso(ox + 2, oy + 2); d.text((cx - 70, cy + 10), 'Berge (hinten)', fill=(60, 60, 70), font=mid)
 cx, cy = iso(7.5, oy + H - 1); d.text((cx + 12, cy - 4), 'Zufahrt', fill=(110, 70, 30), font=mid)
 
