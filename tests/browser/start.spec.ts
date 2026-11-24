@@ -20,15 +20,66 @@ test('startet sauber, Ebenen in fester Reihenfolge, Start unter 3 s', async ({ p
   expect(Number(await root.getAttribute('data-startms'))).toBeLessThan(3000);
   await expect(page.locator('#laden')).toHaveCount(0);                 // Ladebild ist weg
   await expect(page.locator('#hochkant')).toBeHidden();
-  await expect(page).toHaveScreenshot('b03-leere-szene.png');
+  await expect(root).toHaveAttribute('data-kamera', 'idle');
+  await expect(page).toHaveScreenshot('b04-start.png');   // Start-Ansicht mit Hilfsraster (Baustein 4)
   expect(fehler).toEqual([]);
 });
 
-test('Bildschärfe: Retina-Handy lädt @2x, Desktop @1x', async ({ page }, info) => {
+/** Ziehen per Touch (Handy) bzw. Maus (Desktop) über die Spielfläche */
+async function ziehen(page: Page, touch: boolean, from: [number, number], to: [number, number], schritte: number, haltenMs = 0): Promise<void> {
+  if (touch) {
+    const cdp = await page.context().newCDPSession(page);
+    const t = (type: string, p: [number, number][]): Promise<unknown> => cdp.send('Input.dispatchTouchEvent', { type: type as 'touchStart', touchPoints: p.map(([x, y], id) => ({ x, y, id })) });
+    await t('touchStart', [from]);
+    for (let i = 1; i <= schritte; i++) await t('touchMove', [[from[0] + ((to[0] - from[0]) * i) / schritte, from[1] + ((to[1] - from[1]) * i) / schritte]]);
+    if (haltenMs) await page.waitForTimeout(haltenMs);
+    await t('touchEnd', []);
+    await cdp.detach();
+  } else {
+    await page.mouse.move(from[0], from[1]);
+    await page.mouse.down();
+    await page.mouse.move(to[0], to[1], { steps: schritte });
+    if (haltenMs) await page.waitForTimeout(haltenMs);
+    await page.mouse.up();
+  }
+}
+
+test('Kamera: Wischen verschiebt, kommt zur Ruhe; Hilfsraster mit G aus- und einblendbar', async ({ page }, info) => {
+  const fehler = collectErrors(page);
   await page.goto('/');
   const root = page.locator('#neu-root');
   await expect(root).toHaveAttribute('data-bereit', '1');
-  const wanted = info.project.name === 'handy-quer' ? '2' : '1';
+  const vorher = await page.screenshot();
+  await ziehen(page, info.project.name === 'handy-quer', [500, 200], [300, 220], 10, 150);
+  await expect(root).toHaveAttribute('data-kamera', 'idle');
+  expect((await page.screenshot()).equals(vorher)).toBe(false);          // Bild hat sich bewegt
+  await expect(root).toHaveAttribute('data-raster', '1');
+  await page.keyboard.press('g');
+  await expect(root).toHaveAttribute('data-raster', '0');
+  await page.keyboard.press('g');
+  await expect(root).toHaveAttribute('data-raster', '1');
+  expect(fehler).toEqual([]);
+});
+
+test('Kamera: über den Rand gezogen federt sie zurück in die Grenzen', async ({ page }, info) => {
+  await page.goto('/');
+  const root = page.locator('#neu-root');
+  await expect(root).toHaveAttribute('data-bereit', '1');
+  const touch = info.project.name === 'handy-quer';
+  // Mehrmals weit nach rechts ziehen: Kamera läuft an den linken Rand und darüber hinaus (Gummi)
+  for (let i = 0; i < 6; i++) await ziehen(page, touch, [100, 200], [700, 200], 12, 120);
+  await expect(root).toHaveAttribute('data-kamera', 'idle');
+  const amRand = await page.screenshot();
+  await ziehen(page, touch, [100, 200], [700, 200], 12, 120);     // weiter ziehen ändert nach dem Zurückfedern nichts
+  await expect(root).toHaveAttribute('data-kamera', 'idle');
+  expect((await page.screenshot()).equals(amRand)).toBe(true);
+});
+
+test('Bildschärfe: Retina-Handy und Desktop 1280 (zoomt bis 1,25 : 1, Baustein 4) laden @2x', async ({ page }) => {
+  await page.goto('/');
+  const root = page.locator('#neu-root');
+  await expect(root).toHaveAttribute('data-bereit', '1');
+  const wanted = '2';
   await expect(root).toHaveAttribute('data-aufloesung', wanted);
   const atlas = await page.evaluate(() => performance.getEntriesByType('resource').map((r) => r.name).filter((n) => n.includes('/assets/gen/spiel/')));
   expect(atlas.length).toBeGreaterThan(0);

@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Baustein 3 abgenommen (Hannes 24.11.). Nächstes: Baustein 4 Raster + Kamera, vorher Konzeptfragen an Hannes. Prüfen: `npm run check`.
+- Niemand. Baustein 4 (Raster + Kamera) fertig, wartet auf Abnahme durch Hannes (lokal committet, nicht gepusht: Vergleichsbilder `b04-start` entstehen erst nach Abnahme, alte `b03-leere-szene` dann löschen). Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -44,6 +44,7 @@
 20. **Münzen brauchen Ziele** (Hannes 24.11. Nacht, Rückfragen, je Empfehlung): mehrere Sparziele statt Lohn kürzen – Land steigt je Stück um 25 % (300 → ~4.400 beim 13. Stück), Gebäude ab Stufe 2 deutlich teurer (Patisserie 300 … Spielzeugwerkstatt 12.000). Deko maßvoll (Bot: 2,5 Teile je Landstück). Sparen ist erlaubt: höchstens das nächste große Ziel (Land oder Gebäude bis 2 Stufen voraus) + 1.000; Horten wird nur bis zur höchsten Stufe mit Inhalten geprüft (jetzt 12), darüber fehlen Inhalte (Stufe 13+ laut INHALTSPLAN).
 21. **Ladebild erscheint als Ganzes** (Hannes 24.11., je Empfehlung): Bis das Motiv dekodiert ist, nur die ruhige Grundfarbe des Motivs (Apple HIG „Launching“), dann Motiv, Schriftzug, Tipp und Balken gemeinsam eingeblendet – nie Text vor Bild (wie Hay Day/Clash). Balken nach echten Etappen, läuft sichtbar voll, erst dann Ausblenden; Ladebild mindestens 1 s ganz zu sehen (kein Aufblitzen). Weihnachtsmotiv + echtes Logo erst in der Grafik-Runde (Platzhalter zeigt noch Herbst). **Nachtrag (Hannes 24.11.): einfarbige Fläche sah nicht gut aus** → statt Farbe steht ab dem ersten Bild eine weiche Mini-Vorschau des Motivs (rund 1 KB im HTML, beim Bauen aus dem Motiv erzeugt, ebenso die Grundfarbe); in Baustein 14 kommt das Motiv in den Speicher auf dem Handy, dann ab dem 2. Start sofort scharf. Scharfstellen 0,7 s weich an-/auslaufend, Vorschau beim Bauen weichgezeichnet (gleiche Lage, kein Sprung), Motiv unsichtbar vorgezeichnet + Ebenen auf der Grafikkarte: gemessen 60 Bilder/s auch bei 4-fach gedrosselter Rechenleistung (Hannes 24.11.: „muss komplett flüssig sein“).
 
+22. **Kamera wie Hay Day/Clash** (Hannes 24.11., Rückfragen Runde 1–3, je Empfehlung): Ganz raus = **ganzes Tal** sichtbar, ganz rein = **8 Kacheln breit** (Grenzen in Kacheln, gleich auf jedem Bildschirm; ersetzt „Zoom 0,5–1,6“). **Gleiten + Gummirand:** Nachlauf wie iPhone, am Rand gebremst und Zurückfedern, auch der Zoom federt an den Grenzen. **Hilfsraster nur beim Platzieren** (ab Baustein 12 rund ums Objekt); bis dahin zum Prüfen sichtbar, Taste G bzw. Drei-Finger-Tipp. **Start-Ansicht:** jeder Start gleich, **Start-Hof mittig und bildfüllend**, Hofplatz sichtbar vorn (Hannes: lieber so als Hofplatz genau mittig, der liegt am Rand des Start-Hofs). **Kartenrand:** Tal + Kulissenstreifen (seitlich 2 Kacheln, hinten 4, vorn 2 Kachelhöhen), nicht bis in die hinteren Berge. **Kein Doppeltipp-Zoom** (Tippen gehört den Objekten). **Mausrad/Touchpad** weich zum Mauszeiger.
 
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof, Karte, Landstücke, Hindernisse, Werkzeuge).
@@ -55,6 +56,7 @@
   - `session.ts` – hält den Stand, `dispatch`, `tick`, gedrosseltes Speichern
   - `terrain.ts` – Alpental (Schnee, Wald, Berge, See-Eis, Zufahrt, Hofplatz) und Landstücke aus `winterhof.json → map`, Ebenen wie Tiled, Hindernisse als Objekt-Ebene (Baustein 2 + 2b)
   - `map.ts` – Platzierung aus Gelände + Objektliste
+- `src/render/scene/iso.ts` – einzige Umrechnung Raster ↔ Welt (Baustein 4). `src/render/camera/` – Kamera als reines Rechenmodell (`camera.ts`, testbar ohne Browser), Rahmen aus der Karte (`mapView.ts`), Eingabe (`input.ts`). Im Entwicklungsmodus schreibt `window.__kameraSpur` jede Kamera-Lage je Bild mit (für die Bild-für-Bild-Prüfung).
 - `src/render/` – neue Darstellung (Einstieg `index.html`), liest nur den Kern und schickt Befehle. Alte Oberfläche (`main.js`, `world.js`, `engine/`) gelöscht 24.11. (Tag `v9-flickwerk`).
 - Browser-Test: Playwright mit Bildvergleich (`tests/browser/`).
 - `tests/core/` – 38 Tests inkl. 7-Tage-Wirtschafts-Bot. `npm test`, `npm run typecheck`.

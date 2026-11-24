@@ -17,6 +17,8 @@ export interface DeviceInfo {
   maxTextureSize: number;
   /** beim letzten Start zu langsam gewesen (siehe FPS-Wächter in main.ts) */
   slowBefore: boolean;
+  /** Kamera ganz reingezoomt: CSS-Pixel je Weltpunkt (Baustein 4). Über 1 braucht auch ein Bildschirm ohne Retina @2x, sonst unscharf */
+  maxZoom?: number;
 }
 
 /** Größte Atlas-Seite der Bild-Pipeline (.assetpack.js maximumTextureSize). Kann die Grafikkarte das nicht, nur @1x. */
@@ -27,7 +29,7 @@ export const SLOW_FPS = 45;
 
 export function chooseQuality(d: DeviceInfo): Quality {
   if (d.slowBefore) return 1;
-  if (d.dpr < 1.5) return 1;                                  // kein Retina-Bildschirm: @2x bringt nichts
+  if (d.dpr * (d.maxZoom ?? 1) <= 1) return 1;               // @1x reicht: auch ganz reingezoomt deckt ein Bildpunkt höchstens einen Bildschirmpunkt
   if (d.maxTextureSize < ATLAS_MAX * 2) return 1;            // schwache Grafik
   if (d.memoryGb !== undefined && d.memoryGb < 3) return 1;  // wenig Speicher (Texturspeicher-Budget GRAFIK_TECHNIK §7)
   if (d.cores !== undefined && d.cores < 4) return 1;

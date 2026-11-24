@@ -4,8 +4,12 @@
 // Ladebild, Hochkant-Pause, Bildschärfe automatisch. Regeln: docs/GRAFIK_TECHNIK.md.
 // Liest den Kern nur über ../core, ändert den Spielstand nur über Befehle.
 // ============================================================================
-import { Application } from 'pixi.js';
-import { CONTENT } from '../core';
+import { Application, type Container } from 'pixi.js';
+import { CONTENT, terrainMap } from '../core';
+import { Camera, maxZoomForWidth } from './camera/camera';
+import { attachCameraInput } from './camera/input';
+import { cameraConfig, startView } from './camera/mapView';
+import { GridOverlay } from './scene/grid';
 import { loadStartAssets } from './boot/assets';
 import { chooseQuality, renderResolution, SLOW_FPS, type Quality } from './boot/quality';
 import { createWorld, layerOrder } from './scene/layers';
@@ -49,6 +53,15 @@ function watchFirstSeconds(app: Application, q: Quality): void {
   window.setTimeout(() => app.ticker.add(sample), 2000);  // Startlast abwarten
 }
 
+/** Kamera = Verschiebung + Zoom des einen Welt-Containers; steht sie still, auf ganze Bildpunkte gerundet (scharf). */
+function applyCamera(worldRoot: Container, camera: Camera, resolution: number, vw: number, vh: number): void {
+  const { cx, cy, zoom } = camera.view;
+  let x = vw / 2 - cx * zoom, y = vh / 2 - cy * zoom;
+  if (camera.idle) { x = Math.round(x * resolution) / resolution; y = Math.round(y * resolution) / resolution; }
+  worldRoot.scale.set(zoom);
+  worldRoot.position.set(x, y);
+}
+
 async function start(): Promise<void> {
   const t0 = performance.now();
   const root = document.getElementById('neu-root');
@@ -60,7 +73,10 @@ async function start(): Promise<void> {
 
   const dpr = window.devicePixelRatio || 1;
   const nav = navigator as Navigator & { deviceMemory?: number };
-  const q = chooseQuality({ dpr, cores: nav.hardwareConcurrency, memoryGb: nav.deviceMemory, maxTextureSize: maxTextureSize(), slowBefore: readFlag(SLOW_KEY) });
+  const q = chooseQuality({
+    dpr, cores: nav.hardwareConcurrency, memoryGb: nav.deviceMemory, maxTextureSize: maxTextureSize(), slowBefore: readFlag(SLOW_KEY),
+    maxZoom: maxZoomForWidth(Math.max(root.clientWidth, root.clientHeight))
+  });
 
   const app = new Application();
   await app.init({
@@ -79,6 +95,33 @@ async function start(): Promise<void> {
 
   const world = createWorld();
   app.stage.addChild(world.root);
+
+  // Kamera (Baustein 4): Start immer am Hofplatz, Hilfsraster bis Baustein 12 zum Prüfen sichtbar
+  const map = terrainMap();
+  // Schärfe-Grenze: nie weiter rein, als die geladenen Bilder scharf hergeben (Bildstufe q / Zeichenauflösung)
+  const camera = new Camera({ ...cameraConfig(map), maxSharpZoom: q / app.renderer.resolution });
+  camera.resize(app.screen.width, app.screen.height);
+  const sv = startView(map, app.screen.width, app.screen.height);
+  camera.setView(sv.cx, sv.cy, sv.zoom);
+  const grid = new GridOverlay(map, true);
+  world.layer.auswahl.addChild(grid.view);
+  app.renderer.on('resize', (w: number, h: number) => camera.resize(w, h));
+  attachCameraInput(app.canvas, camera, {
+    toggleGrid: () => { grid.setShown(!grid.shown); root.dataset['raster'] = grid.shown ? '1' : '0'; }
+  });
+  root.dataset['raster'] = '1';
+  // Nur im Entwicklungsmodus: Kamera je Bild mitschreiben, damit Abläufe Bild für Bild geprüft werden können (QUALITAETS_LEITFADEN §3)
+  const trace: { t: number; cx: number; cy: number; z: number }[] | null = import.meta.env.DEV ? [] : null;
+  if (trace) (window as unknown as { __kameraSpur: typeof trace }).__kameraSpur = trace;
+  app.ticker.add((t) => {
+    const dt = t.deltaMS / 1000;
+    camera.update(dt);
+    grid.update(dt);
+    applyCamera(world.root, camera, app.renderer.resolution, app.screen.width, app.screen.height);
+    if (root.dataset['kamera'] !== camera.state) root.dataset['kamera'] = camera.state;
+    if (trace) { const v = camera.view; trace.push({ t: performance.now(), cx: v.cx, cy: v.cy, z: v.zoom }); if (trace.length > 20000) trace.splice(0, 10000); }
+  });
+  applyCamera(world.root, camera, app.renderer.resolution, app.screen.width, app.screen.height);
 
   watchOrientation((portrait) => {
     if (portrait) app.ticker.stop(); else app.ticker.start();

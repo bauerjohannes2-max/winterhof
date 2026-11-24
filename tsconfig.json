@@ -14,7 +14,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "vite/client"]
   },
   "include": ["src/core/**/*.ts", "src/render/**/*.ts", "tests/**/*.ts", "playwright.config.ts"]
 }

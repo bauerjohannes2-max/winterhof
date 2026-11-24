@@ -8,7 +8,10 @@ describe('Bildschärfe', () => {
   it('starkes Retina-Handy bekommt @2x', () => expect(chooseQuality(strong)).toBe(2));
   it('ohne Angaben zu Kernen/Speicher (iPhone Safari) entscheidet Bildschirm + Grafik', () =>
     expect(chooseQuality({ dpr: 3, maxTextureSize: 16384, slowBefore: false })).toBe(2));
-  it('kein Retina-Bildschirm → @1x', () => expect(chooseQuality({ ...strong, dpr: 1 })).toBe(1));
+  it('kein Retina-Bildschirm, ganz rein höchstens 1 : 1 → @1x', () => expect(chooseQuality({ ...strong, dpr: 1, maxZoom: 1 })).toBe(1));
+  it('kein Retina, aber großer Bildschirm zoomt über 1 : 1 → @2x (sonst unscharf, Baustein 4)', () =>
+    expect(chooseQuality({ ...strong, dpr: 1, maxZoom: 1.25 })).toBe(2));
+  it('Retina-Handy mit kleinem Zoom braucht trotzdem @2x', () => expect(chooseQuality({ ...strong, dpr: 3, maxZoom: 0.82 })).toBe(2));
   it('schwache Grafik → @1x', () => expect(chooseQuality({ ...strong, maxTextureSize: ATLAS_MAX })).toBe(1));
   it('wenig Speicher → @1x', () => expect(chooseQuality({ ...strong, memoryGb: 2 })).toBe(1));
   it('wenige Kerne → @1x', () => expect(chooseQuality({ ...strong, cores: 2 })).toBe(1));
