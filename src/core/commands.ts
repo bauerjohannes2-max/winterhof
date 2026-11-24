@@ -6,10 +6,11 @@
 import { CONTENT, footprintOf } from './content';
 import { clearCost, decoPrice, nextPlotPrice, obstacleDef, plotStatus } from './land';
 import { buildOccupancy, canPlace, isPlotOwned, tileKey } from './map';
+import { composeOrder, makeableItems } from './orders';
 import { nextRandom, pick, randInt } from './rng';
 import { terrainMap } from './terrain';
 import {
-  allGoals, craftSeconds, dayKey, getObject, goalReady, isFieldReady, levelForXp,
+  allGoals, animalPrice, craftSeconds, dayKey, getObject, goalReady, isFieldReady, levelForXp,
   storageFree, storageOf, storageUpgradeCost, storageUpgradeMaterials, countObjects
 } from './state';
 import type {
@@ -110,39 +111,10 @@ function requirePlace(c: Ctx, kind: MapObject['kind'], type: string, gx: number,
 
 function itemValue(item: ItemId): number { return CONTENT.items[item]?.sellPrice ?? 0; }
 
-// ---------------------------------------------------------------- Aufträge
-function unlockedItems(s: GameState): ItemId[] {
-  const stationTypes = new Set(s.objects.filter((o) => o.kind === 'station').map((o) => o.type));
-  const animalTypes = new Set(s.objects.filter((o) => o.kind === 'animal').map((o) => o.type));
-  const producible = new Set(Object.values(CONTENT.animals).filter((a) => animalTypes.has(a.id)).map((a) => a.produceItem));
-  return Object.values(CONTENT.items)
-    .filter((it) => it.unlockLevel <= s.level)
-    .filter((it) => it.category === 'crop' || (it.category === 'animal' && producible.has(it.id)) || (it.category === 'crafted' && !!it.station && stationTypes.has(it.station)))
-    .map((it) => it.id);
-}
-
+// ---------------------------------------------------------------- Aufträge (Regeln in orders.ts)
 export function generateOrder(s: GameState, now: number, availableAt = now): Order {
-  const rules = CONTENT.orders;
-  const pool = unlockedItems(s);
-  const lines = randInt(s, rules.minLines, Math.min(rules.maxLines, pool.length));
-  const chosen = new Map<ItemId, number>();
-  while (chosen.size < lines) {
-    const it = pick(s, pool);
-    if (chosen.has(it)) continue;
-    const cat = CONTENT.items[it]!.category;
-    chosen.set(it, cat === 'crafted' ? randInt(s, 1, 2) : randInt(s, 2, 5));
-  }
-  const orderLines = [...chosen].map(([item, qty]) => ({ item, qty }));
-  const value = orderLines.reduce((sum, l) => sum + itemValue(l.item) * l.qty, 0);
-  const xp = orderLines.reduce((sum, l) => sum + (CONTENT.items[l.item]?.xp ?? 0) * l.qty, 0);
-  return {
-    id: newId(s, 'o'),
-    npc: pick(s, CONTENT.npcs).id,
-    lines: orderLines,
-    coins: Math.round(value * rules.coinFactor),
-    xp: Math.round(xp * rules.xpFactor),
-    availableAt
-  };
+  const o = composeOrder(s);
+  return { id: newId(s, 'o'), npc: pick(s, CONTENT.npcs).id, lines: o.lines, coins: o.coins, xp: o.xp, tier: o.tier, reward: o.reward, availableAt };
 }
 
 function fillOrders(c: Ctx) {
@@ -403,7 +375,7 @@ function run(c: Ctx, cmd: Command): void {
       requireLevel(s, def.unlockLevel, def.name);
       if (countObjects(s, 'animal', def.id) >= def.maxCount) fail('limit', `Maximal ${def.maxCount} ${def.name}.`);
       requirePlace(c, 'animal', def.id, cmd.gx, cmd.gy);
-      payCoins(c, def.cost);
+      payCoins(c, animalPrice(s, def.id));
       const id = newId(s, 'a');
       s.objects.push({ id, kind: 'animal', type: def.id, gx: cmd.gx, gy: cmd.gy, nick: def.name, state: 'hungry', readyAt: c.now, lastPet: 0 });
       c.ev.push({ type: 'objectPlaced', objectId: id });
@@ -581,7 +553,7 @@ function run(c: Ctx, cmd: Command): void {
       const streak = s.daily.lastDay === yesterday ? s.daily.streak + 1 : 1;
       const cfg = CONTENT.daily;
       const coins = cfg.baseCoins + Math.min(streak - 1, cfg.maxStreakBonus) * cfg.streakCoins;
-      const pool = unlockedItems(s).filter((i) => CONTENT.items[i]!.category !== 'crafted');
+      const pool = [...makeableItems(s)].filter((i) => ['crop', 'animal'].includes(CONTENT.items[i]!.category));
       const item = pick(s, pool);
       const items: Inventory = { [item]: CONTENT.items[item]!.category === 'material' ? 1 : randInt(s, 1, 3) };
       // Truhe verfällt nie: bei vollem Lager nur Münzen

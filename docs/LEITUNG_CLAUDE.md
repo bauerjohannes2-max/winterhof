@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Baustein 2b nachgebessert (24.11. spät: Berge tief, Hindernisse in Gruppen, Sternsee), wartet auf Abnahme durch Hannes (Kartenbild `docs/qa/neustart/b02b_karte.png`). Danach Baustein 3. Prüfen: `npm run check`.
+- Niemand. Baustein 2c Wirtschaft fertig (24.11. spät), wartet auf Abnahme. Danach Baustein 3. Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -35,6 +35,10 @@
 
 16. **Karte nachbessern vor Abnahme 2b** (Hannes 24.11. spät, je Empfehlung): Berge breiter und gestaffelt, Hindernisse in natürlichen Gruppen statt gleichmäßig gestreut; See heißt **Sternsee**; Tagestruhe bleibt fest am Hofplatz.
 
+17. **Kein App-Store, Web-Spiel mit PixiJS** (Hannes 24.11. spät): Winterhof bleibt ein Browser-Spiel (später als Web-App auf den Startbildschirm), keine Store-Version. Deshalb keine Game-Engine (Unity/Godot): PixiJS v8 + TypeScript bleibt (Baustein 0). Begründung: 2D-Schrägansicht braucht keine Engine, läuft auf jedem Handy ohne Installation, alles ist prüfbarer Code. Vorbild: Supercell nutzt ebenfalls keine fertige Engine.
+
+18. **Wirtschaft vor Baustein 3** (Hannes 24.11. spät, je Empfehlung): Der 7-Tage-Bot schwankt je Zufallsverlauf zwischen 7.500 und 62.000 Münzen (Stufe 14–16), Ursache: Aufträge reiner Zufall, kaum Münz-Ausgaben. Neu als Baustein 2c: **Aufträge passend zum Hof** (nur herstellbare Waren, Mischung leicht/mittel/schwer, Lohn nach Aufwand), **zwei Lohn-Arten** (Münz- und Erfahrungs-Aufträge), **Münz-Ausgaben wie Hay Day** (Weihnachtsdeko, steigende Preise je Kauf, alles was bei Hay Day Sinn macht), **Tempo:** Vielspieler Woche 1 etwa Stufe 15, jeder Verlauf höchstens ±1 Stufe. Prüfung mit mehreren Zufallsverläufen statt einem.
+
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof, Karte, Landstücke, Hindernisse, Werkzeuge).
 - `src/core/` – Logik-Kern in TypeScript, ohne DOM/Pixi/Audio:
@@ -49,7 +53,12 @@
 - Browser-Test: Playwright mit Bildvergleich (`tests/browser/`).
 - `tests/core/` – 38 Tests inkl. 7-Tage-Wirtschafts-Bot. `npm test`, `npm run typecheck`.
 
-## Wirtschaft (erste Kalibrierung)
+## Wirtschaft (Baustein 2c, 24.11.)
+- Aufträge: `core/orders.ts` – nur herstellbare Waren, Mischung leicht 45 % / mittel 35 % / anspruchsvoll 20 % per Kartenstapel (Shuffle Bag, 20 Karten), Zielwert 40·Stufe^1,15 × Stufenfaktor, Lohn-Art Münzen (×1,3 Münzen, ×0,7 XP) oder Erfahrung (umgekehrt) je 50 %, Waren im Lager 3× so oft.
+- Münz-Ausgaben: Weihnachtsdeko (Bot kauft Überschuss), Tierpreis steigt je Tier um 50 % des Grundpreises, Felder/Land/Wegplatten wie bisher. Deko gibt nur ~5 % ihres Preises als XP (vorher ~25 %: Deko war eine Stufen-Maschine).
+- XP-Kurve ab Stufe 11 bis 20 % steiler. Bot: 6 Zufallsverläufe parallel (`tests/core/economy/`), Woche 1 Stufe 15–16.
+
+## Wirtschaft (erste Kalibrierung, überholt)
 - Ernte gibt 2, Pflanzen kostet 1 aus dem Silo (sonst Münzen).
 - Silo (Ernte) und Scheune (Produkte) getrennt.
 - Sofortverkauf an Händler nur 30 % des Werts. Aufträge und Hofladen sind besser.

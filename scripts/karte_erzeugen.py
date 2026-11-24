@@ -174,17 +174,26 @@ for cx, cy in centers:
     # großer Kern: so verschieben, dass 2×2 ganz in einem Landstück liegt
     bx = cx - 1 if (cx - TX0) % SIZE == SIZE - 1 else cx
     by = cy - 1 if (cy - TY0) % SIZE == SIZE - 1 else cy
-    if not (rnd.random() < big and put(kind, bx, by, 2)):
-        put(kind, cx, cy, 1)
-    members = 2 + rnd.randint(0, 4)
+    if rnd.random() < big and put(kind, bx, by, 2):
+        group = [(bx + dx, by + dy) for dx in range(2) for dy in range(2)]
+    elif put(kind, cx, cy, 1):
+        group = [(cx, cy)]
+    else:
+        continue
+    # Glieder wachsen an die Gruppe an (Anlagerung): direkt daneben, selten mit einer Lücke von 1 Feld.
+    # So entstehen dichte Nester wie in Hay Day statt lose Streuung um einen Mittelpunkt.
+    members = {'rock': 3, 'pine': 3, 'ice': 2}[kind] + rnd.randint(0, 3)
     tries = 0
-    while members > 0 and tries < 40:
+    while members > 0 and tries < 60:
         tries += 1
-        a = rnd.random() * math.tau
-        r = 1.0 + abs(rnd.gauss(0, 0.6))
-        gx, gy = round(cx + 0.5 + math.cos(a) * r), round(cy + 0.5 + math.sin(a) * r)
-        k = kind if rnd.random() < 0.85 else 'drift'
+        ax, ay = rnd.choice(group)
+        step = 2 if rnd.random() < 0.2 else 1
+        gx, gy = ax + rnd.randint(-1, 1) * step, ay + rnd.randint(-1, 1) * step
+        k = kind if rnd.random() < 0.88 else 'drift'
+        if k == 'ice' and plot_of(gx, gy) not in LAKESIDE:
+            continue                                   # Eis nur auf Ufer-Landstücken
         if put(k, gx, gy, 1):
+            group.append((gx, gy))
             members -= 1
 
 # 3. Lose Schneewehen überall (blaues Rauschen: Mindestabstand 3), dann je Landstück mindestens 5 Hindernisse

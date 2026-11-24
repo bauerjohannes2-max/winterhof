@@ -24,6 +24,8 @@ export interface ContentPack {
   storage: Record<StorageKind, StorageDef>;
   materials: MaterialRules;
   orders: OrderRules;
+  /** Jedes weitere Tier derselben Art kostet cost * (1 + animalCostStep * Anzahl) */
+  animalCostStep: number;
   stand: { slots: number; sellSeconds: number; maxPriceFactor: number };
   villagerOffers: { intervalSeconds: number; lifetimeSeconds: number; priceFactor: number };
   mastery: { at: number; stars: number; speedMult: number }[];

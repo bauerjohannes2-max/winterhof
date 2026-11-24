@@ -155,33 +155,28 @@
         "gy": -13
       },
       {
-        "type": "rock_large",
+        "type": "rock_small",
         "gx": -12,
         "gy": -13
       },
       {
-        "type": "rock_small",
-        "gx": -10,
+        "type": "drift_large",
+        "gx": -6,
         "gy": -13
       },
       {
         "type": "drift_small",
-        "gx": -7,
-        "gy": -13
-      },
-      {
-        "type": "drift_small",
-        "gx": -5,
-        "gy": -13
-      },
-      {
-        "type": "rock_small",
-        "gx": -1,
+        "gx": -3,
         "gy": -13
       },
       {
         "type": "rock_small",
         "gx": 1,
+        "gy": -13
+      },
+      {
+        "type": "drift_small",
+        "gx": 2,
         "gy": -13
       },
       {
@@ -190,27 +185,12 @@
         "gy": -13
       },
       {
-        "type": "drift_small",
-        "gx": 6,
-        "gy": -13
-      },
-      {
-        "type": "drift_large",
-        "gx": 9,
-        "gy": -13
-      },
-      {
         "type": "pine_small",
         "gx": 11,
         "gy": -13
       },
       {
-        "type": "ice_small",
-        "gx": 15,
-        "gy": -13
-      },
-      {
-        "type": "ice_small",
+        "type": "pine_small",
         "gx": 16,
         "gy": -13
       },
@@ -221,236 +201,281 @@
       },
       {
         "type": "rock_small",
-        "gx": -10,
-        "gy": -12
-      },
-      {
-        "type": "rock_small",
-        "gx": -2,
-        "gy": -12
-      },
-      {
-        "type": "rock_large",
-        "gx": -1,
-        "gy": -12
-      },
-      {
-        "type": "pine_small",
-        "gx": 13,
-        "gy": -12
-      },
-      {
-        "type": "ice_small",
-        "gx": 15,
-        "gy": -12
-      },
-      {
-        "type": "ice_small",
-        "gx": 16,
-        "gy": -12
-      },
-      {
-        "type": "rock_small",
         "gx": -12,
-        "gy": -11
-      },
-      {
-        "type": "rock_small",
-        "gx": -10,
-        "gy": -11
-      },
-      {
-        "type": "drift_small",
-        "gx": -7,
-        "gy": -11
-      },
-      {
-        "type": "rock_small",
-        "gx": 1,
-        "gy": -11
-      },
-      {
-        "type": "rock_small",
-        "gx": 6,
-        "gy": -11
-      },
-      {
-        "type": "rock_small",
-        "gx": 7,
-        "gy": -11
-      },
-      {
-        "type": "pine_small",
-        "gx": 12,
-        "gy": -11
-      },
-      {
-        "type": "ice_small",
-        "gx": 15,
-        "gy": -11
-      },
-      {
-        "type": "drift_small",
-        "gx": -5,
-        "gy": -10
-      },
-      {
-        "type": "drift_small",
-        "gx": -3,
-        "gy": -10
-      },
-      {
-        "type": "rock_small",
-        "gx": -1,
-        "gy": -10
-      },
-      {
-        "type": "rock_large",
-        "gx": 5,
-        "gy": -10
-      },
-      {
-        "type": "rock_small",
-        "gx": 8,
-        "gy": -10
-      },
-      {
-        "type": "drift_small",
-        "gx": 10,
-        "gy": -10
-      },
-      {
-        "type": "rock_small",
-        "gx": -8,
-        "gy": -9
-      },
-      {
-        "type": "drift_small",
-        "gx": 1,
-        "gy": -9
-      },
-      {
-        "type": "drift_small",
-        "gx": 3,
-        "gy": -9
-      },
-      {
-        "type": "rock_small",
-        "gx": 8,
-        "gy": -9
-      },
-      {
-        "type": "rock_small",
-        "gx": -13,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": -12,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": -7,
-        "gy": -8
-      },
-      {
-        "type": "drift_small",
-        "gx": 5,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": -11,
-        "gy": -7
+        "gy": -12
       },
       {
         "type": "drift_small",
         "gx": -9,
-        "gy": -7
-      },
-      {
-        "type": "rock_small",
-        "gx": -6,
-        "gy": -7
+        "gy": -12
       },
       {
         "type": "drift_small",
-        "gx": -3,
-        "gy": -7
+        "gx": -7,
+        "gy": -12
+      },
+      {
+        "type": "rock_large",
+        "gx": -1,
+        "gy": -12
       },
       {
         "type": "rock_small",
+        "gx": 1,
+        "gy": -12
+      },
+      {
+        "type": "pine_small",
+        "gx": 9,
+        "gy": -12
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": -12
+      },
+      {
+        "type": "pine_small",
         "gx": 11,
-        "gy": -7
+        "gy": -12
       },
       {
-        "type": "rock_small",
-        "gx": 12,
-        "gy": -7
+        "type": "pine_small",
+        "gx": 14,
+        "gy": -12
+      },
+      {
+        "type": "pine_small",
+        "gx": 15,
+        "gy": -12
       },
       {
         "type": "drift_small",
-        "gx": 15,
-        "gy": -7
+        "gx": 16,
+        "gy": -12
       },
       {
         "type": "rock_small",
+        "gx": 5,
+        "gy": -11
+      },
+      {
+        "type": "drift_large",
+        "gx": 7,
+        "gy": -11
+      },
+      {
+        "type": "pine_small",
+        "gx": 9,
+        "gy": -11
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": -11
+      },
+      {
+        "type": "pine_small",
+        "gx": 11,
+        "gy": -11
+      },
+      {
+        "type": "drift_small",
+        "gx": 14,
+        "gy": -11
+      },
+      {
+        "type": "drift_large",
         "gx": -13,
-        "gy": -6
+        "gy": -10
       },
       {
         "type": "rock_small",
-        "gx": -12,
-        "gy": -6
+        "gx": -9,
+        "gy": -10
+      },
+      {
+        "type": "rock_large",
+        "gx": -8,
+        "gy": -10
+      },
+      {
+        "type": "drift_small",
+        "gx": -6,
+        "gy": -10
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": -1,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": 0,
+        "gy": -10
+      },
+      {
+        "type": "rock_large",
+        "gx": 5,
+        "gy": -10
+      },
+      {
+        "type": "pine_small",
+        "gx": 14,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": -1,
+        "gy": -9
       },
       {
         "type": "drift_small",
         "gx": 2,
-        "gy": -6
+        "gy": -9
+      },
+      {
+        "type": "rock_small",
+        "gx": 4,
+        "gy": -9
+      },
+      {
+        "type": "pine_small",
+        "gx": 15,
+        "gy": -9
+      },
+      {
+        "type": "rock_large",
+        "gx": -13,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": -11,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": -7,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": 4,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": 5,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": 6,
+        "gy": -8
       },
       {
         "type": "drift_small",
         "gx": 8,
-        "gy": -6
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": -11,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": -7
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": -1,
+        "gy": -7
+      },
+      {
+        "type": "drift_small",
+        "gx": 9,
+        "gy": -7
       },
       {
         "type": "drift_small",
         "gx": 10,
-        "gy": -6
+        "gy": -7
+      },
+      {
+        "type": "ice_small",
+        "gx": 14,
+        "gy": -7
       },
       {
         "type": "rock_small",
+        "gx": 2,
+        "gy": -6
+      },
+      {
+        "type": "ice_small",
         "gx": 12,
         "gy": -6
       },
       {
-        "type": "drift_small",
-        "gx": -8,
-        "gy": -5
+        "type": "ice_small",
+        "gx": 13,
+        "gy": -6
       },
       {
-        "type": "drift_small",
-        "gx": -6,
-        "gy": -5
-      },
-      {
-        "type": "drift_small",
-        "gx": -5,
+        "type": "drift_large",
+        "gx": -13,
         "gy": -5
       },
       {
         "type": "rock_small",
+        "gx": -11,
+        "gy": -5
+      },
+      {
+        "type": "drift_small",
+        "gx": -10,
+        "gy": -5
+      },
+      {
+        "type": "drift_small",
+        "gx": -3,
+        "gy": -5
+      },
+      {
+        "type": "rock_large",
         "gx": -1,
         "gy": -5
       },
       {
         "type": "rock_small",
-        "gx": 0,
+        "gx": 2,
         "gy": -5
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
         "gx": 5,
         "gy": -5
       },
@@ -460,8 +485,8 @@
         "gy": -5
       },
       {
-        "type": "drift_small",
-        "gx": 10,
+        "type": "rock_small",
+        "gx": 7,
         "gy": -5
       },
       {
@@ -470,23 +495,23 @@
         "gy": -5
       },
       {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": -4
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": -4
+      },
+      {
         "type": "drift_small",
-        "gx": -13,
+        "gx": -6,
         "gy": -4
       },
       {
         "type": "rock_small",
-        "gx": -3,
-        "gy": -4
-      },
-      {
-        "type": "rock_small",
-        "gx": -2,
-        "gy": -4
-      },
-      {
-        "type": "rock_small",
-        "gx": -1,
+        "gx": 1,
         "gy": -4
       },
       {
@@ -496,18 +521,18 @@
       },
       {
         "type": "rock_small",
-        "gx": 8,
+        "gx": 6,
         "gy": -4
       },
       {
-        "type": "rock_small",
-        "gx": 12,
+        "type": "drift_small",
+        "gx": 10,
         "gy": -4
       },
       {
-        "type": "rock_small",
-        "gx": -11,
-        "gy": -3
+        "type": "ice_small",
+        "gx": 14,
+        "gy": -4
       },
       {
         "type": "rock_large",
@@ -515,29 +540,19 @@
         "gy": -3
       },
       {
-        "type": "drift_small",
-        "gx": -6,
+        "type": "rock_small",
+        "gx": -8,
         "gy": -3
       },
       {
-        "type": "rock_small",
+        "type": "drift_small",
         "gx": -3,
         "gy": -3
       },
       {
         "type": "drift_small",
-        "gx": 10,
-        "gy": -3
-      },
-      {
-        "type": "rock_small",
-        "gx": 13,
-        "gy": -3
-      },
-      {
-        "type": "ice_small",
-        "gx": 16,
-        "gy": -3
+        "gx": -13,
+        "gy": -2
       },
       {
         "type": "rock_small",
@@ -546,82 +561,107 @@
       },
       {
         "type": "rock_small",
-        "gx": 1,
+        "gx": 4,
         "gy": -2
       },
       {
-        "type": "rock_small",
-        "gx": 3,
-        "gy": -2
-      },
-      {
-        "type": "drift_small",
-        "gx": 7,
-        "gy": -2
-      },
-      {
-        "type": "ice_small",
+        "type": "ice_large",
         "gx": 15,
         "gy": -2
       },
       {
         "type": "rock_small",
-        "gx": -11,
-        "gy": -1
-      },
-      {
-        "type": "drift_small",
-        "gx": -3,
-        "gy": -1
-      },
-      {
-        "type": "drift_large",
-        "gx": -1,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": 3,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": 5,
-        "gy": -1
-      },
-      {
-        "type": "pine_small",
-        "gx": 9,
+        "gx": -9,
         "gy": -1
       },
       {
         "type": "rock_small",
         "gx": -8,
-        "gy": 0
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": -1
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": -1
       },
       {
         "type": "rock_small",
         "gx": 2,
+        "gy": -1
+      },
+      {
+        "type": "rock_large",
+        "gx": 3,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": 7,
+        "gy": -1
+      },
+      {
+        "type": "ice_small",
+        "gx": 13,
+        "gy": -1
+      },
+      {
+        "type": "ice_small",
+        "gx": 14,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
         "gy": 0
       },
       {
         "type": "rock_small",
-        "gx": 3,
+        "gx": -8,
         "gy": 0
       },
       {
-        "type": "pine_small",
+        "type": "rock_large",
+        "gx": -7,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": 6,
+        "gy": 0
+      },
+      {
+        "type": "rock_large",
         "gx": 8,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": 10,
+        "gy": 0
+      },
+      {
+        "type": "drift_small",
+        "gx": 14,
         "gy": 0
       },
       {
         "type": "ice_small",
         "gx": 15,
-        "gy": 0
-      },
-      {
-        "type": "drift_small",
-        "gx": 16,
         "gy": 0
       },
       {
@@ -630,33 +670,8 @@
         "gy": 1
       },
       {
-        "type": "drift_small",
-        "gx": -10,
-        "gy": 1
-      },
-      {
         "type": "rock_small",
-        "gx": -8,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
-        "gx": -7,
-        "gy": 1
-      },
-      {
-        "type": "drift_small",
-        "gx": -4,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
-        "gx": -2,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
-        "gx": 3,
+        "gx": -1,
         "gy": 1
       },
       {
@@ -665,28 +680,28 @@
         "gy": 1
       },
       {
-        "type": "pine_small",
-        "gx": 9,
+        "type": "rock_small",
+        "gx": 7,
+        "gy": 1
+      },
+      {
+        "type": "rock_small",
+        "gx": 10,
         "gy": 1
       },
       {
         "type": "drift_small",
-        "gx": 13,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
-        "gx": -6,
+        "gx": -10,
         "gy": 2
       },
       {
-        "type": "rock_small",
+        "type": "drift_small",
+        "gx": -7,
+        "gy": 2
+      },
+      {
+        "type": "rock_large",
         "gx": -2,
-        "gy": 2
-      },
-      {
-        "type": "rock_small",
-        "gx": 0,
         "gy": 2
       },
       {
@@ -701,13 +716,48 @@
       },
       {
         "type": "drift_small",
-        "gx": -6,
+        "gx": 16,
+        "gy": 2
+      },
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": 3
+      },
+      {
+        "type": "pine_small",
+        "gx": -12,
+        "gy": 3
+      },
+      {
+        "type": "pine_small",
+        "gx": -11,
+        "gy": 3
+      },
+      {
+        "type": "drift_small",
+        "gx": -5,
         "gy": 3
       },
       {
         "type": "rock_small",
+        "gx": -3,
+        "gy": 3
+      },
+      {
+        "type": "drift_small",
         "gx": 0,
         "gy": 3
+      },
+      {
+        "type": "drift_small",
+        "gx": 14,
+        "gy": 3
+      },
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": 4
       },
       {
         "type": "pine_small",
@@ -716,22 +766,17 @@
       },
       {
         "type": "pine_small",
-        "gx": -11,
-        "gy": 4
-      },
-      {
-        "type": "drift_small",
         "gx": -10,
         "gy": 4
       },
       {
         "type": "drift_small",
-        "gx": -4,
+        "gx": -8,
         "gy": 4
       },
       {
-        "type": "drift_small",
-        "gx": -1,
+        "type": "rock_small",
+        "gx": -3,
         "gy": 4
       },
       {
@@ -740,13 +785,13 @@
         "gy": 4
       },
       {
-        "type": "pine_small",
-        "gx": 14,
-        "gy": 4
+        "type": "rock_small",
+        "gx": -2,
+        "gy": 5
       },
       {
-        "type": "drift_small",
-        "gx": -8,
+        "type": "pine_small",
+        "gx": 14,
         "gy": 5
       },
       {
@@ -755,33 +800,28 @@
         "gy": 5
       },
       {
-        "type": "pine_small",
-        "gx": -12,
-        "gy": 6
-      },
-      {
-        "type": "pine_small",
-        "gx": -11,
-        "gy": 6
-      },
-      {
-        "type": "pine_small",
-        "gx": -5,
-        "gy": 6
-      },
-      {
-        "type": "pine_small",
-        "gx": -3,
+        "type": "drift_small",
+        "gx": -13,
         "gy": 6
       },
       {
         "type": "drift_small",
-        "gx": 0,
+        "gx": -10,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": -7,
         "gy": 6
       },
       {
         "type": "rock_small",
-        "gx": 1,
+        "gx": -4,
+        "gy": 6
+      },
+      {
+        "type": "rock_small",
+        "gx": -3,
         "gy": 6
       },
       {
@@ -795,93 +835,113 @@
         "gy": 6
       },
       {
-        "type": "pine_small",
-        "gx": 12,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": 14,
-        "gy": 6
-      },
-      {
-        "type": "rock_small",
-        "gx": -9,
-        "gy": 7
-      },
-      {
-        "type": "drift_small",
+        "type": "rock_large",
         "gx": -5,
         "gy": 7
       },
       {
         "type": "pine_small",
-        "gx": -4,
-        "gy": 7
-      },
-      {
-        "type": "rock_large",
         "gx": 0,
         "gy": 7
       },
       {
-        "type": "drift_small",
-        "gx": -12,
-        "gy": 8
-      },
-      {
-        "type": "rock_small",
-        "gx": -9,
-        "gy": 8
+        "type": "pine_small",
+        "gx": 1,
+        "gy": 7
       },
       {
         "type": "pine_small",
-        "gx": -5,
-        "gy": 8
-      },
-      {
-        "type": "drift_large",
-        "gx": -2,
-        "gy": 8
-      },
-      {
-        "type": "drift_small",
-        "gx": 12,
-        "gy": 8
+        "gx": 13,
+        "gy": 7
       },
       {
         "type": "drift_small",
         "gx": 16,
+        "gy": 7
+      },
+      {
+        "type": "rock_small",
+        "gx": -11,
+        "gy": 8
+      },
+      {
+        "type": "rock_large",
+        "gx": -10,
         "gy": 8
       },
       {
         "type": "rock_small",
-        "gx": -10,
+        "gx": -8,
+        "gy": 8
+      },
+      {
+        "type": "rock_small",
+        "gx": -7,
+        "gy": 8
+      },
+      {
+        "type": "rock_small",
+        "gx": -6,
+        "gy": 8
+      },
+      {
+        "type": "pine_small",
+        "gx": -1,
+        "gy": 8
+      },
+      {
+        "type": "pine_small",
+        "gx": 0,
+        "gy": 8
+      },
+      {
+        "type": "pine_small",
+        "gx": 1,
+        "gy": 8
+      },
+      {
+        "type": "drift_small",
+        "gx": -13,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": -6,
         "gy": 9
       },
       {
         "type": "drift_small",
-        "gx": -7,
-        "gy": 9
-      },
-      {
-        "type": "rock_small",
-        "gx": 0,
-        "gy": 9
-      },
-      {
-        "type": "rock_small",
-        "gx": 1,
-        "gy": 9
-      },
-      {
-        "type": "pine_large",
-        "gx": 14,
+        "gx": -3,
         "gy": 9
       },
       {
         "type": "pine_small",
-        "gx": -3,
+        "gx": 13,
+        "gy": 9
+      },
+      {
+        "type": "pine_small",
+        "gx": 14,
+        "gy": 9
+      },
+      {
+        "type": "drift_small",
+        "gx": -11,
+        "gy": 10
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": 10
+      },
+      {
+        "type": "pine_small",
+        "gx": 12,
         "gy": 10
       },
       {
@@ -891,17 +951,22 @@
       },
       {
         "type": "pine_small",
-        "gx": 16,
+        "gx": 14,
+        "gy": 10
+      },
+      {
+        "type": "pine_small",
+        "gx": 15,
         "gy": 10
       },
       {
         "type": "drift_small",
-        "gx": -10,
+        "gx": -13,
         "gy": 11
       },
       {
-        "type": "pine_small",
-        "gx": -6,
+        "type": "drift_small",
+        "gx": 0,
         "gy": 11
       },
       {
@@ -910,22 +975,22 @@
         "gy": 11
       },
       {
-        "type": "drift_small",
-        "gx": -12,
+        "type": "drift_large",
+        "gx": -7,
         "gy": 12
       },
       {
-        "type": "pine_small",
+        "type": "rock_large",
         "gx": -5,
         "gy": 12
       },
       {
-        "type": "pine_small",
+        "type": "drift_small",
         "gx": -3,
         "gy": 12
       },
       {
-        "type": "pine_small",
+        "type": "rock_large",
         "gx": 3,
         "gy": 12
       },
@@ -936,27 +1001,27 @@
       },
       {
         "type": "drift_small",
-        "gx": -9,
+        "gx": 11,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": 13,
+        "gy": 12
+      },
+      {
+        "type": "drift_small",
+        "gx": -13,
         "gy": 13
       },
       {
         "type": "pine_small",
-        "gx": -6,
+        "gx": -11,
         "gy": 13
       },
       {
-        "type": "drift_small",
-        "gx": 1,
-        "gy": 13
-      },
-      {
-        "type": "pine_small",
-        "gx": 5,
-        "gy": 13
-      },
-      {
-        "type": "drift_small",
-        "gx": 9,
+        "type": "rock_small",
+        "gx": 0,
         "gy": 13
       },
       {
@@ -966,22 +1031,32 @@
       },
       {
         "type": "pine_small",
-        "gx": 16,
+        "gx": 15,
         "gy": 13
       },
       {
-        "type": "drift_small",
-        "gx": -11,
-        "gy": 14
-      },
-      {
-        "type": "drift_small",
-        "gx": -2,
+        "type": "pine_small",
+        "gx": -10,
         "gy": 14
       },
       {
         "type": "pine_small",
-        "gx": 3,
+        "gx": -9,
+        "gy": 14
+      },
+      {
+        "type": "rock_small",
+        "gx": -6,
+        "gy": 14
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
+        "gy": 14
+      },
+      {
+        "type": "rock_small",
+        "gx": -3,
         "gy": 14
       },
       {
@@ -990,17 +1065,22 @@
         "gy": 14
       },
       {
+        "type": "drift_small",
+        "gx": 10,
+        "gy": 14
+      },
+      {
         "type": "pine_small",
+        "gx": 13,
+        "gy": 14
+      },
+      {
+        "type": "pine_large",
         "gx": 15,
         "gy": 14
       },
       {
-        "type": "pine_small",
-        "gx": 16,
-        "gy": 14
-      },
-      {
-        "type": "pine_small",
+        "type": "pine_large",
         "gx": -12,
         "gy": 15
       },
@@ -1010,23 +1090,28 @@
         "gy": 15
       },
       {
-        "type": "drift_small",
-        "gx": -8,
+        "type": "pine_small",
+        "gx": -9,
         "gy": 15
       },
       {
-        "type": "drift_small",
-        "gx": -6,
+        "type": "rock_small",
+        "gx": -2,
         "gy": 15
       },
       {
-        "type": "drift_small",
-        "gx": -4,
+        "type": "rock_small",
+        "gx": 0,
         "gy": 15
       },
       {
         "type": "rock_small",
         "gx": 1,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 3,
         "gy": 15
       },
       {
@@ -1040,13 +1125,8 @@
         "gy": 15
       },
       {
-        "type": "drift_small",
+        "type": "drift_large",
         "gx": 9,
-        "gy": 15
-      },
-      {
-        "type": "pine_large",
-        "gx": 10,
         "gy": 15
       },
       {
@@ -1061,8 +1141,18 @@
       },
       {
         "type": "pine_small",
-        "gx": 15,
+        "gx": 14,
         "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": -9,
+        "gy": 16
+      },
+      {
+        "type": "drift_small",
+        "gx": -6,
+        "gy": 16
       },
       {
         "type": "rock_small",
@@ -1071,11 +1161,21 @@
       },
       {
         "type": "rock_small",
+        "gx": 1,
+        "gy": 16
+      },
+      {
+        "type": "rock_small",
         "gx": 2,
         "gy": 16
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
+        "gx": 3,
+        "gy": 16
+      },
+      {
+        "type": "pine_small",
         "gx": 5,
         "gy": 16
       },
@@ -1085,18 +1185,13 @@
         "gy": 16
       },
       {
-        "type": "drift_small",
-        "gx": 9,
+        "type": "pine_small",
+        "gx": 11,
         "gy": 16
       },
       {
         "type": "pine_small",
-        "gx": 13,
-        "gy": 16
-      },
-      {
-        "type": "pine_small",
-        "gx": 16,
+        "gx": 14,
         "gy": 16
       }
     ],
@@ -2237,7 +2332,7 @@
       "theme": "Winter",
       "sprite": "deco_pine",
       "cost": 30,
-      "xp": 10,
+      "xp": 2,
       "unlockLevel": 1,
       "glow": false,
       "desc": "Tief verschneite Alpentanne für deinen Waldrand."
@@ -2248,7 +2343,7 @@
       "theme": "Winter",
       "sprite": "deco_snowman",
       "cost": 40,
-      "xp": 14,
+      "xp": 2,
       "unlockLevel": 1,
       "glow": false,
       "desc": "Fröhlicher Schneemann mit gestreiftem Schal und Karottennase."
@@ -2259,7 +2354,7 @@
       "theme": "Winter",
       "sprite": "deco_lantern",
       "cost": 45,
-      "xp": 15,
+      "xp": 2,
       "unlockLevel": 1,
       "glow": true,
       "glowOffset": {
@@ -2275,7 +2370,7 @@
       "theme": "Winter",
       "sprite": "deco_giftpile",
       "cost": 60,
-      "xp": 22,
+      "xp": 3,
       "unlockLevel": 2,
       "glow": false,
       "desc": "Festlich verpackte Päckchen mit glänzenden Schleifen."
@@ -2286,7 +2381,7 @@
       "theme": "Winter",
       "sprite": "deco_bench",
       "cost": 70,
-      "xp": 24,
+      "xp": 4,
       "unlockLevel": 2,
       "glow": true,
       "glowOffset": {
@@ -2302,7 +2397,7 @@
       "theme": "Winter",
       "sprite": "deco_lightarch",
       "cost": 120,
-      "xp": 38,
+      "xp": 6,
       "unlockLevel": 3,
       "glow": true,
       "glowOffset": {
@@ -2318,7 +2413,7 @@
       "theme": "Weihnachten",
       "sprite": "deco_light_reindeer",
       "cost": 180,
-      "xp": 50,
+      "xp": 9,
       "unlockLevel": 6,
       "glow": true,
       "desc": "Rentier aus warmen Lichterketten.",
@@ -2334,7 +2429,7 @@
       "theme": "Weihnachten",
       "sprite": "deco_big_nutcracker",
       "cost": 320,
-      "xp": 80,
+      "xp": 16,
       "unlockLevel": 9,
       "glow": false,
       "desc": "Nussknacker, größer als jeder Wichtel."
@@ -2345,7 +2440,7 @@
       "theme": "Weihnachten",
       "sprite": "deco_gingerbread_gate",
       "cost": 450,
-      "xp": 110,
+      "xp": 22,
       "unlockLevel": 12,
       "glow": true,
       "desc": "Tor aus Lebkuchen mit Zuckerguss-Lichtern.",
@@ -2361,7 +2456,7 @@
       "theme": "Winter",
       "sprite": "deco_pine",
       "cost": 90,
-      "xp": 25,
+      "xp": 4,
       "unlockLevel": 4,
       "glow": false,
       "desc": "Alte, mächtige Alpentanne."
@@ -2618,140 +2713,140 @@
     },
     {
       "level": 11,
-      "xpNeeded": 10460,
+      "xpNeeded": 10980,
       "coinBonus": 65,
       "treeStage": 3,
       "unlockText": "Freigeschaltet: Schneeeule und Wichtelpost."
     },
     {
       "level": 12,
-      "xpNeeded": 14074,
+      "xpNeeded": 15480,
       "coinBonus": 70,
       "treeStage": 3,
       "unlockText": "Freigeschaltet: Walnüsse, Spielzeugwerkstatt und Lebkuchen-Tor."
     },
     {
       "level": 13,
-      "xpNeeded": 18463,
+      "xpNeeded": 21230,
       "coinBonus": 75,
       "treeStage": 3,
       "unlockText": "Stufe 13 erreicht."
     },
     {
       "level": 14,
-      "xpNeeded": 23712,
+      "xpNeeded": 28450,
       "coinBonus": 80,
       "treeStage": 3,
       "unlockText": "Stufe 14 erreicht."
     },
     {
       "level": 15,
-      "xpNeeded": 29904,
+      "xpNeeded": 35880,
       "coinBonus": 85,
       "treeStage": 3,
       "unlockText": "Stufe 15 erreicht."
     },
     {
       "level": 16,
-      "xpNeeded": 37125,
+      "xpNeeded": 44550,
       "coinBonus": 90,
       "treeStage": 3,
       "unlockText": "Stufe 16 erreicht."
     },
     {
       "level": 17,
-      "xpNeeded": 45463,
+      "xpNeeded": 54560,
       "coinBonus": 95,
       "treeStage": 3,
       "unlockText": "Stufe 17 erreicht."
     },
     {
       "level": 18,
-      "xpNeeded": 55006,
+      "xpNeeded": 66010,
       "coinBonus": 100,
       "treeStage": 3,
       "unlockText": "Stufe 18 erreicht."
     },
     {
       "level": 19,
-      "xpNeeded": 65843,
+      "xpNeeded": 79010,
       "coinBonus": 105,
       "treeStage": 3,
       "unlockText": "Stufe 19 erreicht."
     },
     {
       "level": 20,
-      "xpNeeded": 78062,
+      "xpNeeded": 93670,
       "coinBonus": 110,
       "treeStage": 3,
       "unlockText": "Stufe 20 erreicht."
     },
     {
       "level": 21,
-      "xpNeeded": 91757,
+      "xpNeeded": 110110,
       "coinBonus": 115,
       "treeStage": 3,
       "unlockText": "Stufe 21 erreicht."
     },
     {
       "level": 22,
-      "xpNeeded": 107017,
+      "xpNeeded": 128420,
       "coinBonus": 120,
       "treeStage": 3,
       "unlockText": "Stufe 22 erreicht."
     },
     {
       "level": 23,
-      "xpNeeded": 123940,
+      "xpNeeded": 148730,
       "coinBonus": 125,
       "treeStage": 3,
       "unlockText": "Stufe 23 erreicht."
     },
     {
       "level": 24,
-      "xpNeeded": 142615,
+      "xpNeeded": 171140,
       "coinBonus": 130,
       "treeStage": 3,
       "unlockText": "Stufe 24 erreicht."
     },
     {
       "level": 25,
-      "xpNeeded": 163138,
+      "xpNeeded": 195770,
       "coinBonus": 135,
       "treeStage": 3,
       "unlockText": "Stufe 25 erreicht."
     },
     {
       "level": 26,
-      "xpNeeded": 185606,
+      "xpNeeded": 222730,
       "coinBonus": 140,
       "treeStage": 3,
       "unlockText": "Stufe 26 erreicht."
     },
     {
       "level": 27,
-      "xpNeeded": 210114,
+      "xpNeeded": 252140,
       "coinBonus": 145,
       "treeStage": 3,
       "unlockText": "Stufe 27 erreicht."
     },
     {
       "level": 28,
-      "xpNeeded": 236760,
+      "xpNeeded": 284110,
       "coinBonus": 150,
       "treeStage": 3,
       "unlockText": "Stufe 28 erreicht."
     },
     {
       "level": 29,
-      "xpNeeded": 265643,
+      "xpNeeded": 318770,
       "coinBonus": 155,
       "treeStage": 3,
       "unlockText": "Stufe 29 erreicht."
     },
     {
       "level": 30,
-      "xpNeeded": 296859,
+      "xpNeeded": 356230,
       "coinBonus": 160,
       "treeStage": 3,
       "unlockText": "Stufe 30 erreicht."
@@ -3039,12 +3134,48 @@
   },
   "orders": {
     "slots": 4,
-    "minLines": 1,
-    "maxLines": 3,
     "coinFactor": 1.1,
     "xpFactor": 1.0,
-    "refillSeconds": 90
+    "refillSeconds": 90,
+    "valueBase": 40,
+    "valueExp": 1.15,
+    "maxQtyRaw": 8,
+    "maxQtyCrafted": 3,
+    "tiers": {
+      "easy": {
+        "weight": 0.45,
+        "mult": 0.6,
+        "minLines": 1,
+        "maxLines": 2
+      },
+      "medium": {
+        "weight": 0.35,
+        "mult": 1.0,
+        "minLines": 1,
+        "maxLines": 3
+      },
+      "hard": {
+        "weight": 0.2,
+        "mult": 1.6,
+        "minLines": 2,
+        "maxLines": 3
+      }
+    },
+    "rewards": {
+      "coins": {
+        "weight": 0.5,
+        "coinMult": 1.3,
+        "xpMult": 0.7
+      },
+      "xp": {
+        "weight": 0.5,
+        "coinMult": 0.7,
+        "xpMult": 1.3
+      }
+    },
+    "note": "Aufträge passend zum Hof (Baustein 2c, orders.ts): nur herstellbare Waren, Mischung leicht/mittel/anspruchsvoll, Zielwert nach Stufe, Lohn-Art Münzen oder Erfahrung."
   },
+  "animalCostStep": 0.5,
   "stand": {
     "slots": 6,
     "sellSeconds": 45,

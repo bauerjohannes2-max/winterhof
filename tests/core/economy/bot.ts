@@ -1,26 +1,32 @@
+// Wirtschafts-Bot (gemeinsam für economy.*.test.ts, aufgeteilt, damit die Verläufe parallel laufen).
 // Wirtschafts-Simulation: ein Vielspieler-Bot spielt 7 Tage je 3 Sitzungen à 20 Minuten, tippt jede Minute.
-// Prüft Leitplanken (kein Festhängen, sinnvolles Tempo), keine exakten Werte.
-import { describe, expect, it } from 'vitest';
+// Baustein 2c (Entscheidung 18): mehrere Zufallsverläufe statt einem, damit Glück den Fortschritt nicht bestimmt.
+// Prüft Leitplanken (kein Festhängen, Tempo etwa Stufe 15 in Woche 1, Verläufe nah beieinander), keine exakten Werte.
+import { expect } from 'vitest';
 import {
-  CONTENT, advanceTime, applyCommand, canPlace, clearCost, createNewGame, isFieldReady, isPlotOwned, nextPlotPrice,
-  obstacleDef, plotStatus, storageFree, terrainMap, type Command, type GameState
-} from '../../src/core';
+  CONTENT, advanceTime, applyCommand, buildOccupancy, canPlace, clearCost, createNewGame, decoPrice, footprintOf, isFieldReady, isPlotOwned,
+  nextPlotPrice, obstacleDef, plotStatus, storageFree, terrainMap, type Command, type GameState
+} from '../../../src/core';
+
+const tally = { toolCoins: 0, cleared: 0, earned: 0, decoCoins: 0 };
 
 function tryCmd(s: GameState, cmd: Command, now: number): GameState {
   const r = applyCommand(s, cmd, now);
-  return r.ok ? r.state : s;
+  if (!r.ok) return s;
+  for (const e of r.events) if (e.type === 'coinsChanged' && e.delta > 0) tally.earned += e.delta;
+  return r.state;
 }
 
 /** Erstes freies Feld auf eigenem Land (Start-Hof zuerst). */
 function freeSpot(s: GameState, w: number, h: number): { gx: number; gy: number } | null {
   const plots = [...s.ownedPlots].map((id) => terrainMap().plotById(id)!);
+  const occ = buildOccupancy(s.objects);   // einmal je Suche, nicht je Feld
   for (const p of plots) for (let gy = p.y0; gy <= p.y1; gy++) for (let gx = p.x0; gx <= p.x1; gx++) {
-    if (canPlace(s, gx, gy, w, h).ok) return { gx, gy };
+    if (canPlace(s, gx, gy, w, h, null, occ).ok) return { gx, gy };
   }
   return null;
 }
 
-const tally = { toolCoins: 0, cleared: 0 };
 
 /** Land: Hindernisse auf eigenem Land räumen (fehlendes Werkzeug nur mit Polster kaufen), bei Platznot Land kaufen. */
 function botLand(s0: GameState, now: number): GameState {
@@ -51,9 +57,13 @@ function botStep(s0: GameState, now: number, sessionStart = false): GameState {
     if (o.kind === 'station') for (let i = 0; i < 6; i++) s = tryCmd(s, { type: 'collectProduct', stationId: o.id }, now);
     if (o.kind === 'station' && o.wrapped) s = tryCmd(s, { type: 'unwrapStation', stationId: o.id }, now);
   }
-  // 2. Aufträge erfüllen; zu Sitzungsbeginn einen unerfüllbaren ablehnen (wie ein echter Spieler)
+  // 2. Aufträge erfüllen; zu Sitzungsbeginn den Auftrag ablehnen, dem am meisten fehlt (wie ein echter Spieler)
   for (const o of [...s.orders]) s = tryCmd(s, { type: 'fulfillOrder', orderId: o.id }, now);
-  if (sessionStart && s.orders.length > 0) s = tryCmd(s, { type: 'skipOrder', orderId: s.orders[0]!.id }, now);
+  if (sessionStart && s.orders.length > 0) {
+    const lack = (o: GameState['orders'][number]) => o.lines.reduce((a, l) => a + Math.max(0, l.qty - (s.inventory[l.item] ?? 0)) * CONTENT.items[l.item]!.sellPrice, 0);
+    const worst = [...s.orders].sort((a, b) => lack(b) - lack(a))[0]!;
+    if (lack(worst) > 0) s = tryCmd(s, { type: 'skipOrder', orderId: worst.id }, now);
+  }
   // 3. Tiere füttern, pflanzen (Weizen + was Aufträge brauchen)
   for (const o of s.objects) if (o.kind === 'animal' && o.state === 'hungry') s = tryCmd(s, { type: 'feedAnimal', animalId: o.id }, now);
   const wanted = s.orders.flatMap((o) => o.lines.map((l) => l.item)).filter((i) => CONTENT.items[i]?.category === 'crop' && CONTENT.items[i]!.unlockLevel <= s.level);
@@ -95,35 +105,63 @@ function botStep(s0: GameState, now: number, sessionStart = false): GameState {
     if (s === before) break;
   }
   for (const kind of ['silo', 'barn'] as const) if (storageFree(s, kind) < 10 && s.coins > 400) s = tryCmd(s, { type: 'upgradeStorage', storage: kind }, now);
+  // 7. Überschuss für Weihnachtsdeko (die größte freiwillige Ausgabe, wie in Hay Day); Polster für Land bleibt
+  const reserve = nextPlotPrice(s).coins + 800;
+  const decos = Object.values(CONTENT.decorations).filter((d) => d.group !== 'path' && d.unlockLevel <= s.level).sort((a, b) => b.cost - a.cost);
+  for (let i = 0; i < 3 && decos.length; i++) {
+    const d = decos.find((x) => decoPrice(s, x.id) <= s.coins - reserve);
+    if (!d) break;
+    const fp = footprintOf({ kind: 'deco', type: d.id });
+    const at = freeSpot(s, fp.w, fp.h);
+    if (!at) break;
+    const price = decoPrice(s, d.id);
+    const before = s;
+    s = tryCmd(s, { type: 'buyDeco', decoType: d.id, ...at }, now);
+    if (s === before) break;
+    tally.decoCoins += price;
+  }
   s = tryCmd(s, { type: 'claimDaily' }, now);
   for (const g of [...CONTENT.chapters, ...CONTENT.achievements]) s = tryCmd(s, { type: 'claimGoal', goalId: g.id }, now);
   return s;
 }
 
-describe('Wirtschaft (7-Tage-Bot)', () => {
-  it('kommt voran, hängt nicht fest, Tempo im Rahmen', () => {
-    const T0 = Date.UTC(2026, 10, 23, 7, 0, 0);
-    let s = createNewGame(T0, 7);
-    const levelByDay: number[] = [];
-    for (let day = 0; day < 7; day++) {
-      for (const startHour of [7, 13, 19]) {
-        for (let m = 0; m <= 20; m += 1) {
-          s = botStep(s, T0 + day * 86_400_000 + (startHour - 7) * 3600_000 + m * 60_000, m === 0);
-        }
+export interface Run { seed: number; levelByDay: number[]; coins: number; earned: number; orders: number; land: number; cleared: number; deco: number }
+
+export function runBot(seed: number): Run {
+  Object.assign(tally, { toolCoins: 0, cleared: 0, earned: 0, decoCoins: 0 });
+  const T0 = Date.UTC(2026, 10, 23, 7, 0, 0);
+  let s = createNewGame(T0, seed);
+  const levelByDay: number[] = [];
+  for (let day = 0; day < 7; day++) {
+    for (const startHour of [7, 13, 19]) {
+      for (let m = 0; m <= 20; m += 1) {
+        s = botStep(s, T0 + day * 86_400_000 + (startHour - 7) * 3600_000 + m * 60_000, m === 0);
       }
-      levelByDay.push(s.level);
     }
-    console.log('Level je Tag', levelByDay.join(','), '| Münzen', s.coins, '| Aufträge', s.stats.ordersDone, '| Land', s.ownedPlots.length,
-      '| geräumt', tally.cleared, '| Werkzeug-Kauf', tally.toolCoins, '| Werkzeuge', CONTENT.tools.items.map((t) => s.inventory[t] ?? 0).join('/'));
-    expect(levelByDay[0]).toBeGreaterThanOrEqual(3);       // Tag 1: spürbarer Fortschritt
-    expect(levelByDay[0]).toBeLessThanOrEqual(8);          // ...aber nicht durchgespielt
-    expect(levelByDay[6]).toBeGreaterThanOrEqual(10);      // Vielspieler nach 1 Woche
-    expect(levelByDay[6]).toBeLessThanOrEqual(20);
-    expect(s.coins).toBeLessThan(50_000);                  // keine Gelddruckmaschine
-    expect(s.stats.ordersDone).toBeGreaterThan(3);
-    expect(s.ownedPlots.length).toBeGreaterThan(CONTENT.map.plots.start.length + 2); // Land wächst spürbar
-    expect(s.ownedPlots.length).toBeLessThan(terrainMap().plots.length);             // ...aber nicht alles in einer Woche
-    expect(tally.cleared).toBeGreaterThan(10);                                         // Räumen ist Teil des Spiels
-    expect(s.coins).toBeGreaterThanOrEqual(0);
-  });
-});
+    levelByDay.push(s.level);
+  }
+  expect(s.coins).toBeGreaterThanOrEqual(0);
+  expect(s.ownedPlots.length).toBeLessThan(terrainMap().plots.length);             // nicht alles Land in einer Woche
+  return { seed, levelByDay, coins: s.coins, earned: tally.earned, orders: s.stats.ordersDone, land: s.ownedPlots.length, cleared: tally.cleared, deco: tally.decoCoins };
+}
+
+/** Leitplanken je Verlauf (Entscheidung 18). Absolute Bänder, damit Glück den Fortschritt nicht bestimmt:
+ * Stufe 14–16 nach Woche 1 heißt höchstens 2 Stufen Unterschied zwischen beliebigen Verläufen. */
+export function checkRun(r: Run): void {
+  console.log(`Verlauf ${r.seed}: Stufe je Tag ${r.levelByDay.join(',')} | eingenommen ${r.earned} | Deko ${r.deco} | Münzen ${r.coins} | Aufträge ${r.orders} | Land ${r.land} | geräumt ${r.cleared}`);
+  const at = `Verlauf ${r.seed}`;
+  expect(r.levelByDay[0], at).toBeGreaterThanOrEqual(3);        // Tag 1: spürbarer Fortschritt
+  expect(r.levelByDay[0], at).toBeLessThanOrEqual(8);           // ...aber nicht durchgespielt
+  expect(r.levelByDay[6], at).toBeGreaterThanOrEqual(14);       // Woche 1 etwa Stufe 15
+  expect(r.levelByDay[6], at).toBeLessThanOrEqual(16);
+  expect(r.orders, at).toBeGreaterThan(30);                      // Aufträge tragen das Spiel
+  expect(r.land, at).toBeGreaterThan(CONTENT.map.plots.start.length + 2); // Land wächst spürbar
+  expect(r.cleared, at).toBeGreaterThan(10);                     // Räumen ist Teil des Spiels
+  expect(r.coins, at).toBeLessThan(15_000);                      // Münzen haben ein Ziel, kein Horten
+  expect(r.earned, at).toBeGreaterThan(EARNED_BAND[0]);         // Einnahmen: Leitplanke, siehe EARNED_BAND
+  expect(r.earned, at).toBeLessThan(EARNED_BAND[1]);
+}
+
+/** Einnahmen in Woche 1 (Münzen). Gemessen 24.11.: 55.000–104.000 (Faktor 1,9). Ziel ist Faktor 1,5; die Streuung
+ * kommt zum großen Teil aus der einfachen Bot-Strategie (welchen Auftrag er ablehnt), offen in NEUSTART_PLAN 2c. */
+export const EARNED_BAND = [45_000, 120_000] as const;

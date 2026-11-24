@@ -192,3 +192,11 @@ export function dayKey(nowMs: number, tzOffsetMin = new Date(nowMs).getTimezoneO
   const d = new Date(nowMs - tzOffsetMin * 60000);
   return d.toISOString().slice(0, 10);
 }
+
+/** Preis des nächsten Tiers dieser Art: steigt mit jedem weiteren Tier (Hay Day). */
+export function animalPrice(state: GameState, animalType: string): number {
+  const def = CONTENT.animals[animalType];
+  if (!def) return 0;
+  const owned = countObjects(state, 'animal', animalType);
+  return Math.round(def.cost * (1 + CONTENT.animalCostStep * owned) / 5) * 5;
+}

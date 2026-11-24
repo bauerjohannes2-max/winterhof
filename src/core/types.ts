@@ -143,13 +143,22 @@ export interface MaterialRules {
   storageQtyEvery: number;
 }
 
+export type OrderTier = 'easy' | 'medium' | 'hard';
+export type OrderReward = 'coins' | 'xp';
 export interface OrderRules {
   slots: number;
-  minLines: number;
-  maxLines: number;
-  coinFactor: number;   // Belohnung = Warenwert * Faktor
+  coinFactor: number;   // Belohnung = Warenwert * Faktor * Lohn-Art
   xpFactor: number;
   refillSeconds: number; // Wartezeit nach Ablehnen
+  /** Zielwert (Warenwert) eines Auftrags = valueBase * Stufe^valueExp * tiers[t].mult */
+  valueBase: number;
+  valueExp: number;
+  maxQtyRaw: number;
+  maxQtyCrafted: number;
+  /** Mischung: leicht (Rohware), mittel (einfach verarbeitet), anspruchsvoll (mehrstufig) */
+  tiers: Record<OrderTier, { weight: number; mult: number; minLines: number; maxLines: number }>;
+  /** Lohn-Art: Münz- oder Erfahrungs-Auftrag (Hay Day) */
+  rewards: Record<OrderReward, { weight: number; coinMult: number; xpMult: number }>;
 }
 
 // ---------------------------------------------------------------- Karte
@@ -216,6 +225,9 @@ export interface Order {
   lines: OrderLine[];
   coins: number;
   xp: number;
+  /** Schwierigkeit und Lohn-Art (fehlt bei Aufträgen aus älteren Spielständen) */
+  tier?: OrderTier;
+  reward?: OrderReward;
   /** Auftrag erst ab diesem Zeitpunkt sichtbar (nach Ablehnen) */
   availableAt: number;
 }
@@ -263,6 +275,8 @@ export interface GameState {
   storage: Record<StorageKind, number>; // Kapazität
   objects: MapObject[];
   storedDecos: Record<string, number>;
+  /** Kartenstapel für die Auftragsmischung (Shuffle Bag): gleicht Glücks- und Pechsträhnen aus. Fehlt in älteren Ständen. */
+  orderBag?: { tiers: OrderTier[]; rewards: OrderReward[] };
   /** Eigene Landstücke (IDs "Spalte,Reihe", inkl. Start) */
   ownedPlots: string[];
   /** Nächster Zeitpunkt, an dem eine Schneewehe nachwachsen darf */

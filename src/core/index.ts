@@ -13,5 +13,7 @@ export {
   goalReady, allGoals, activeChapter, dayKey
 } from './state';
 export { applyCommand, advanceTime, generateOrder } from './commands';
+export { composeOrder, makeableItems, itemTier, orderValueTarget } from './orders';
+export { animalPrice } from './state';
 export { serialize, deserialize, migrateLegacy, loadFromStore, saveToStore, SAVE_KEY, BACKUP_KEY, BEFORE_V9_KEY, LEGACY_KEYS } from './save';
 export { GameSession } from './session';
