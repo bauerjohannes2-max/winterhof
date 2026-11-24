@@ -32,6 +32,8 @@ export interface ContentPack {
   footprints: Record<string, Footprint>;
   field: { cost: number; costStep: number; maxCount: number; unlockLevel: number };
   market: { sellFactor: number };
+  /** Tipps auf dem Ladebild (Baustein 3), wechseln je Start und alle paar Sekunden */
+  loadingTips: string[];
   daily: { baseCoins: number; streakCoins: number; maxStreakBonus: number };
   map: {
     origin: { gx: number; gy: number };
@@ -117,6 +119,8 @@ export function validateContent(c: ContentPack = CONTENT): string[] {
     const rawValue = Object.entries(it.ingredients).reduce((s, [ing, q]) => s + (c.items[ing]?.sellPrice ?? 0) * q, 0);
     if (it.sellPrice < rawValue) errs.push(`${it.id}: Verkaufspreis ${it.sellPrice} < Zutatenwert ${rawValue}`);
   }
+  if (c.loadingTips.length < 5) errs.push('loadingTips: mindestens 5 Tipps');
+  for (const t of c.loadingTips) if (!t.trim() || t.length > 90) errs.push(`loadingTips: Tipp leer oder länger als 90 Zeichen (am Handy nicht lesbar): ${t}`);
   return errs;
 }
 

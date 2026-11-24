@@ -50,6 +50,9 @@ Vorbild: Hay Day (Bilder bringen ihren Boden mit) und Clash of Clans (jede Grund
 - Wege: Aus den Kartendaten entsteht eine Maske, die weich gerundet wird (Unschärfe + Schwelle). Darauf kommen die Wegtextur, ein dunkler Saum innen und Schneeklumpen auf der Kante.
 - **Bild-Pipeline:** Quellbilder liegen in `art_src/`, Pixi **AssetPack** baut daraus Atlanten (WebP + PNG als Ersatz) in zwei Auflösungen (@1x, @2x). Der Code lädt nur über ein Manifest, nie über einen Dateipfad.
 - Mindestschärfe: 1,6 Bildpunkte je Weltpunkt (STIL_REGELN §6).
+- **Umsetzung (Baustein 3, 24.11.):** AssetPack 1.7 (`.assetpack.js`, `npm run assets`, läuft vor jedem Build). Quellbilder **verlustfrei als PNG** in `art_src/` (versioniert; AssetPack packt nur PNG/JPG). Ordner-Tags: `{m}` = Bündel im Manifest, `{tps}` = Atlas. Quelle gilt als @2x, daraus entsteht @1x; Atlasseiten höchstens 2048 px; Ausgabe `assets/gen/` (nicht versioniert) mit `manifest.json`. Laden: `Assets.init({ basePath: 'assets/gen/', manifest: 'manifest.json', texturePreference })`, dann `loadBundle`.
+- **Bildschärfe automatisch (Entscheidung 19):** `render/boot/quality.ts` wählt @2x nur bei Retina-Bildschirm, Grafik ≥ 4096, ≥ 3 GB Speicher, ≥ 4 Kernen (wo der Browser es verrät). Zeichenauflösung höchstens 2. Liegt das Mittel der ersten Sekunden unter 45 Bildern/s, startet das Gerät beim nächsten Mal mit @1x. Schalter in den Einstellungen kommt mit den Menüs.
+- **Ladebild und Hochkant** sind HTML in `index.html` (sofort sichtbar vor dem Skript): Motiv (Platzhalter `assets/splash_art.webp`), Schriftzug, Tipp aus `winterhof.json → loadingTips`, Balken. Hochkant zeigt CSS sofort „Bitte halte dein Handy quer“, `ui/orientation.ts` hält die Zeit an.
 
 ## 7. Leistungsbudget (Mittelklasse-Handy, quer)
 - ≥ 55 Bilder pro Sekunde, ≤ 60 Zeichenaufrufe pro Bild, Texturspeicher ≤ 96 MB, Start bis spielbar ≤ 3 s bei WLAN.

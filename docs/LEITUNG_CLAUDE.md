@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Claude (24.11. Nacht): Baustein 3 Technik-Gerüst (Vorgaben Entscheidung 19). 2c abgenommen.
+- Niemand. Baustein 3 Technik-Gerüst fertig (24.11.), wartet auf Abnahme. Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).

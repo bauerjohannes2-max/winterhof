@@ -50,7 +50,7 @@ export default defineConfig({
     }
   },
   test: {
-    include: ['tests/core/**/*.test.ts']
+    include: ['tests/core/**/*.test.ts', 'tests/render/**/*.test.ts']
   },
   server: {
     host: '127.0.0.1',

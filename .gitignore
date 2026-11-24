@@ -7,6 +7,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 node_modules/
-art_src/
+# Quellbilder sind versioniert (Bild-Pipeline Baustein 3), nur Rohmaterial der Probe nicht
+art_src/probe_raw/
+# von AssetPack erzeugt (npm run assets)
+assets/gen/
+.assetpack/
 test-results/
 playwright-report/

@@ -3415,6 +3415,18 @@
       }
     ]
   },
+  "loadingTips": [
+    "Wische über reife Felder, dann erntest du alles in einem Zug.",
+    "Wunschzettel bringen Münzen oder Erfahrung. Nimm, was du gerade brauchst.",
+    "Hängt ein Wunschzettel fest? Wirf ihn weg, bald kommt ein neuer.",
+    "Hindernisse räumen gibt Erfahrung und manchmal ein Fundstück.",
+    "Tannen musst du nicht fällen: Grab sie aus und setz sie woanders wieder ein.",
+    "Deine Tiere fressen Weizen oder Beeren. Halte immer etwas Futter im Silo.",
+    "Grundbrief, Holzhammer und Grenzpflock findest du beim Ernten und Abholen.",
+    "Die Tagestruhe am Hofplatz hat jeden Tag ein Geschenk für dich.",
+    "Volle Scheune? Im Hofladen bekommst du mehr als beim Händler.",
+    "Ab Stufe 13 kannst du ans Ufer des Sternsees."
+  ],
   "market": {
     "sellFactor": 0.3
   },

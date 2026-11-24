@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 8085",
-    "build": "node ./node_modules/vite/bin/vite.js build",
+    "assets": "node ./node_modules/@assetpack/core/bin/index.js",
+    "dev": "npm run assets && node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 8085",
+    "build": "npm run assets && node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 8085",
     "test": "node ./node_modules/vitest/vitest.mjs run",
     "typecheck": "node ./node_modules/typescript/bin/tsc -p tsconfig.json",
@@ -17,6 +18,7 @@
     "pixi.js": "^8.10.2"
   },
   "devDependencies": {
+    "@assetpack/core": "^1.7.0",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.65.1",
     "eslint": "^9.39.5",
