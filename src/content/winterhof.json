@@ -2122,7 +2122,7 @@
         "h": 2
       },
       "unlockLevel": 2,
-      "cost": 165,
+      "cost": 300,
       "recipes": [
         "berry_tart",
         "tiramisu",
@@ -2152,7 +2152,7 @@
         "h": 2
       },
       "unlockLevel": 3,
-      "cost": 240,
+      "cost": 600,
       "recipes": [
         "wool_scarf",
         "cookie_tin",
@@ -2188,7 +2188,7 @@
         "h": 2
       },
       "unlockLevel": 7,
-      "cost": 420,
+      "cost": 2500,
       "recipes": [
         "baked_apple",
         "apple_punch"
@@ -2217,7 +2217,7 @@
         "h": 2
       },
       "unlockLevel": 8,
-      "cost": 650,
+      "cost": 4000,
       "recipes": [
         "candied_almonds",
         "marzipan"
@@ -2246,7 +2246,7 @@
         "h": 2
       },
       "unlockLevel": 10,
-      "cost": 950,
+      "cost": 6500,
       "recipes": [
         "advent_wreath",
         "door_wreath"
@@ -2275,7 +2275,7 @@
         "h": 2
       },
       "unlockLevel": 11,
-      "cost": 1250,
+      "cost": 9000,
       "recipes": [
         "wishlist",
         "xmas_card"
@@ -2304,7 +2304,7 @@
         "h": 2
       },
       "unlockLevel": 12,
-      "cost": 1650,
+      "cost": 12000,
       "recipes": [
         "rocking_horse",
         "toy_train",
@@ -2536,8 +2536,8 @@
   },
   "land": {
     "fromLevel": 3,
-    "baseCost": 150,
-    "costGrowth": 1.15,
+    "baseCost": 300,
+    "costGrowth": 1.25,
     "materialsFromPlot": 2,
     "materialStep": 2,
     "materials": [

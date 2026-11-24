@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Baustein 2c Wirtschaft fertig (24.11. spät), wartet auf Abnahme. Danach Baustein 3. Prüfen: `npm run check`.
+- Niemand. Baustein 2c nachgebessert (24.11. Nacht), wartet auf Abnahme. Danach Baustein 3 (Vorgaben Entscheidung 19). Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -39,6 +39,10 @@
 
 18. **Wirtschaft vor Baustein 3** (Hannes 24.11. spät, je Empfehlung): Der 7-Tage-Bot schwankt je Zufallsverlauf zwischen 7.500 und 62.000 Münzen (Stufe 14–16), Ursache: Aufträge reiner Zufall, kaum Münz-Ausgaben. Neu als Baustein 2c: **Aufträge passend zum Hof** (nur herstellbare Waren, Mischung leicht/mittel/schwer, Lohn nach Aufwand), **zwei Lohn-Arten** (Münz- und Erfahrungs-Aufträge), **Münz-Ausgaben wie Hay Day** (Weihnachtsdeko, steigende Preise je Kauf, alles was bei Hay Day Sinn macht), **Tempo:** Vielspieler Woche 1 etwa Stufe 15, jeder Verlauf höchstens ±1 Stufe. Prüfung mit mehreren Zufallsverläufen statt einem.
 
+19. **2c nachbessern, Vorgaben Baustein 3** (Hannes 24.11. Nacht, Rückfragen): 2c erst abnehmen, wenn die Einnahmen-Streuung im Ziel ist (klügerer Bot, Ursache statt Band weiten). Baustein 3: Ladebild wie Hay Day (Bild + Logo + Balken + wechselnde Tipps, erst Platzhalter), hochkant pausiert das Spiel mit Hinweis „Bitte quer halten“ (bewegtes Symbol), Bildschärfe automatisch je Handy (@1x/@2x), Schalter in den Einstellungen später.
+
+20. **Münzen brauchen Ziele** (Hannes 24.11. Nacht, Rückfragen, je Empfehlung): mehrere Sparziele statt Lohn kürzen – Land steigt je Stück um 25 % (300 → ~4.400 beim 13. Stück), Gebäude ab Stufe 2 deutlich teurer (Patisserie 300 … Spielzeugwerkstatt 12.000). Deko maßvoll (Bot: 2,5 Teile je Landstück). Sparen ist erlaubt: höchstens das nächste große Ziel (Land oder Gebäude bis 2 Stufen voraus) + 1.000; Horten wird nur bis zur höchsten Stufe mit Inhalten geprüft (jetzt 12), darüber fehlen Inhalte (Stufe 13+ laut INHALTSPLAN).
+
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof, Karte, Landstücke, Hindernisse, Werkzeuge).
 - `src/core/` – Logik-Kern in TypeScript, ohne DOM/Pixi/Audio:
@@ -56,7 +60,8 @@
 ## Wirtschaft (Baustein 2c, 24.11.)
 - Aufträge: `core/orders.ts` – nur herstellbare Waren, Mischung leicht 45 % / mittel 35 % / anspruchsvoll 20 % per Kartenstapel (Shuffle Bag, 20 Karten), Zielwert 40·Stufe^1,15 × Stufenfaktor, Lohn-Art Münzen (×1,3 Münzen, ×0,7 XP) oder Erfahrung (umgekehrt) je 50 %, Waren im Lager 3× so oft.
 - Münz-Ausgaben: Weihnachtsdeko (Bot kauft Überschuss), Tierpreis steigt je Tier um 50 % des Grundpreises, Felder/Land/Wegplatten wie bisher. Deko gibt nur ~5 % ihres Preises als XP (vorher ~25 %: Deko war eine Stufen-Maschine).
-- XP-Kurve ab Stufe 11 bis 20 % steiler. Bot: 6 Zufallsverläufe parallel (`tests/core/economy/`), Woche 1 Stufe 15–16.
+- XP-Kurve ab Stufe 11 bis 20 % steiler.
+- **Bot = Spieler-Modell mit Bedarfsplanung** (24.11. Nacht): offene Aufträge bis zu den Rohwaren aufgelöst + Futter je Tier, pflanzt/produziert, was fehlt; Extra-Produktion nur mit übrigen Zutaten; verkauft nur Überschuss; lehnt einen Auftrag erst ab, wenn er 3 Sitzungen hängt; spart für fehlende Gebäude vor Land. Vorher (feste Pflanzliste) hungerte Verlauf 7 tagelang an Weizen (Futter für Huhn, Schaf, Esel). Ergebnis 12 Verläufe: Woche 1 Stufe 15–16, Einnahmen 108.000–131.000 (Faktor 1,2), Münzen bis Stufe 12 knapp. 6 Verläufe (Seeds 1–6) laufen in `npm run check`.
 
 ## Wirtschaft (erste Kalibrierung, überholt)
 - Ernte gibt 2, Pflanzen kostet 1 aus dem Silo (sonst Münzen).
