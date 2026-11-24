@@ -4,12 +4,13 @@
 // Ladebild, Hochkant-Pause, Bildschärfe automatisch. Regeln: docs/GRAFIK_TECHNIK.md.
 // Liest den Kern nur über ../core, ändert den Spielstand nur über Befehle.
 // ============================================================================
-import { Application, type Container } from 'pixi.js';
+import { Application, Assets, type Container, type Texture } from 'pixi.js';
 import { CONTENT, terrainMap } from '../core';
 import { Camera, maxZoomForWidth } from './camera/camera';
 import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
 import { GridOverlay } from './scene/grid';
+import { Ground } from './scene/ground';
 import { loadStartAssets } from './boot/assets';
 import { chooseQuality, renderResolution, SLOW_FPS, type Quality } from './boot/quality';
 import { createWorld, layerOrder } from './scene/layers';
@@ -103,13 +104,23 @@ async function start(): Promise<void> {
   camera.resize(app.screen.width, app.screen.height);
   const sv = startView(map, app.screen.width, app.screen.height);
   camera.setView(sv.cx, sv.cy, sv.zoom);
-  const grid = new GridOverlay(map, true);
+  // Grundboden (Baustein 5): eigenes Land = Start-Landstücke, bis die Darstellung den Spielstand liest (Baustein 6 ff.)
+  const params = new URLSearchParams(location.search);
+  const ground = new Ground(map, CONTENT.map.plots.start, Assets.get<Texture>('schnee_hof'), Assets.get<Texture>('wildnis'),
+    params.get('boden') === 'b' ? 'b' : 'a');
+  world.layer.grund.addChild(ground.view);
+  const coverView = (): void => {
+    const a = camera.screenToWorld(0, 0), e = camera.screenToWorld(app.screen.width, app.screen.height);
+    ground.cover({ x0: a.x, y0: a.y, x1: e.x, y1: e.y });
+  };
+  const grid = new GridOverlay(map, params.get('raster') !== '0');
   world.layer.auswahl.addChild(grid.view);
   app.renderer.on('resize', (w: number, h: number) => camera.resize(w, h));
   attachCameraInput(app.canvas, camera, {
     toggleGrid: () => { grid.setShown(!grid.shown); root.dataset['raster'] = grid.shown ? '1' : '0'; }
   });
-  root.dataset['raster'] = '1';
+  root.dataset['raster'] = grid.shown ? '1' : '0';
+  root.dataset['boden'] = params.get('boden') === 'b' ? 'b' : 'a';
   // Nur im Entwicklungsmodus: Kamera je Bild mitschreiben, damit Abläufe Bild für Bild geprüft werden können (QUALITAETS_LEITFADEN §3)
   const trace: { t: number; cx: number; cy: number; z: number }[] | null = import.meta.env.DEV ? [] : null;
   if (trace) (window as unknown as { __kameraSpur: typeof trace }).__kameraSpur = trace;
@@ -118,10 +129,12 @@ async function start(): Promise<void> {
     camera.update(dt);
     grid.update(dt);
     applyCamera(world.root, camera, app.renderer.resolution, app.screen.width, app.screen.height);
+    coverView();
     if (root.dataset['kamera'] !== camera.state) root.dataset['kamera'] = camera.state;
     if (trace) { const v = camera.view; trace.push({ t: performance.now(), cx: v.cx, cy: v.cy, z: v.zoom }); if (trace.length > 20000) trace.splice(0, 10000); }
   });
   applyCamera(world.root, camera, app.renderer.resolution, app.screen.width, app.screen.height);
+  coverView();
 
   watchOrientation((portrait) => {
     if (portrait) app.ticker.stop(); else app.ticker.start();
