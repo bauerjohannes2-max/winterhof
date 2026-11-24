@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Baustein 3 Technik-Gerüst fertig (24.11.), wartet auf Abnahme. Prüfen: `npm run check`.
+- Niemand. Baustein 3 Technik-Gerüst fertig (24.11.), Ladebild nachgebessert (Entscheidung 21), wartet auf Abnahme. Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -42,6 +42,8 @@
 19. **2c nachbessern, Vorgaben Baustein 3** (Hannes 24.11. Nacht, Rückfragen): 2c erst abnehmen, wenn die Einnahmen-Streuung im Ziel ist (klügerer Bot, Ursache statt Band weiten). Baustein 3: Ladebild wie Hay Day (Bild + Logo + Balken + wechselnde Tipps, erst Platzhalter), hochkant pausiert das Spiel mit Hinweis „Bitte quer halten“ (bewegtes Symbol), Bildschärfe automatisch je Handy (@1x/@2x), Schalter in den Einstellungen später.
 
 20. **Münzen brauchen Ziele** (Hannes 24.11. Nacht, Rückfragen, je Empfehlung): mehrere Sparziele statt Lohn kürzen – Land steigt je Stück um 25 % (300 → ~4.400 beim 13. Stück), Gebäude ab Stufe 2 deutlich teurer (Patisserie 300 … Spielzeugwerkstatt 12.000). Deko maßvoll (Bot: 2,5 Teile je Landstück). Sparen ist erlaubt: höchstens das nächste große Ziel (Land oder Gebäude bis 2 Stufen voraus) + 1.000; Horten wird nur bis zur höchsten Stufe mit Inhalten geprüft (jetzt 12), darüber fehlen Inhalte (Stufe 13+ laut INHALTSPLAN).
+21. **Ladebild erscheint als Ganzes** (Hannes 24.11., je Empfehlung): Bis das Motiv dekodiert ist, nur die ruhige Grundfarbe des Motivs (Apple HIG „Launching“), dann Motiv, Schriftzug, Tipp und Balken gemeinsam eingeblendet – nie Text vor Bild (wie Hay Day/Clash). Balken nach echten Etappen, läuft sichtbar voll, erst dann Ausblenden; Ladebild mindestens 1 s ganz zu sehen (kein Aufblitzen). Weihnachtsmotiv + echtes Logo erst in der Grafik-Runde (Platzhalter zeigt noch Herbst).
+
 
 ## Architektur ab v8
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof, Karte, Landstücke, Hindernisse, Werkzeuge).

@@ -31,10 +31,25 @@ function copyStaticFilesPlugin() {
   };
 }
 
+/** Setzt die Ladebild-Tipps aus winterhof.json (einzige Datenquelle) ins HTML, damit der Tipp schon beim Einblenden steht. */
+function loadingTipsPlugin() {
+  return {
+    name: 'winterhof-lade-tipps',
+    transformIndexHtml(html) {
+      const content = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'src/content/winterhof.json'), 'utf8'));
+      const tips = content.loadingTips;
+      if (!Array.isArray(tips) || tips.length === 0) throw new Error('winterhof.json: loadingTips fehlt oder leer');
+      if (!html.includes('<!--LADE-TIPPS-->')) throw new Error('index.html: Platzhalter <!--LADE-TIPPS--> fehlt');
+      // "<" maskieren, damit kein Tipp das Skript-Element beenden kann
+      return html.replace('<!--LADE-TIPPS-->', JSON.stringify(tips).replace(/</g, '\\u003c'));
+    }
+  };
+}
+
 export default defineConfig({
   base: './',
   publicDir: false,
-  plugins: [copyStaticFilesPlugin()],
+  plugins: [copyStaticFilesPlugin(), loadingTipsPlugin()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,

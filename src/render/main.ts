@@ -54,6 +54,9 @@ async function start(): Promise<void> {
   const root = document.getElementById('neu-root');
   if (!root) throw new Error('#neu-root fehlt');
   const loading = openLoadingScreen();
+  // Balken nach echten Etappen (grob nach Datenmenge): Motiv da 10 % (index.html), Spiel-Skript geladen 35 %,
+  // Grafik gestartet 45 %, Bilder 45–100 %. Nie geschätzt oder nach Zeit vorgerückt.
+  loading.progress(0.35);
 
   const dpr = window.devicePixelRatio || 1;
   const nav = navigator as Navigator & { deviceMemory?: number };
@@ -70,9 +73,9 @@ async function start(): Promise<void> {
     powerPreference: 'high-performance'
   });
   root.appendChild(app.canvas);
-  loading.progress(0.1);
+  loading.progress(0.45);
 
-  await loadStartAssets(q, (p) => loading.progress(0.1 + p * 0.9));
+  await loadStartAssets(q, (p) => loading.progress(0.45 + p * 0.55));
 
   const world = createWorld();
   app.stage.addChild(world.root);
@@ -96,4 +99,5 @@ start().catch((e: unknown) => {
   console.error('Winterhof konnte nicht starten', e);
   const tip = document.getElementById('laden-tipp');
   if (tip) tip.textContent = 'Das Spiel konnte nicht starten. Bitte lade die Seite neu.';
+  document.getElementById('laden')?.classList.add('bereit');   // Meldung sichtbar machen, auch wenn das Motiv fehlt
 });

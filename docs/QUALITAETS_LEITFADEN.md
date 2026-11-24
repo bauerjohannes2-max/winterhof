@@ -21,6 +21,7 @@ Bevor ein Baustein oder eine wichtige Entscheidung beginnt, beantwortet Claude s
 ## 3. Nach jedem Schritt: ehrlich prüfen
 - Alle Prüfungen grün (`npm run check`). **Nie einen Test abschwächen oder ein Vergleichsbild erneuern, nur damit es grün wird.** Vergleichsbilder werden nur nach Hannes' Abnahme erneuert.
 - **Kritiker-Durchgang:** Claude sieht sich das Ergebnis selbst an (Bild, nicht nur Code) und legt es neben Hay Day/Clash. In der Abnahme an Hannes steht ehrlich, was noch nicht auf Vorbild-Niveau ist.
+- **Abläufe in Bewegung prüfen, nicht nur Standbilder** (Hannes 24.11.: „hättest du selbst sehen müssen“): Laden, Übergänge, Ein-/Ausblenden immer bei langsamem Netz aufnehmen und **Bild für Bild** ansehen, bevor es an Hannes geht. Fehlerbilder: etwas ploppt einzeln auf (Text vor Bild), blitzt kurz, springt, Balken steht oder blendet vor 100 % aus. Was ein Profi-Spiel so nie zeigen würde, ist ein Fehler, auch wenn kein Test anschlägt – und bekommt danach einen Test.
 - **Lieber verwerfen als mittelmäßig behalten.** So arbeitet auch Supercell: Was die Qualitätslatte nicht schafft, fliegt raus, auch wenn schon viel Arbeit drinsteckt.
 - Ein Baustein ist erst fertig, wenn Hannes ihn abgenommen hat. Nie zwei Baustellen gleichzeitig.
 

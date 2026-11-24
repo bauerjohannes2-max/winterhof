@@ -6,10 +6,11 @@
   <meta name="theme-color" content="#16294a" />
   <title>Winterhof</title>
   <link rel="icon" type="image/png" href="./assets/icon-180.png" />
-  <!-- Ladebild-Motiv direkt im HTML, damit es vor dem Skript sichtbar ist (Platzhalter bis zur Grafik-Runde, Entscheidung 19) -->
-  <link rel="preload" as="image" href="./assets/splash_art.webp" />
   <style>
     :root {
+      /* Grundfarbe = Mittelwert des Ladebild-Motivs: steht da, bis das Motiv fertig dekodiert ist (Apple HIG „Launching“:
+         vorher nur eine ruhige Farbe, nie Text ohne Bild). Bei neuem Motiv mitändern. */
+      --grundfarbe: #9f826d;
       --nacht: #16294a;
       --gold: #ffd76a;
       --gruen: #7fd35a;
@@ -19,21 +20,30 @@
     #neu-root { position: fixed; inset: 0; }
     #neu-root canvas { display: block; }
 
-    /* Ladebild (Baustein 3): Motiv, Schriftzug oben, Tipp + Balken unten im Daumenbereich */
+    /* Ladebild (Baustein 3): Motiv, Schriftzug oben, Tipp + Balken unten im Daumenbereich.
+       Wie Hay Day/Clash erscheint es als EIN fertiges Bild: Motiv, Schriftzug, Tipp und Balken werden erst gemeinsam
+       eingeblendet, wenn das Motiv dekodiert ist (Startskript unten). Vorher nur die Grundfarbe. */
     #laden {
-      position: fixed; inset: 0; z-index: 10;
-      display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-      padding: max(14px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
-      box-sizing: border-box;
-      background: var(--nacht) url("./assets/splash_art.webp") center / cover no-repeat;
+      position: fixed; inset: 0; z-index: 10; overflow: hidden;
+      background: var(--grundfarbe);
       font-family: var(--schrift); color: #fff;
       transition: opacity 0.35s ease;
     }
     #laden.fertig { opacity: 0; pointer-events: none; }
-    #laden::after { /* unten abdunkeln, damit Tipp und Balken auf jedem Motiv lesbar sind */
+    #laden-bild, #laden-inhalt { position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s ease-out; }
+    #laden.bereit #laden-bild, #laden.bereit #laden-inhalt { opacity: 1; }
+    #laden-bild { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    #laden-bild.fehlt { display: none; }
+    #laden-inhalt {
+      display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+      padding: max(14px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+      box-sizing: border-box;
+    }
+    #laden-inhalt::before { /* unten abdunkeln, damit Tipp und Balken auf jedem Motiv lesbar sind */
       content: ""; position: absolute; inset: 55% 0 0 0; pointer-events: none;
       background: linear-gradient(to bottom, rgba(10, 22, 44, 0), rgba(10, 22, 44, 0.78));
     }
+    #laden-logo { position: relative; }
     #laden-logo {
       margin: 0; font-size: clamp(34px, 9vh, 64px); font-weight: 900; letter-spacing: 0.02em; line-height: 1;
       color: #fff;
@@ -67,19 +77,60 @@
     }
     #hochkant-handy::after { content: ""; position: absolute; left: 50%; bottom: 6px; width: 14px; height: 4px; margin-left: -7px; border-radius: 2px; background: #fff; }
     @keyframes drehen { 0%, 25% { transform: rotate(0deg); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
-    @media (prefers-reduced-motion: reduce) { #hochkant-handy { animation: none; transform: rotate(-90deg); } #laden, #laden-balken { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { #hochkant-handy { animation: none; transform: rotate(-90deg); } #laden, #laden-bild, #laden-inhalt, #laden-balken { transition: none; } }
     @media (orientation: portrait) { #hochkant { display: flex; } }
   </style>
 </head>
 <body>
   <div id="neu-root"></div>
   <div id="laden" role="progressbar" aria-label="Winterhof lädt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-    <h1 id="laden-logo">Winterhof</h1>
-    <div id="laden-unten">
-      <p id="laden-tipp"></p>
-      <div id="laden-spur"><div id="laden-balken"></div></div>
+    <!-- Motiv als Bild im HTML (früh entdeckt, höchste Priorität; web.dev „Fetch Priority“). Platzhalter bis zur Grafik-Runde. -->
+    <img id="laden-bild" src="./assets/splash_art.webp" alt="" fetchpriority="high" decoding="async" />
+    <div id="laden-inhalt">
+      <h1 id="laden-logo">Winterhof</h1>
+      <div id="laden-unten">
+        <p id="laden-tipp"></p>
+        <div id="laden-spur"><div id="laden-balken"></div></div>
+      </div>
     </div>
   </div>
+  <!-- Tipps aus winterhof.json → loadingTips, beim Bauen eingesetzt (vite.config.js), damit der Tipp schon beim Einblenden steht -->
+  <script type="application/json" id="laden-tipps"><!--LADE-TIPPS--></script>
+  <script>
+    // Ladebild zeigen, sobald das Motiv dekodiert ist: alles erscheint gemeinsam, nie Text vor dem Bild.
+    // Klassisches Inline-Skript, läuft sofort (vor dem Spiel-Skript). Fällt das Motiv aus: nach Fehler bzw. 4 s auf der Grundfarbe.
+    (function () {
+      var laden = document.getElementById('laden');
+      var bild = document.getElementById('laden-bild');
+      var tipp = document.getElementById('laden-tipp');
+      var tipps = [];
+      try { tipps = JSON.parse(document.getElementById('laden-tipps').textContent || '[]'); } catch (e) { tipps = []; }
+      if (tipps.length) {
+        var i = 0;
+        try {   // jeder Start zeigt den nächsten Tipp
+          var n = Number(localStorage.getItem('winterhof_tipp') || '0');
+          i = Number.isInteger(n) && n >= 0 ? n % tipps.length : 0;
+          localStorage.setItem('winterhof_tipp', String(i + 1));
+        } catch (e) { i = 0; }
+        tipp.textContent = tipps[i];
+        laden.dataset.tipp = String(i);
+      }
+      var gezeigt = false;
+      function zeigen() {
+        if (gezeigt) return;
+        gezeigt = true;
+        laden.dataset.seit = String(Math.round(performance.now()));
+        laden.classList.add('bereit');
+        var balken = document.getElementById('laden-balken');   // erste Etappe (Motiv) geschafft
+        if (balken && !balken.style.transform) balken.style.transform = 'scaleX(0.1)';
+      }
+      function ohneBild() { bild.classList.add('fehlt'); zeigen(); }
+      if (bild.decode) bild.decode().then(zeigen, ohneBild);
+      else if (bild.complete) zeigen();
+      else { bild.addEventListener('load', zeigen); bild.addEventListener('error', ohneBild); }
+      setTimeout(zeigen, 4000);
+    })();
+  </script>
   <div id="hochkant" role="alert">
     <div id="hochkant-handy" aria-hidden="true"></div>
     <p>Bitte halte dein Handy quer.</p>

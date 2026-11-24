@@ -44,10 +44,33 @@ test('Ladebild: Motiv, Schriftzug, Tipp und Balken', async ({ page }) => {
   const held = new Promise<void>((r) => { release = r; });
   await page.route('**/assets/gen/manifest.json', async (route) => { await held; await route.continue(); });
   await page.goto('/');
+  await expect(page.locator('#laden')).toHaveClass(/bereit/);
   await expect(page.locator('#laden-tipp')).not.toHaveText('');
   await expect(page.locator('#laden-logo')).toHaveText('Winterhof');
   await expect(page).toHaveScreenshot('b03-ladebild.png');
   release();
+  await expect(page.locator('#neu-root')).toHaveAttribute('data-bereit', '1');
+});
+
+test('Ladebild erscheint als Ganzes: nie Schriftzug oder Tipp vor dem Motiv', async ({ page }) => {
+  // Motiv zurückhalten (langsames Netz): bis dahin nur die Grundfarbe, Schriftzug/Tipp/Balken unsichtbar
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((r) => { release = r; });
+  await page.route('**/splash_art*.webp', async (route) => { await held; await route.continue(); });
+  await page.goto('/', { waitUntil: 'commit' });
+  const laden = page.locator('#laden');
+  await expect(laden).toBeAttached();
+  await page.waitForTimeout(600);
+  await expect(laden).not.toHaveClass(/bereit/);
+  const opacity = (sel: string): Promise<string> => page.locator(sel).evaluate((e) => getComputedStyle(e).opacity);
+  expect(await opacity('#laden-inhalt')).toBe('0');
+  expect(await opacity('#laden-bild')).toBe('0');
+  // Tipp steht schon vor dem Einblenden fest (kommt aus dem HTML, nicht erst mit dem Spiel-Skript)
+  await expect(page.locator('#laden-tipp')).not.toHaveText('');
+  release();
+  await expect(laden).toHaveClass(/bereit/);
+  await expect.poll(() => opacity('#laden-inhalt')).toBe('1');
+  expect(await opacity('#laden-bild')).toBe('1');
   await expect(page.locator('#neu-root')).toHaveAttribute('data-bereit', '1');
 });
 
