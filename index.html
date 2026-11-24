@@ -8,9 +8,8 @@
   <link rel="icon" type="image/png" href="./assets/icon-180.png" />
   <style>
     :root {
-      /* Grundfarbe = Mittelwert des Ladebild-Motivs: steht da, bis das Motiv fertig dekodiert ist (Apple HIG „Launching“:
-         vorher nur eine ruhige Farbe, nie Text ohne Bild). Bei neuem Motiv mitändern. */
-      --grundfarbe: #9f826d;
+      /* Grundfarbe = Mittelwert des Ladebild-Motivs, beim Bauen aus dem Motiv berechnet (vite.config.js) */
+      --grundfarbe: __LADE_GRUNDFARBE__;
       --nacht: #16294a;
       --gold: #ffd76a;
       --gruen: #7fd35a;
@@ -22,7 +21,8 @@
 
     /* Ladebild (Baustein 3): Motiv, Schriftzug oben, Tipp + Balken unten im Daumenbereich.
        Wie Hay Day/Clash erscheint es als EIN fertiges Bild: Motiv, Schriftzug, Tipp und Balken werden erst gemeinsam
-       eingeblendet, wenn das Motiv dekodiert ist (Startskript unten). Vorher nur die Grundfarbe. */
+       eingeblendet, wenn das Motiv dekodiert ist (Startskript unten). Vorher steht ab dem ersten Bild eine weiche
+       Mini-Vorschau des Motivs (rund 1 KB, beim Bauen ins HTML gesetzt) – nie eine leere Fläche, nie Text ohne Bild. */
     #laden {
       position: fixed; inset: 0; z-index: 10; overflow: hidden;
       background: var(--grundfarbe);
@@ -30,6 +30,11 @@
       transition: opacity 0.35s ease;
     }
     #laden.fertig { opacity: 0; pointer-events: none; }
+    #laden::before { /* Mini-Vorschau, weichgezeichnet; etwas größer, damit der weiche Rand nicht sichtbar wird */
+      content: ""; position: absolute; inset: 0; transform: scale(1.08);
+      background: url("__LADE_VORSCHAU__") center / cover no-repeat;
+      filter: blur(10px);
+    }
     #laden-bild, #laden-inhalt { position: absolute; inset: 0; opacity: 0; transition: opacity 0.3s ease-out; }
     #laden.bereit #laden-bild, #laden.bereit #laden-inhalt { opacity: 1; }
     #laden-bild { width: 100%; height: 100%; object-fit: cover; object-position: center; }
@@ -43,8 +48,8 @@
       content: ""; position: absolute; inset: 55% 0 0 0; pointer-events: none;
       background: linear-gradient(to bottom, rgba(10, 22, 44, 0), rgba(10, 22, 44, 0.78));
     }
-    #laden-logo { position: relative; }
     #laden-logo {
+      position: relative;
       margin: 0; font-size: clamp(34px, 9vh, 64px); font-weight: 900; letter-spacing: 0.02em; line-height: 1;
       color: #fff;
       -webkit-text-stroke: 2px var(--nacht); paint-order: stroke fill;

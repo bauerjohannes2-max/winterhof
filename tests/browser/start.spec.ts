@@ -65,6 +65,9 @@ test('Ladebild erscheint als Ganzes: nie Schriftzug oder Tipp vor dem Motiv', as
   const opacity = (sel: string): Promise<string> => page.locator(sel).evaluate((e) => getComputedStyle(e).opacity);
   expect(await opacity('#laden-inhalt')).toBe('0');
   expect(await opacity('#laden-bild')).toBe('0');
+  // Statt leerer Fläche steht sofort die Mini-Vorschau des Motivs (steckt im HTML, kein eigener Ladevorgang)
+  const vorschau = await laden.evaluate((e) => getComputedStyle(e, '::before').backgroundImage);
+  expect(vorschau).toContain('data:image/webp;base64,');
   // Tipp steht schon vor dem Einblenden fest (kommt aus dem HTML, nicht erst mit dem Spiel-Skript)
   await expect(page.locator('#laden-tipp')).not.toHaveText('');
   release();

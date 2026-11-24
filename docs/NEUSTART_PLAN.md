@@ -65,7 +65,7 @@ Verbindlich nach `QUALITAETS_LEITFADEN.md` §2–3 (kritisch prüfen vorher, ehr
 | 11 | **Figuren + Tiere** | Laufen auf Wegen/Weiden, richtige Überdeckung, Größen nach STIL_REGELN §4 |
 | 12 | **Antippen, Platzieren, Verschieben** | Treffer genau auf Bildform, Vorschau grün/rot aus dem Kern, Verschieben speichert |
 | 13 | **HUD + Buttons** (Hay-Day-Maßstab) | Münzen, Stufe, Lager, Haupt-Buttons neu; daumengroß, lesbar am Handy quer; Menüs weiter erreichbar |
-| 14 | **Live schalten** | Offline-Fähigkeit (Service Worker neu), Probe-Bilder aufgeräumt, Browser-Test in GitHub-Prüfung; Hochladen wieder automatisch; danach live (alte Oberfläche schon 24.11. gelöscht) |
+| 14 | **Live schalten** | Offline-Fähigkeit (Service Worker neu, Ladebild-Motiv vorab gespeichert: ab 2. Start sofort scharf, Entscheidung 21), Probe-Bilder aufgeräumt, Browser-Test in GitHub-Prüfung; Hochladen wieder automatisch; danach live (alte Oberfläche schon 24.11. gelöscht) |
 
 **Befund Baustein 2:** Das Kartenkonzept (Straße quer durch, benannte Rechteck-Grundstücke, Wald-Rahmen) war nicht Hay-Day-Niveau. Hannes hat es am 24.11. neu entschieden (Entscheidung 14), Umsetzung in Baustein 2b.
 
