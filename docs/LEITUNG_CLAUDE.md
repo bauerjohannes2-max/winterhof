@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Niemand. Baustein 3 Technik-Gerüst fertig (24.11.), Ladebild nachgebessert (Entscheidung 21), wartet auf Abnahme. Prüfen: `npm run check`.
+- Niemand. Baustein 3 abgenommen (Hannes 24.11.). Nächstes: Baustein 4 Raster + Kamera, vorher Konzeptfragen an Hannes. Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
