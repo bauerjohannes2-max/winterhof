@@ -4,8 +4,29 @@
     {
       "name": "winterhof-dev",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["./node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "8085", "--strictPort"],
+      "runtimeArgs": [
+        "./node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8085",
+        "--strictPort"
+      ],
       "port": 8085
+    },
+    {
+      "name": "winterhof-wlan",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "./node_modules/vite/bin/vite.js",
+        "preview",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8090",
+        "--strictPort"
+      ],
+      "port": 8090
     }
   ]
 }
