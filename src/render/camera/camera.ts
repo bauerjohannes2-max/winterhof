@@ -34,7 +34,7 @@ export const MAX_ZOOM_TILES = 8;
 export interface CameraConfig {
   /** Bis hierhin darf der Bildschirm zeigen (Tal + Kulissenstreifen), Welt */
   readonly bounds: Rect;
-  /** Ganz rausgezoomt passt dieses Rechteck ganz auf den Bildschirm (das Tal), Welt */
+  /** Ganz rausgezoomt passt dieses Rechteck ganz auf den Bildschirm (Tal + Kulissenstreifen), Welt */
   readonly fit: Rect;
   /** Schärfe-Grenze: höchstens so weit rein, dass ein Bildpunkt der Bilder mindestens einen Bildschirmpunkt deckt (Bildstufe / Zeichenauflösung) */
   readonly maxSharpZoom?: number;

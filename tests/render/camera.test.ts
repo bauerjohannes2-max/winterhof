@@ -2,7 +2,7 @@
 import { terrainMap } from '../../src/core';
 import { describe, expect, test } from 'vitest';
 import { Camera, MAX_ZOOM_TILES, rubber, TOUCH_SLOP, unrubber } from '../../src/render/camera/camera';
-import { cameraConfig, plazaCenter, startLand, startView } from '../../src/render/camera/mapView';
+import { cameraConfig, plazaCenter, startLand, startView, valleyRect } from '../../src/render/camera/mapView';
 import { gridAreaBounds, gridToWorld, TILE_W, tileAtWorld, worldToGrid } from '../../src/render/scene/iso';
 
 const map = terrainMap();
@@ -81,11 +81,14 @@ describe('Kamera: Grenzen und Start (Entscheidung 22)', () => {
         if (hi - lo <= b1 - b0) { expect(lo).toBeGreaterThanOrEqual(b0 - 1e-6); expect(hi).toBeLessThanOrEqual(b1 + 1e-6); }
         else close((lo + hi) / 2, (b0 + b1) / 2, 1e-6);
       }
-      // In die Mitte des Tals geschoben, ist das ganze Tal zu sehen
-      c.setView((cfg.fit.x0 + cfg.fit.x1) / 2, (cfg.fit.y0 + cfg.fit.y1) / 2, 0.001);
-      const a = c.screenToWorld(0, 0), e = c.screenToWorld(vw, vh);
-      expect(a.x).toBeLessThanOrEqual(cfg.fit.x0 + 1e-6); expect(e.x).toBeGreaterThanOrEqual(cfg.fit.x1 - 1e-6);
-      expect(a.y).toBeLessThanOrEqual(cfg.fit.y0 + 1e-6); expect(e.y).toBeGreaterThanOrEqual(cfg.fit.y1 - 1e-6);
+      // Ganz raus ist das ganze Tal in JEDER erreichbaren Lage zu sehen (Hannes 24.11.: Spitzen nie angeschnitten)
+      const t = valleyRect(map);
+      for (const [x, y] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 0]] as const) {
+        c.setView(x * 99999, y * 99999, 0.001);
+        const a = c.screenToWorld(0, 0), e = c.screenToWorld(vw, vh);
+        expect(a.x).toBeLessThanOrEqual(t.x0 + 1e-6); expect(e.x).toBeGreaterThanOrEqual(t.x1 - 1e-6);
+        expect(a.y).toBeLessThanOrEqual(t.y0 + 1e-6); expect(e.y).toBeGreaterThanOrEqual(t.y1 - 1e-6);
+      }
     });
     test(`${name}: Start zeigt den Start-Hof mittig und ganz, Hofplatz sichtbar`, () => {
       const c = cam(vw, vh);
