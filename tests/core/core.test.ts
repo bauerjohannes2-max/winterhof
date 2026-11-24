@@ -140,39 +140,34 @@ describe('Produktion', () => {
 });
 
 describe('Platzierung', () => {
-  it('Nicht auf Weg, Wasser, gesperrtem Land oder anderem Objekt', () => {
+  it('Nicht auf Hofplatz, Zufahrt, fremdem Land, Hindernis oder anderem Objekt', () => {
     const s = createNewGame(T0);
-    expect(canPlace(s, 4, 6, 1, 1).ok).toBe(false);   // Dorfstraße
-    expect(canPlace(s, 14, 4, 1, 1).ok).toBe(false);  // Bach
-    expect(canPlace(s, 0, 4, 1, 1).ok).toBe(false);   // gesperrte Zone
+    expect(canPlace(s, 7, 10, 1, 1).ok).toBe(false);  // Hofplatz
+    expect(canPlace(s, 7, 12, 1, 1).ok).toBe(false);  // Zufahrt (fremdes Land)
+    expect(canPlace(s, 0, 4, 1, 1).ok).toBe(false);   // fremdes Land
     expect(canPlace(s, 6, 8, 1, 1).ok).toBe(false);   // Feld
-    expect(canPlace(s, 9, 10, 1, 1).ok).toBe(true);
+    expect(canPlace(s, 2, 6, 1, 1).ok).toBe(false);   // Schneewehe
+    expect(canPlace(s, 9, 6, 1, 1).ok).toBe(true);
   });
   it('Kaufen + Bewegen + Einlagern', () => {
     let s = { ...createNewGame(T0), coins: 1000 };
-    s = ok(s, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 10 });
+    s = ok(s, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 6 });
     const id = s.objects[s.objects.length - 1]!.id;
-    expect(err(s, { type: 'moveObject', objectId: id, gx: 4, gy: 6 })).toBe('blocked');
-    s = ok(s, { type: 'moveObject', objectId: id, gx: 2, gy: 11 });
+    expect(err(s, { type: 'moveObject', objectId: id, gx: 7, gy: 10 })).toBe('blocked');
+    s = ok(s, { type: 'moveObject', objectId: id, gx: 3, gy: 6 });
     s = ok(s, { type: 'storeDeco', decoId: id });
     expect(s.storedDecos.pine).toBe(1);
-    s = ok(s, { type: 'placeStoredDeco', decoType: 'pine', gx: 9, gy: 10 });
+    s = ok(s, { type: 'placeStoredDeco', decoType: 'pine', gx: 9, gy: 6 });
     expect(s.storedDecos.pine).toBeUndefined();
     expect(validateLayout(s)).toEqual([]);
   });
   it('Neues Gebäude kommt verpackt und muss ausgepackt werden', () => {
     let s = { ...createNewGame(T0), coins: 1000 };
-    s = ok(s, { type: 'buyStation', stationType: 'teahouse', gx: 10, gy: 9 });
+    s = ok(s, { type: 'buyStation', stationType: 'teahouse', gx: 10, gy: 8 });
     const st = s.objects.find((o) => o.kind === 'station' && o.type === 'teahouse')!;
     expect(err(s, { type: 'startProduction', stationId: st.id, item: 'winter_punch' })).toBe('locked');
     s = ok(s, { type: 'unwrapStation', stationId: st.id });
     expect(err(s, { type: 'buyStation', stationType: 'teahouse', gx: 2, gy: 10 })).toBe('limit');
-  });
-  it('Zone freischalten macht Land bebaubar', () => {
-    let s = { ...createNewGame(T0), coins: 1000, xp: 95, level: 2 };
-    expect(canPlace(s, 0, 4, 1, 1).ok).toBe(false);
-    s = ok(s, { type: 'unlockZone', zoneId: 'west_forest' });
-    expect(canPlace(s, 0, 4, 1, 1).ok).toBe(true);
   });
 });
 
@@ -249,10 +244,10 @@ describe('Zeit, Level, Ziele, Truhe', () => {
 });
 
 describe('Speicherstand', () => {
-  it('v8 speichern und laden ist verlustfrei', () => {
-    const s = advanceTime(ok({ ...createNewGame(T0), coins: 500 }, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 10 }), T0).state;
+  it('v9 speichern und laden ist verlustfrei', () => {
+    const s = advanceTime(ok({ ...createNewGame(T0), coins: 500 }, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 6 }), T0).state;
     const r = deserialize(serialize(s), T0);
-    expect(r.source).toBe('v8');
+    expect(r.source).toBe('current');
     expect(r.state).toEqual(s);
     expect(r.warnings).toEqual([]);
   });
@@ -260,7 +255,7 @@ describe('Speicherstand', () => {
     const legacy = {
       version: 7, coins: 777, xp: 300, villageName: 'Testhof', barnCapacity: 75,
       unlockedLands: ['west_forest'],
-      inventory: { wheat: 12, egg: 3, butterplaetzchen: 2, alterKram: 4 },
+      inventory: { wheat: 12, egg: 3, butterplaetzchen: 2, alterKram: 4, snow_shovel: 2 },
       chalet: { gx: 4, gy: 3 }, christmasTree: { gx: 8, gy: 3 }, wishlistBoard: { gx: 10, gy: 5 }, sleighPos: { gx: 11, gy: 5 }, mailbox: { gx: 3, gy: 5 },
       stations: [
         { id: 'st_bakery', type: 'bakery', gx: 3, gy: 8, built: true, wrapped: false, craftedCount: 7,
@@ -280,7 +275,8 @@ describe('Speicherstand', () => {
     expect(s.coins).toBe(777);
     expect(s.xp).toBe(300);
     expect(s.level).toBe(3);
-    expect(s.inventory).toEqual({ wheat: 12, egg: 3, butterplaetzchen: 2 });
+    expect(s.inventory).toEqual({ wheat: 12, egg: 3, butterplaetzchen: 2, mallet: 2, shovel: 1, pickaxe: 1 }); // Material umbenannt, Startpaket
+    expect(s.ownedPlots).toEqual(expect.arrayContaining(['3,3', '4,4', '2,3', '2,4']));    // Westzone -> Landstücke
     expect(r.warnings.some((w) => w.includes('alterKram'))).toBe(true);
     expect(getObject(s, 'f_1', 'field')!.crop).toBe('berries');          // Feld bleibt bepflanzt
     expect(getObject(s, 'f_9', 'field')).not.toBeNull();                  // Feld in Westzone bleibt
@@ -290,7 +286,8 @@ describe('Speicherstand', () => {
     expect(bakery.queue.map((j) => j.item)).toEqual(['waffles', 'butterplaetzchen']);
     expect(s.objects.some((o) => o.type === 'teahouse')).toBe(false);    // nie gebaut
     expect(getObject(s, 'd_7', 'deco')).not.toBeNull();
-    expect(s.storedDecos.snowman).toBe(1);                                // stand auf der Straße -> ins Lager
+    expect(getObject(s, 'd_8', 'deco')).toMatchObject({ gx: 4, gy: 6 });   // alte Straße ist jetzt Schnee: bleibt stehen
+    expect(getObject(s, 'wishlistBoard', 'prop')).toMatchObject({ gx: 10, gy: 10 }); // feste Station am Hofplatz
     expect(s.stand[0]).toMatchObject({ item: 'egg', sold: true });
     expect(s.stats.storageUpgrades).toBe(1);
     expect(s.claimedGoals).toEqual(['ach_harvest', 'ch_1']);
@@ -348,12 +345,19 @@ describe('Winterpost, Dorfbewohner, Tiernamen', () => {
 describe('Baumaterial (ab Stufe 6)', () => {
   const lvl6 = (s: GameState): GameState => ({ ...s, level: 6, xp: CONTENT.levels[5]!.xpNeeded, coins: 5000 });
 
-  it('Unter Stufe 6: Lagerausbau nur mit Münzen, kein Zufallszug', () => {
-    const s = { ...createNewGame(T0), coins: 5000 };
-    const r = applyCommand(s, { type: 'harvest', fieldId: 'f_1' }, T0);
-    expect(r.ok && r.state.rngState).toBe(advanceTime(s, T0).state.rngState);
+  it('Unter Stufe 6: Lagerausbau nur mit Münzen, Funde nur Werkzeuge', () => {
+    let s = { ...createNewGame(T0), coins: 5000 };
     expect(storageUpgradeMaterials(s, 'silo')).toEqual({});
     ok(s, { type: 'upgradeStorage', storage: 'silo' });
+    let t = T0;
+    for (let i = 0; i < 200; i++) {
+      const r = applyCommand(s, { type: 'harvest', fieldId: 'f_1' }, t);
+      if (!r.ok) throw new Error(r.error.message);
+      for (const e of r.events) if (e.type === 'itemFound') expect(CONTENT.items[e.item]!.category).toBe('tool');
+      s = { ...ok(r.state, { type: 'plant', fieldId: 'f_1', crop: 'wheat' }, t), xp: 0, level: 1 };
+      s = { ...s, inventory: { ...s.inventory, wheat: 5 } };
+      t += 61_000;
+    }
   });
 
   it('Ab Stufe 6 braucht der Lagerausbau Material und verbraucht es', () => {
@@ -375,36 +379,25 @@ describe('Baumaterial (ab Stufe 6)', () => {
     expect(Object.values(storageUpgradeMaterials(big, 'silo'))[0]).toBe(2);
   });
 
-  it('Bachwiese: Material nötig, danach bebaubar', () => {
+  it('Zufallsfund beim Ernten (Werkzeug oder Material), nie in Aufträgen oder Angeboten', () => {
     let s = lvl6(createNewGame(T0));
-    const z = CONTENT.landZones.find((x) => x.id === 'bachwiese')!;
-    expect(canPlace(s, 15, 3, 1, 1).ok).toBe(false);
-    expect(err(s, { type: 'unlockZone', zoneId: 'bachwiese' })).toBe('missing_items');
-    s = { ...s, inventory: { ...s.inventory, ...z.materials } };
-    s = ok(s, { type: 'unlockZone', zoneId: 'bachwiese' });
-    for (const id of Object.keys(z.materials!)) expect(s.inventory[id] ?? 0).toBe(0);
-    s = ok(s, { type: 'buyField', gx: 15, gy: 3 });
-    expect(validateLayout(s)).toEqual([]);
-  });
-
-  it('Zufallsfund beim Ernten, nie in Aufträgen oder Angeboten', () => {
-    let s = lvl6(createNewGame(T0));
+    const start = (x: GameState) => Object.entries(x.inventory).filter(([id]) => ['material', 'tool'].includes(CONTENT.items[id]?.category ?? '')).reduce((n, [, q]) => n + q, 0);
+    const before = start(s);
     let t = T0;
     let found = 0;
     for (let i = 0; i < 300; i++) {
       const r = applyCommand(s, { type: 'harvest', fieldId: 'f_1' }, t);
       if (!r.ok) throw new Error(r.error.message);
-      found += r.events.filter((e) => e.type === 'materialFound').length;
+      found += r.events.filter((e) => e.type === 'itemFound').length;
       s = ok(r.state, { type: 'plant', fieldId: 'f_1', crop: 'wheat' }, t);
       s = { ...s, inventory: { ...s.inventory, wheat: 5 } }; // Silo nie voll
       t += 61_000;
     }
     expect(found).toBeGreaterThan(5);
     expect(found).toBeLessThan(45);
-    const mats = Object.entries(s.inventory).filter(([id]) => CONTENT.items[id]?.category === 'material');
-    expect(mats.reduce((n, [, q]) => n + q, 0)).toBe(found);
-    for (const o of s.orders) for (const l of o.lines) expect(CONTENT.items[l.item]!.category).not.toBe('material');
-    if (s.villagerOffer) expect(CONTENT.items[s.villagerOffer.item]!.category).not.toBe('material');
+    expect(start(s) - before).toBe(found);
+    for (const o of s.orders) for (const l of o.lines) expect(['material', 'tool']).not.toContain(CONTENT.items[l.item]!.category);
+    if (s.villagerOffer) expect(['material', 'tool']).not.toContain(CONTENT.items[s.villagerOffer.item]!.category);
   });
 });
 
@@ -412,27 +405,8 @@ describe('Inhaltsplan', () => {
   it('Jede Stufe 2–12 bringt mindestens 1 Neuheit', () => {
     const unlocks = [
       ...Object.values(CONTENT.items), ...Object.values(CONTENT.animals), ...Object.values(CONTENT.stations),
-      ...Object.values(CONTENT.decorations), ...CONTENT.landZones
-    ].map((x) => x.unlockLevel);
+      ...Object.values(CONTENT.decorations)
+    ].map((x) => x.unlockLevel).concat(CONTENT.land.fromLevel, ...Object.values(CONTENT.map.plots.levels));
     for (let l = 2; l <= 12; l++) expect(unlocks.includes(l), `Stufe ${l} ohne Neuheit`).toBe(true);
-  });
-});
-
-describe('Kern-Qualität Karte (23.11.)', () => {
-  it('Karte hat kein Wasser, Ostwiese schließt direkt an', () => {
-    const z = CONTENT.landZones.find((x) => x.id === 'bachwiese')!;
-    expect(z.bounds.x0).toBe(14);
-    const s = { ...createNewGame(T0), unlockedZones: ['east_glade', 'bachwiese'] };
-    expect(canPlace(s, 14, 3, 1, 1).ok).toBe(true);
-  });
-
-  it('Truhe zieht in alten Ständen neben das Haupthaus', () => {
-    const s = createNewGame(T0);
-    const chest = s.objects.find((o) => o.type === 'dailyChest')!;
-    expect([chest.gx, chest.gy]).toEqual([6, 3]);
-    const old = { ...s, objects: s.objects.map((o) => (o.type === 'dailyChest' ? { ...o, gx: 11, gy: 11 } : o)) };
-    const loaded = deserialize(JSON.stringify(old), T0).state;
-    const c2 = loaded.objects.find((o) => o.type === 'dailyChest')!;
-    expect([c2.gx, c2.gy]).toEqual([6, 3]);
   });
 });

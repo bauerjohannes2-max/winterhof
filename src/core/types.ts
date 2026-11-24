@@ -8,7 +8,7 @@ export type ObjectId = string;
 export type Inventory = Record<ItemId, number>;
 
 export type StorageKind = 'silo' | 'barn';
-export type ItemCategory = 'crop' | 'animal' | 'crafted' | 'material';
+export type ItemCategory = 'crop' | 'animal' | 'crafted' | 'material' | 'tool';
 export type MaterialGroup = 'storage' | 'land';
 
 // ---------------------------------------------------------------- Inhalte
@@ -58,18 +58,51 @@ export interface DecoDef {
   id: string;
   name: string;
   cost: number;
+  /** Preis steigt je Stück, das man schon besitzt (Wegplatten, Hay Day) */
+  costStep?: number;
+  /** 'path' = Wegplatte des Spielers */
+  group?: 'path';
   xp: number;
   unlockLevel: number;
 }
 
-export interface LandZoneDef {
+/** Landstücke kaufen (KARTEN_KONZEPT.md) */
+export interface LandRules {
+  fromLevel: number;
+  /** Preis des k-ten gekauften Stücks: baseCost * costGrowth^k, auf 10 gerundet */
+  baseCost: number;
+  costGrowth: number;
+  /** Ab dem so vielten gekauften Stück (k, ab 0) zusätzlich Land-Material */
+  materialsFromPlot: number;
+  /** Menge je Material: 1 + floor((k - materialsFromPlot) / materialStep) */
+  materialStep: number;
+  materials: ItemId[];
+}
+
+/** Hindernis auf dem Land: braucht Werkzeug × toolQty zum Räumen */
+export interface ObstacleDef {
   id: string;
   name: string;
-  bounds: { x0: number; y0: number; x1: number; y1: number };
-  cost: number;
-  unlockLevel: number;
-  /** Baumaterial zusätzlich zu den Münzen (ab Stufe 6) */
-  materials?: Inventory;
+  tool: ItemId;
+  toolQty: number;
+  xp: number;
+  /** Tanne: wird ausgegraben und landet als diese Deko im Lager */
+  yieldsDeco?: string;
+}
+
+export interface ToolRules {
+  items: ItemId[];
+  /** Sofortkauf beim Räumen, Preis je Stück nach Spielerstufe (aufsteigend nach fromLevel) */
+  prices: { fromLevel: number; coins: number }[];
+  /** Chance auf einen Fund beim Räumen */
+  clearFindChance: number;
+}
+
+/** Schneewehen wachsen nach (nur auf freiem eigenem Land) */
+export interface DriftRules {
+  type: string;
+  everySeconds: number;
+  max: number;
 }
 
 export interface LevelDef {
@@ -163,12 +196,17 @@ export interface DecoObject extends MapObjectBase {
   kind: 'deco';
 }
 
-/** Feste Hof-Gebäude ohne Spielfunktion (Chalet, Baum, Wunschtafel, Schlitten, Briefkasten, Truhe) */
+/** Hof-Gebäude ohne eigene Produktion (Chalet, Baum, Auftragstafel, Schlitten, Hofladen, Briefkasten, Truhe) */
 export interface PropObject extends MapObjectBase {
   kind: 'prop';
 }
 
-export type MapObject = FieldObject | AnimalObject | StationObject | DecoObject | PropObject;
+/** Hindernis (Schneewehe, Fels, Eis, Tanne): belegt Felder, nicht verschiebbar, darf auf fremdem Land liegen */
+export interface ObstacleObject extends MapObjectBase {
+  kind: 'obstacle';
+}
+
+export type MapObject = FieldObject | AnimalObject | StationObject | DecoObject | PropObject | ObstacleObject;
 
 // ---------------------------------------------------------------- Spielstand
 export interface OrderLine { item: ItemId; qty: number }
@@ -202,7 +240,7 @@ export interface VillagerOffer {
 
 export const STAT_KEYS = [
   'harvests', 'planted', 'crafted', 'collected', 'pets', 'fed', 'ordersDone',
-  'standSales', 'landsUnlocked', 'chestsOpened', 'villagerDeals', 'storageUpgrades'
+  'standSales', 'landsUnlocked', 'chestsOpened', 'villagerDeals', 'storageUpgrades', 'obstaclesCleared'
 ] as const;
 export type StatKey = (typeof STAT_KEYS)[number];
 export type Stats = Record<StatKey, number>;
@@ -225,7 +263,10 @@ export interface GameState {
   storage: Record<StorageKind, number>; // Kapazität
   objects: MapObject[];
   storedDecos: Record<string, number>;
-  unlockedZones: string[];
+  /** Eigene Landstücke (IDs "Spalte,Reihe", inkl. Start) */
+  ownedPlots: string[];
+  /** Nächster Zeitpunkt, an dem eine Schneewehe nachwachsen darf */
+  nextDriftAt: number;
 
   orders: Order[];
   stand: (StandSlot | null)[];
@@ -270,7 +311,8 @@ export type Command =
   | { type: 'acceptOffer' }
   | { type: 'declineOffer' }
   | { type: 'upgradeStorage'; storage: StorageKind }
-  | { type: 'unlockZone'; zoneId: string }
+  | { type: 'unlockPlot'; plotId: string }
+  | { type: 'clearObstacle'; obstacleId: ObjectId; buyMissing?: boolean }
   | { type: 'claimDaily' }
   | { type: 'claimGoal'; goalId: string }
   | { type: 'setSetting'; key: keyof GameState['settings']; value: unknown }
@@ -306,12 +348,15 @@ export type GameEvent =
   | { type: 'offerArrived'; npc: string }
   | { type: 'offerClosed'; accepted: boolean }
   | { type: 'storageUpgraded'; storage: StorageKind; capacity: number }
-  | { type: 'zoneUnlocked'; zoneId: string }
+  | { type: 'plotUnlocked'; plotId: string }
+  | { type: 'obstacleCleared'; obstacleId: ObjectId; obstacleType: string; gx: number; gy: number; deco?: string }
+  | { type: 'obstacleSpawned'; obstacleId: ObjectId }
+  | { type: 'toolsBought'; items: Inventory; coins: number }
   | { type: 'dailyClaimed'; streak: number; coins: number; items: Inventory }
   | { type: 'goalClaimed'; goalId: string }
   | { type: 'goalReady'; goalId: string }
   | { type: 'discovered'; item: ItemId }
-  | { type: 'materialFound'; item: ItemId; at?: ObjectId }
+  | { type: 'itemFound'; item: ItemId; at?: ObjectId }
   | { type: 'villagerTipped'; coins: number }
   | { type: 'giftPacked'; items: Inventory }
   | { type: 'giftReceived'; parcelId: string; items: Inventory };

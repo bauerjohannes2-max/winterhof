@@ -4,7 +4,7 @@
 // Belegung wird aus state.objects berechnet. Keine Kopie im Spielstand, keine Neuberechnung pro Frame.
 // ============================================================================
 import { footprintOf } from './content';
-import { terrainMap, ZONE_BORDER, ZONE_STARTER } from './terrain';
+import { terrainMap, ZONE_BORDER } from './terrain';
 import type { GameState, MapObject, ObjectId } from './types';
 
 export function tileKey(gx: number, gy: number): string {
@@ -21,35 +21,37 @@ export function buildOccupancy(objects: readonly MapObject[]): Map<string, Objec
   return occ;
 }
 
-export function isZoneUnlocked(zone: string, state: GameState): boolean {
-  return zone === ZONE_STARTER || state.unlockedZones.includes(zone);
+export function isPlotOwned(plot: string, state: Pick<GameState, 'ownedPlots'>): boolean {
+  return state.ownedPlots.includes(plot);
 }
 
 export type PlaceCheck = { ok: true } | { ok: false; reason: 'terrain' | 'locked' | 'occupied' | 'bounds' };
 
-/** Darf ein Objekt mit Footprint w×h an (gx,gy)? */
+/** Darf ein Objekt mit Footprint w×h an (gx,gy)? Nur auf eigenem, freiem Schnee ohne Weg. */
 export function canPlace(
-  state: GameState, gx: number, gy: number, w: number, h: number, ignoreId: ObjectId | null = null
+  state: Pick<GameState, 'objects' | 'ownedPlots'>, gx: number, gy: number, w: number, h: number, ignoreId: ObjectId | null = null,
+  occupancy: Map<string, ObjectId> = buildOccupancy(state.objects)
 ): PlaceCheck {
   if (!Number.isInteger(gx) || !Number.isInteger(gy)) return { ok: false, reason: 'bounds' };
-  const occ = buildOccupancy(state.objects);
   for (let dy = 0; dy < h; dy++) {
     for (let dx = 0; dx < w; dx++) {
       const x = gx + dx, y = gy + dy;
       const t = terrainMap().tileAt(x, y);
       if (!t || t.zone === ZONE_BORDER) return { ok: false, reason: 'bounds' };
-      if (!isZoneUnlocked(t.zone, state)) return { ok: false, reason: 'locked' };
+      if (!isPlotOwned(t.zone, state)) return { ok: false, reason: 'locked' };
       if (t.terrain !== 'snow' || t.surface !== 'none') return { ok: false, reason: 'terrain' };
-      const k = tileKey(x, y);
-      const who = occ.get(k);
+      const who = occupancy.get(tileKey(x, y));
       if (who && who !== ignoreId) return { ok: false, reason: 'occupied' };
     }
   }
   return { ok: true };
 }
 
-/** Prüft den ganzen Spielstand: keine Überlappung, nichts auf Weg/Wasser/gesperrtem Land. */
-export function validateLayout(state: GameState): string[] {
+/**
+ * Prüft den ganzen Spielstand: keine Überlappung, nichts auf Weg/Kulisse/fremdem Land.
+ * Ausnahme: Hindernisse gehören zur Landschaft und dürfen auf fremdem Land liegen.
+ */
+export function validateLayout(state: Pick<GameState, 'objects' | 'ownedPlots'>): string[] {
   const errs: string[] = [];
   const seen = new Map<string, ObjectId>();
   for (const o of state.objects) {
@@ -62,9 +64,9 @@ export function validateLayout(state: GameState): string[] {
         if (prev) errs.push(`Überlappung ${prev} / ${o.id} auf ${k}`);
         seen.set(k, o.id);
         const t = terrainMap().tileAt(x, y);
-        if (!t || t.zone === ZONE_BORDER) errs.push(`${o.id} außerhalb des Hofs auf ${k}`);
+        if (!t || t.zone === ZONE_BORDER) errs.push(`${o.id} außerhalb des Tals auf ${k}`);
         else {
-          if (!isZoneUnlocked(t.zone, state)) errs.push(`${o.id} auf gesperrtem Land ${k}`);
+          if (o.kind !== 'obstacle' && !isPlotOwned(t.zone, state)) errs.push(`${o.id} auf fremdem Land ${k}`);
           if (t.terrain !== 'snow' || t.surface !== 'none') errs.push(`${o.id} auf ${t.terrain}/${t.surface} ${k}`);
         }
       }

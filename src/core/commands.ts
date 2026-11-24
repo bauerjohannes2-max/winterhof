@@ -4,8 +4,10 @@
 // oder Fehler. Der alte Stand wird nie verändert.
 // ============================================================================
 import { CONTENT, footprintOf } from './content';
-import { canPlace } from './map';
+import { clearCost, decoPrice, nextPlotPrice, obstacleDef, plotStatus } from './land';
+import { buildOccupancy, canPlace, isPlotOwned, tileKey } from './map';
 import { nextRandom, pick, randInt } from './rng';
+import { terrainMap } from './terrain';
 import {
   allGoals, craftSeconds, dayKey, getObject, goalReady, isFieldReady, levelForXp,
   storageFree, storageOf, storageUpgradeCost, storageUpgradeMaterials, countObjects
@@ -179,7 +181,7 @@ export function advanceTime(state: GameState, nowRaw: number): { state: GameStat
     c.ev.push({ type: 'offerClosed', accepted: false });
   }
   if (!s.villagerOffer && now >= s.nextOfferAt) {
-    const offerable = Object.entries(s.inventory).filter(([id, q]) => q >= 2 && CONTENT.items[id] && CONTENT.items[id]!.category !== 'material');
+    const offerable = Object.entries(s.inventory).filter(([id, q]) => q >= 2 && CONTENT.items[id] && !['material', 'tool'].includes(CONTENT.items[id]!.category));
     if (offerable.length > 0) {
       const [item, have] = pick(s, offerable);
       const qty = Math.max(1, Math.min(have - 1, randInt(s, 1, 3)));
@@ -197,11 +199,52 @@ export function advanceTime(state: GameState, nowRaw: number): { state: GameStat
   }
 
   fillOrders(c);
+  growDrifts(c);
 
   for (const g of allGoals()) if (goalReady(s, g) && !state.claimedGoals.includes(g.id) && !goalReady(state, g)) {
     c.ev.push({ type: 'goalReady', goalId: g.id });
   }
   return { state: s, events: c.ev };
+}
+
+/**
+ * Schneewehen wachsen nach (Clash-Prinzip, nur Schnee): je Takt eine kleine Wehe auf freiem eigenem Land,
+ * mit 1 Feld Abstand zu allem, höchstens drifts.max gleichzeitig. Lange Abwesenheit: nur die letzten Takte zählen.
+ */
+function growDrifts(c: Ctx) {
+  const r = CONTENT.drifts;
+  const step = r.everySeconds * 1000;
+  if (c.s.nextDriftAt > c.now) return;
+  const behind = Math.floor((c.now - c.s.nextDriftAt) / step) + 1;
+  if (behind > r.max) c.s.nextDriftAt += (behind - r.max) * step;
+  while (c.s.nextDriftAt <= c.now) {
+    c.s.nextDriftAt += step;
+    const drifts = c.s.objects.filter((o) => o.kind === 'obstacle' && o.type === r.type && isPlotOwned(terrainMap().tileAt(o.gx, o.gy)?.zone ?? '', c.s)).length;
+    if (drifts >= r.max) continue;
+    const occ = buildOccupancy(c.s.objects);
+    const spots: { gx: number; gy: number }[] = [];
+    for (const id of c.s.ownedPlots) {
+      const p = terrainMap().plotById(id);
+      if (!p) continue;
+      for (let gy = p.y0; gy <= p.y1; gy++) {
+        for (let gx = p.x0; gx <= p.x1; gx++) {
+          let free = true;
+          for (let dy = -1; dy <= 1 && free; dy++) {
+            for (let dx = -1; dx <= 1 && free; dx++) {
+              const t = terrainMap().tileAt(gx + dx, gy + dy);
+              if (occ.has(tileKey(gx + dx, gy + dy)) || (t && t.surface !== 'none')) free = false;
+            }
+          }
+          if (free && canPlace(c.s, gx, gy, 1, 1, null, occ).ok) spots.push({ gx, gy });
+        }
+      }
+    }
+    if (spots.length === 0) continue;
+    const at = pick(c.s, spots);
+    const id = newId(c.s, 'ob');
+    c.s.objects.push({ id, kind: 'obstacle', type: r.type, gx: at.gx, gy: at.gy });
+    c.ev.push({ type: 'obstacleSpawned', obstacleId: id });
+  }
 }
 
 function tickStation(c: Ctx, st: StationObject) {
@@ -296,7 +339,7 @@ function run(c: Ctx, cmd: Command): void {
       addXp(c, CONTENT.items[def.produceItem]?.xp ?? 0, a.id);
       stat(c, 'collected');
       c.ev.push({ type: 'animalCollected', animalId: a.id, item: def.produceItem });
-      maybeFindMaterial(c, a.id);
+      maybeFind(c, a.id, CONTENT.materials.dropChance);
       return;
     }
     case 'petAnimal': {
@@ -332,7 +375,7 @@ function run(c: Ctx, cmd: Command): void {
       stat(c, 'crafted');
       addXp(c, CONTENT.items[item]?.xp ?? 0, st.id);
       c.ev.push({ type: 'productCollected', stationId: st.id, item });
-      maybeFindMaterial(c, st.id);
+      maybeFind(c, st.id, CONTENT.materials.dropChance);
       tickStation(c, st); // pausierte Produktion läuft weiter
       return;
     }
@@ -381,7 +424,7 @@ function run(c: Ctx, cmd: Command): void {
       const def = CONTENT.decorations[cmd.decoType] ?? fail('invalid', 'Unbekannte Deko.');
       requireLevel(s, def.unlockLevel, def.name);
       requirePlace(c, 'deco', def.id, cmd.gx, cmd.gy);
-      payCoins(c, def.cost);
+      payCoins(c, decoPrice(s, def.id));
       const id = newId(s, 'd');
       s.objects.push({ id, kind: 'deco', type: def.id, gx: cmd.gx, gy: cmd.gy });
       addXp(c, def.xp, id);
@@ -407,7 +450,8 @@ function run(c: Ctx, cmd: Command): void {
     }
     case 'moveObject': {
       const o = s.objects.find((x) => x.id === cmd.objectId) ?? fail('not_found', 'Objekt nicht gefunden.');
-      if (o.kind === 'prop' && o.type === 'dailyChest') fail('locked', 'Die Truhe bleibt am Haupthaus.');
+      if (o.kind === 'obstacle') fail('locked', 'Hindernisse lassen sich nicht verschieben, nur räumen.');
+      if (o.kind === 'prop' && CONTENT.map.fixed.includes(o.type)) fail('locked', 'Steht fest am Hofplatz.');
       requirePlace(c, o.kind, o.type, cmd.gx, cmd.gy, o.id);
       o.gx = cmd.gx;
       o.gy = cmd.gy;
@@ -492,18 +536,42 @@ function run(c: Ctx, cmd: Command): void {
       c.ev.push({ type: 'storageUpgraded', storage: cmd.storage, capacity: s.storage[cmd.storage] });
       return;
     }
-    case 'unlockZone': {
-      const z = CONTENT.landZones.find((x) => x.id === cmd.zoneId) ?? fail('not_found', 'Unbekanntes Grundstück.');
-      if (s.unlockedZones.includes(z.id)) fail('already_done', 'Schon freigeschaltet.');
-      requireLevel(s, z.unlockLevel, z.name);
-      const mats = z.materials ?? {};
-      if (!hasItems(s, mats)) fail('missing_items', 'Es fehlt Baumaterial.', missing(s, mats));
-      payCoins(c, z.cost);
-      if (Object.keys(mats).length > 0) spend(c, mats);
-      s.unlockedZones.push(z.id);
+    case 'unlockPlot': {
+      const plot = terrainMap().plotById(cmd.plotId) ?? fail('not_found', 'Unbekanntes Landstück.');
+      const status = plotStatus(s, plot);
+      if (status === 'owned') fail('already_done', 'Das Land gehört dir schon.');
+      if (status === 'not_adjacent') fail('locked', 'Nur Land, das an deinen Hof grenzt.', { reason: 'not_adjacent' });
+      if (status === 'level') fail('locked', `Dieses Land ab Stufe ${plot.minLevel}.`, { level: plot.minLevel });
+      const price = nextPlotPrice(s);
+      if (!hasItems(s, price.materials)) fail('missing_items', 'Es fehlt Land-Material.', missing(s, price.materials));
+      payCoins(c, price.coins);
+      if (Object.keys(price.materials).length > 0) spend(c, price.materials);
+      s.ownedPlots.push(plot.id);
       stat(c, 'landsUnlocked');
       addXp(c, 40);
-      c.ev.push({ type: 'zoneUnlocked', zoneId: z.id });
+      c.ev.push({ type: 'plotUnlocked', plotId: plot.id });
+      return;
+    }
+    case 'clearObstacle': {
+      const o = getObject(s, cmd.obstacleId, 'obstacle') ?? fail('not_found', 'Hindernis nicht gefunden.');
+      const def = obstacleDef(o) ?? fail('invalid', 'Unbekanntes Hindernis.');
+      if (!isPlotOwned(terrainMap().tileAt(o.gx, o.gy)?.zone ?? '', s)) fail('locked', 'Erst das Land kaufen.');
+      const cost = clearCost(s, def);
+      const lack = cost.missing[def.tool] ?? 0;
+      if (lack > 0) {
+        if (!cmd.buyMissing) fail('missing_items', 'Es fehlt Werkzeug.', { missing: cost.missing, coins: cost.coins });
+        payCoins(c, cost.coins);
+        // Sofortkauf: wird direkt benutzt, kommt nie ins Lager (kein Horten, kein Lagerplatz nötig)
+        s.inventory[def.tool] = (s.inventory[def.tool] ?? 0) + lack;
+        c.ev.push({ type: 'toolsBought', items: { ...cost.missing }, coins: cost.coins });
+      }
+      spend(c, cost.tools);
+      s.objects = s.objects.filter((x) => x.id !== o.id);
+      if (def.yieldsDeco) s.storedDecos[def.yieldsDeco] = (s.storedDecos[def.yieldsDeco] ?? 0) + 1;
+      stat(c, 'obstaclesCleared');
+      addXp(c, def.xp, o.id);
+      c.ev.push({ type: 'obstacleCleared', obstacleId: o.id, obstacleType: o.type, gx: o.gx, gy: o.gy, ...(def.yieldsDeco ? { deco: def.yieldsDeco } : {}) });
+      maybeFind(c, o.id, CONTENT.tools.clearFindChance);
       return;
     }
     case 'claimDaily': {
@@ -603,16 +671,16 @@ function run(c: Ctx, cmd: Command): void {
   }
 }
 
-/** Zufallsfund Baumaterial (ab Stufe 6). Bei voller Scheune kein Fund, nie ein Fehler. */
-function maybeFindMaterial(c: Ctx, at: string) {
+/** Zufallsfund: Werkzeug (ab Start) oder Baumaterial (ab materials.fromLevel). Bei voller Scheune kein Fund, nie ein Fehler. */
+function maybeFind(c: Ctx, at: string, chance: number) {
   const m = CONTENT.materials;
-  if (c.s.level < m.fromLevel) return; // vorher kein Zufallszug: alte Abläufe bleiben gleich
-  if (nextRandom(c.s) >= m.dropChance) return;
-  const pool = [...m.storage, ...m.land].filter((id) => (CONTENT.items[id]?.unlockLevel ?? 99) <= c.s.level);
+  if (nextRandom(c.s) >= chance) return;
+  const pool = [...CONTENT.tools.items, ...(c.s.level >= m.fromLevel ? [...m.storage, ...m.land] : [])]
+    .filter((id) => (CONTENT.items[id]?.unlockLevel ?? 99) <= c.s.level);
   if (pool.length === 0 || storageFree(c.s, 'barn') < 1) return;
   const item = pick(c.s, pool);
   gain(c, { [item]: 1 }, at);
-  c.ev.push({ type: 'materialFound', item, at });
+  c.ev.push({ type: 'itemFound', item, at });
 }
 
 function harvestField(c: Ctx, fieldId: string) {
@@ -627,7 +695,7 @@ function harvestField(c: Ctx, fieldId: string) {
   c.ev.push({ type: 'harvested', fieldId: f.id, crop: it.id, qty });
   f.crop = null;
   f.plantedAt = c.now;
-  maybeFindMaterial(c, f.id);
+  maybeFind(c, f.id, CONTENT.materials.dropChance);
 }
 
 // nextRandom wird re-exportiert, damit Tests den Seed-Verlauf prüfen können

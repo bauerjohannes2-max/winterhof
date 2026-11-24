@@ -4,17 +4,21 @@
 // gemeldet, nicht still verworfen.
 // ============================================================================
 import { CONTENT } from './content';
-import { canPlace, validateLayout } from './map';
+import { validateLayout } from './map';
+import { ITEM_RENAMES_V9, ZONES_V8, upgradeToV9 } from './migrate';
 import { SCHEMA_VERSION, createNewGame, emptyStats, levelForXp } from './state';
 import type { GameState, MapObject, StatKey } from './types';
 
 export const SAVE_KEY = 'winterhof_save_v8';
 export const BACKUP_KEY = 'winterhof_save_v8_backup';
+/** Unveränderte Kopie des letzten v8-Stands vor der Umstellung auf v9 (wird nie überschrieben). */
+export const BEFORE_V9_KEY = 'winterhof_save_v8_before_v9';
 export const LEGACY_KEYS = ['winterhof_save_v6_grid', 'winterhof_save_v6', 'winterhof_save_v5', 'winterhof_save_v2'];
 
 export interface LoadReport {
   state: GameState;
-  source: 'new' | 'v8' | 'legacy';
+  /** current = aktuelles Format; v8 / legacy = migriert; new = neues Spiel */
+  source: 'new' | 'current' | 'v8' | 'legacy';
   warnings: string[];
 }
 
@@ -22,13 +26,20 @@ export function serialize(s: GameState): string {
   return JSON.stringify(s);
 }
 
-/** Lädt Rohdaten (v8 oder Altformat). Wirft nur bei völlig unlesbaren Daten. */
+/** Lädt Rohdaten (v9, v8 oder Altformat). Wirft nur bei völlig unlesbaren Daten. */
 export function deserialize(raw: string, nowMs: number): LoadReport {
   const data = JSON.parse(raw) as Record<string, unknown>;
   if (!data || typeof data !== 'object') throw new Error('Spielstand ist kein Objekt');
   if (data.schemaVersion === SCHEMA_VERSION) {
     const warnings = checkState(data as unknown as GameState);
-    return { state: repair(data as unknown as GameState, nowMs), source: 'v8', warnings };
+    return { state: repair(data as unknown as GameState, nowMs), source: 'current', warnings };
+  }
+  if (data.schemaVersion === 8) {
+    const oldZones = Array.isArray(data.unlockedZones) ? (data.unlockedZones as unknown[]).filter((z): z is string => typeof z === 'string') : [];
+    const warnings: string[] = [];
+    const s = upgradeToV9(repair({ ...(data as unknown as GameState), ownedPlots: [] }, nowMs), oldZones, nowMs, warnings);
+    warnings.push(...checkState(s));
+    return { state: s, source: 'v8', warnings };
   }
   if (typeof data.schemaVersion === 'number' && data.schemaVersion > SCHEMA_VERSION) {
     throw new Error(`Spielstand ist neuer (v${data.schemaVersion}) als dieses Spiel (v${SCHEMA_VERSION})`);
@@ -69,19 +80,7 @@ function repair(s: GameState, nowMs: number): GameState {
   out.xp = Math.max(0, Math.floor(Number(out.xp) || 0));
   out.level = Math.max(out.level || 1, levelForXp(out.xp));
   out.clockMaxMs = Math.max(out.clockMaxMs || 0, 0);
-  chestToHome(out);
   return out;
-}
-
-/** Truhe steht fest neben dem Haupthaus (Hannes 23.11.). Alte Stände: umziehen, wenn der Platz frei ist. */
-export function chestToHome(s: GameState): void {
-  const chest = s.objects.find((o) => o.kind === 'prop' && o.type === 'dailyChest');
-  const home = CONTENT.start.objects.find((o) => o.type === 'dailyChest');
-  if (!chest || !home || (chest.gx === home.gx && chest.gy === home.gy)) return;
-  if (canPlace(s, home.gx, home.gy, 1, 1, chest.id).ok) {
-    chest.gx = home.gx;
-    chest.gy = home.gy;
-  }
 }
 
 // ---------------------------------------------------------------- Altformat (v2–v7)
@@ -95,14 +94,15 @@ export function migrateLegacy(d: Legacy, nowMs: number): LoadReport {
   s.coins = Math.max(0, Math.floor(Number(d.coins ?? s.coins)));
   s.xp = Math.max(0, Math.floor(Number(d.xp ?? 0)));
   s.level = levelForXp(s.xp);
-  s.unlockedZones = Array.isArray(d.unlockedLands) ? d.unlockedLands.filter((z: string) => CONTENT.landZones.some((l) => l.id === z)) : [];
+  const oldZones: string[] = Array.isArray(d.unlockedLands) ? d.unlockedLands.filter((z: unknown) => typeof z === 'string' && z in ZONES_V8) : [];
 
   // Lager: alles übernehmen; unbekannte Waren melden (nicht still löschen)
   s.inventory = {};
-  for (const [id, q] of Object.entries((d.inventory ?? {}) as Record<string, number>)) {
+  for (const [oldId, q] of Object.entries((d.inventory ?? {}) as Record<string, number>)) {
+    const id = ITEM_RENAMES_V9[oldId] ?? oldId;
     const n = Math.floor(Number(q));
     if (!(n > 0)) continue;
-    if (CONTENT.items[id]) s.inventory[id] = n;
+    if (CONTENT.items[id]) s.inventory[id] = (s.inventory[id] ?? 0) + n;
     else warnings.push(`Ware ${id} (${n}×) gibt es nicht mehr – nicht übernommen`);
   }
   // Kapazität so wählen, dass nichts verloren geht
@@ -165,17 +165,6 @@ export function migrateLegacy(d: Legacy, nowMs: number): LoadReport {
   s.objects = objects;
   s.storedDecos = { ...(d.storedDecos ?? {}) };
 
-  // Objekte, die im neuen Raster kollidieren: Deko wandert ins Lager, Rest bleibt mit Warnung
-  const layoutErrs = validateLayout(s);
-  if (layoutErrs.length > 0) {
-    const bad = new Set(layoutErrs.map((e) => e.split(' ')[0]!).concat(layoutErrs.flatMap((e) => (e.match(/Überlappung (\S+) \/ (\S+)/) ?? []).slice(1))));
-    s.objects = s.objects.filter((o) => {
-      if (o.kind === 'deco' && bad.has(o.id)) { s.storedDecos[o.type] = (s.storedDecos[o.type] ?? 0) + 1; warnings.push(`Deko ${o.id} ins Lager gelegt (Platz belegt)`); return false; }
-      return true;
-    });
-    warnings.push(...validateLayout(s));
-  }
-
   s.stand = Array.from({ length: CONTENT.stand.slots }, (_, i) => {
     const o = d.standSlots?.[i];
     if (!o || !CONTENT.items[o.itemId]) return null;
@@ -191,6 +180,8 @@ export function migrateLegacy(d: Legacy, nowMs: number): LoadReport {
   s.claimedGifts = Array.isArray(d.claimedGifts) ? d.claimedGifts.filter((x: unknown) => typeof x === 'string') : [];
   s.settings = { ...s.settings, ...(typeof d.settings === 'object' ? d.settings : {}) };
   s.clockMaxMs = nowMs;
+  upgradeToV9(s, oldZones, nowMs, warnings);
+  warnings.push(...validateLayout(s));
   return { state: s, source: 'legacy', warnings };
 }
 
@@ -204,7 +195,11 @@ export interface KeyValueStore {
 export function loadFromStore(store: KeyValueStore, nowMs: number): LoadReport {
   const raw = store.getItem(SAVE_KEY);
   if (raw) {
-    try { return deserialize(raw, nowMs); }
+    try {
+      const r = deserialize(raw, nowMs);
+      if (r.source === 'v8' && store.getItem(BEFORE_V9_KEY) === null) store.setItem(BEFORE_V9_KEY, raw);
+      return r;
+    }
     catch (e) {
       const bak = store.getItem(BACKUP_KEY);
       if (bak) {

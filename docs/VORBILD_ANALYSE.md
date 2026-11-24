@@ -29,3 +29,11 @@ Quellen angesehen: Hay-Day-Wiki (Farm-Karte, Gebäude-Einzelbilder), Clash-Wiki 
 ## Offene Punkte (später, nichts Neues ohne Hannes)
 - Gebäudebilder mit eigenem Vorplatz neu malen lassen (Gemini) – größter Hebel laut Hay Day.
 - Hühnerstall mit kleinem Auslauf (Hay Day: Stall + Gehege in einem Bild).
+
+## 6. Land, Hindernisse, Werkzeuge (Wikis angesehen 24.11., Baustein 2b)
+- **Hay Day:** Farm-Erweiterung in Landstücken; kaufbar ist nur ein Stück, das an eigenes Land grenzt. Je Stück gleich viele Grundbriefe, Hämmer, Pflöcke, Menge steigt (5 bis 40). Zweiter Bereich „über der Straße“, Spezialstücke mit eigener Erlaubnis.
+- **Hay Day Räumen:** Axt (Busch, kleiner Baum), Säge (großer Baum), Dynamit (einzelner Stein), TNT (Steingruppe), Schaufel (Tümpel). Fund beim Ernten, Abholen, Räumen; seit 2026 fehlendes Werkzeug beim Antippen mit Münzen kaufbar (Preis nach Stufe), wird sofort benutzt, kein Weiterverkauf.
+- **Hay Day Wege:** 3 einfache Wege ab Stufe 1 für wenige Münzen, edlere später, Preis steigt je Kauf.
+- **Hay Day Fischsee:** eigener Bereich ab Stufe 27 nach Boots-Reparatur, Angelplätze per Erweiterung.
+- **Clash:** rund 40 Hindernisse beim Start, Pflanzen wachsen alle 8 h nach (max. 45, mit 1 Feld Abstand), Steine nie. Räumen gibt Erfahrung, manchmal Edelsteine. „Hindernis-Schaufel“ macht ein Hindernis zur verschiebbaren Deko (Vorbild für unser Tannen-Ausgraben).
+- **Umgesetzt (Kern):** Landstücke 5×5 nur angrenzend, Land-Material in gleicher Menge, Werkzeug-Sofortkauf nach Stufe, nur Schneewehen wachsen nach (8 h, max. 5, 1 Feld Abstand), Tanne → Deko, Wegplatten mit steigendem Preis.

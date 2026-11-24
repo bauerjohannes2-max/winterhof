@@ -2,8 +2,8 @@
 // Prüft Leitplanken (kein Festhängen, sinnvolles Tempo), keine exakten Werte.
 import { describe, expect, it } from 'vitest';
 import {
-  CONTENT, advanceTime, applyCommand, canPlace, createNewGame, isFieldReady, storageFree,
-  type Command, type GameState
+  CONTENT, advanceTime, applyCommand, canPlace, clearCost, createNewGame, isFieldReady, isPlotOwned, nextPlotPrice,
+  obstacleDef, plotStatus, storageFree, terrainMap, type Command, type GameState
 } from '../../src/core';
 
 function tryCmd(s: GameState, cmd: Command, now: number): GameState {
@@ -11,11 +11,39 @@ function tryCmd(s: GameState, cmd: Command, now: number): GameState {
   return r.ok ? r.state : s;
 }
 
+/** Erstes freies Feld auf eigenem Land (Start-Hof zuerst). */
+function freeSpot(s: GameState, w: number, h: number): { gx: number; gy: number } | null {
+  const plots = [...s.ownedPlots].map((id) => terrainMap().plotById(id)!);
+  for (const p of plots) for (let gy = p.y0; gy <= p.y1; gy++) for (let gx = p.x0; gx <= p.x1; gx++) {
+    if (canPlace(s, gx, gy, w, h).ok) return { gx, gy };
+  }
+  return null;
+}
+
+const tally = { toolCoins: 0, cleared: 0 };
+
+/** Land: Hindernisse auf eigenem Land räumen (fehlendes Werkzeug nur mit Polster kaufen), bei Platznot Land kaufen. */
+function botLand(s0: GameState, now: number): GameState {
+  let s = s0;
+  for (const o of s.objects) {
+    if (o.kind !== 'obstacle' || !isPlotOwned(terrainMap().tileAt(o.gx, o.gy)!.zone, s)) continue;
+    const cost = clearCost(s, obstacleDef(o)!);
+    const r = applyCommand(s, { type: 'clearObstacle', obstacleId: o.id, buyMissing: s.coins > cost.coins + 500 }, now);
+    if (r.ok) { s = r.state; tally.cleared++; tally.toolCoins += cost.coins; }
+  }
+  const price = nextPlotPrice(s);
+  if (!freeSpot(s, 2, 2) || s.coins > price.coins + 600) {
+    const next = terrainMap().plots.filter((p) => plotStatus(s, p) === 'buyable').sort((a, b) => Math.abs(a.col - 3.5) + Math.abs(a.row - 3.5) - Math.abs(b.col - 3.5) - Math.abs(b.row - 3.5))[0];
+    if (next) s = tryCmd(s, { type: 'unlockPlot', plotId: next.id }, now);
+  }
+  return s;
+}
+
 function botStep(s0: GameState, now: number, sessionStart = false): GameState {
   let s = advanceTime(s0, now).state;
   // 0. Lager zuerst ausbauen (mit Material), Land freischalten
   for (const kind of ['barn', 'silo'] as const) if (storageFree(s, kind) < 15) s = tryCmd(s, { type: 'upgradeStorage', storage: kind }, now);
-  for (const z of CONTENT.landZones) if (s.coins > z.cost + 150) s = tryCmd(s, { type: 'unlockZone', zoneId: z.id }, now);
+  s = botLand(s, now);
   // 1. ernten, abholen
   for (const o of s.objects) {
     if (o.kind === 'field' && isFieldReady(o, now)) s = tryCmd(s, { type: 'harvest', fieldId: o.id }, now);
@@ -48,20 +76,23 @@ function botStep(s0: GameState, now: number, sessionStart = false): GameState {
   // 6. investieren: Gebäude, Tiere, Felder, Lager
   for (const [id, def] of Object.entries(CONTENT.stations)) {
     if (s.level >= def.unlockLevel && !s.objects.some((o) => o.type === id) && s.coins >= def.cost) {
-      for (let gy = 0; gy <= 13; gy++) for (let gx = 0; gx <= 16; gx++) {
-        if (!s.objects.some((o) => o.type === id) && canPlace(s, gx, gy, 2, 2).ok) s = tryCmd(s, { type: 'buyStation', stationType: id, gx, gy }, now);
-      }
+      const at = freeSpot(s, 2, 2);
+      if (at) s = tryCmd(s, { type: 'buyStation', stationType: id, ...at }, now);
     }
   }
   for (const id of Object.keys(CONTENT.animals)) {
-    for (let gy = 2; gy <= 11; gy++) for (let gx = 2; gx <= 11; gx++) {
-      if (s.coins > 300 && canPlace(s, gx, gy, 1, 1).ok) s = tryCmd(s, { type: 'buyAnimal', animalType: id, gx, gy }, now);
+    for (let i = 0; i < 10 && s.coins > 300; i++) {
+      const at = freeSpot(s, 1, 1);
+      const before = s;
+      if (at) s = tryCmd(s, { type: 'buyAnimal', animalType: id, ...at }, now);
+      if (s === before) break;
     }
   }
-  if (s.coins > 200) {
-    for (let gy = 2; gy <= 11; gy++) for (let gx = 2; gx <= 11; gx++) {
-      if (s.coins > 200 && canPlace(s, gx, gy, 1, 1).ok) s = tryCmd(s, { type: 'buyField', gx, gy }, now);
-    }
+  for (let i = 0; i < 40 && s.coins > 200; i++) {
+    const at = freeSpot(s, 1, 1);
+    const before = s;
+    if (at) s = tryCmd(s, { type: 'buyField', ...at }, now);
+    if (s === before) break;
   }
   for (const kind of ['silo', 'barn'] as const) if (storageFree(s, kind) < 10 && s.coins > 400) s = tryCmd(s, { type: 'upgradeStorage', storage: kind }, now);
   s = tryCmd(s, { type: 'claimDaily' }, now);
@@ -82,13 +113,17 @@ describe('Wirtschaft (7-Tage-Bot)', () => {
       }
       levelByDay.push(s.level);
     }
-    console.log('Level je Tag', levelByDay.join(','), '| Münzen', s.coins, '| Aufträge', s.stats.ordersDone, '| Objekte', s.objects.length);
+    console.log('Level je Tag', levelByDay.join(','), '| Münzen', s.coins, '| Aufträge', s.stats.ordersDone, '| Land', s.ownedPlots.length,
+      '| geräumt', tally.cleared, '| Werkzeug-Kauf', tally.toolCoins, '| Werkzeuge', CONTENT.tools.items.map((t) => s.inventory[t] ?? 0).join('/'));
     expect(levelByDay[0]).toBeGreaterThanOrEqual(3);       // Tag 1: spürbarer Fortschritt
     expect(levelByDay[0]).toBeLessThanOrEqual(8);          // ...aber nicht durchgespielt
     expect(levelByDay[6]).toBeGreaterThanOrEqual(10);      // Vielspieler nach 1 Woche
     expect(levelByDay[6]).toBeLessThanOrEqual(20);
     expect(s.coins).toBeLessThan(50_000);                  // keine Gelddruckmaschine
     expect(s.stats.ordersDone).toBeGreaterThan(3);
+    expect(s.ownedPlots.length).toBeGreaterThan(CONTENT.map.plots.start.length + 2); // Land wächst spürbar
+    expect(s.ownedPlots.length).toBeLessThan(terrainMap().plots.length);             // ...aber nicht alles in einer Woche
+    expect(tally.cleared).toBeGreaterThan(10);                                         // Räumen ist Teil des Spiels
     expect(s.coins).toBeGreaterThanOrEqual(0);
   });
 });

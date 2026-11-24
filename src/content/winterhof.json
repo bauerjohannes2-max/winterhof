@@ -1,15 +1,17 @@
 {
   "version": 1,
   "map": {
-    "note": "Karte in Ebenen wie im Tiled-Format: je Ebene eine Zeile pro gy (von oben = kleinstes gy), ein Zeichen pro gx. Zeichen siehe legend. Zonen (Grundstücke) kommen aus starterBounds + landZones.",
+    "note": "Alpental (KARTEN_KONZEPT.md). Ebenen wie im Tiled-Format: je Ebene eine Zeile pro gy (von oben = kleinstes gy), ein Zeichen pro gx, Zeichen siehe legend. Bildschirm: x ~ gx-gy, y ~ gx+gy (hinten = klein, vorn = groß). plots: Tal aus gleich großen Landstücken (Spalte,Reihe), start = eigene Stücke zu Beginn, levels = Mindeststufe je Stück. obstacles: Objekt-Ebene (Hindernisse), erzeugt mit scripts/karte_erzeugen.py. fixed: Stationen am Hofplatz, nicht verschiebbar.",
     "origin": {
-      "gx": -10,
-      "gy": -10
+      "gx": -21,
+      "gy": -21
     },
     "legend": {
       "terrain": {
         ".": "snow",
-        "F": "forest"
+        "F": "forest",
+        "M": "mountain",
+        "I": "ice"
       },
       "surface": {
         ".": "none",
@@ -17,89 +19,1134 @@
         "P": "plaza"
       }
     },
-    "starterBounds": {
-      "x0": 2,
-      "y0": 2,
-      "x1": 11,
-      "y1": 11
+    "plots": {
+      "origin": {
+        "gx": -13,
+        "gy": -13
+      },
+      "size": 5,
+      "cols": 6,
+      "rows": 6,
+      "start": [
+        "3,3",
+        "4,3",
+        "3,4",
+        "4,4"
+      ],
+      "levels": {
+        "5,0": 13,
+        "5,1": 13,
+        "5,2": 13
+      }
     },
+    "fixed": [
+      "sleigh",
+      "wishlistBoard",
+      "farmStand",
+      "mailbox",
+      "dailyChest"
+    ],
     "terrain": [
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      ".....................................",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFF.........................FFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-      "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+      "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMMMMMMMMMMMMMFFFFFFFMMFFFFFFFFFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "MMMMMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFF...FFFFF",
+      "MMMMMMMMMMMMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFF........FFFF",
+      "MMMMFFFFFFMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.........FFF",
+      "MMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF....II.....FF",
+      "MMMMMFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF....IIII....FF",
+      "MMMMMFFF..............................F....IIIIII...FF",
+      "MMMMMFFF..............................F...IIIIIIII...F",
+      "MMMMMFFF..............................F...IIIIIIII...F",
+      "MMMMMFFF..............................F...IIIIIIIII...",
+      "MMMMMFFF..............................F..IIIIIIIIII...",
+      "MMMMFFFF..............................F..IIIIIIIIII...",
+      "MMMMFFFF.................................IIIIIIIIII..F",
+      "MMMMFFFF.................................IIIIIIIIII..F",
+      "MMMMFFFF.................................IIIIIIIIII..F",
+      "MMMMFFFF.................................IIIIIIIIII...",
+      "MMMFFFFF.................................IIIIIIIIII...",
+      "MMMFFFFF..............................F..IIIIIIIIII...",
+      "MMFFFFFF..............................F...IIIIIIII...F",
+      "MMFFFFFF..............................FF...IIIIIII...F",
+      "MFFFFFFF..............................FF....IIIII...FF",
+      "MMFFFFFF..............................FF............FF",
+      "MMFFFFFF..............................FFF...........FF",
+      "MMFFFFFF..............................FFFF.........FFF",
+      "MMFFFFFF..............................FFFFF......FFFFF",
+      "MFFFFFFF..............................FFFFFF...FFFFFFF",
+      "MFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "MFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "MFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFF..............................FFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF",
+      "FFFFFFFFFFFFFFFFFFFFFFFFFFFF..FFFFFFFFFFFFFFFFFFFFFFFF"
     ],
     "surface": [
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      "...............R..PP.................",
-      "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
-      "..............R......................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      ".....................................",
-      "....................................."
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "......................................................",
+      "...........................PPPP.......................",
+      "...........................PPPP.......................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................",
+      "............................RR........................"
+    ],
+    "obstacles": [
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": -13
+      },
+      {
+        "type": "pine_large",
+        "gx": -11,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
+        "gy": -13
+      },
+      {
+        "type": "pine_small",
+        "gx": -8,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
+        "gy": -13
+      },
+      {
+        "type": "drift_small",
+        "gx": -2,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": -1,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": 0,
+        "gy": -13
+      },
+      {
+        "type": "drift_small",
+        "gx": 3,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": 10,
+        "gy": -13
+      },
+      {
+        "type": "rock_large",
+        "gx": -8,
+        "gy": -12
+      },
+      {
+        "type": "pine_large",
+        "gx": -6,
+        "gy": -12
+      },
+      {
+        "type": "pine_large",
+        "gx": -3,
+        "gy": -12
+      },
+      {
+        "type": "rock_large",
+        "gx": 7,
+        "gy": -12
+      },
+      {
+        "type": "rock_small",
+        "gx": 10,
+        "gy": -12
+      },
+      {
+        "type": "drift_small",
+        "gx": 12,
+        "gy": -12
+      },
+      {
+        "type": "pine_small",
+        "gx": 15,
+        "gy": -12
+      },
+      {
+        "type": "drift_small",
+        "gx": 16,
+        "gy": -12
+      },
+      {
+        "type": "drift_small",
+        "gx": -12,
+        "gy": -11
+      },
+      {
+        "type": "rock_small",
+        "gx": -1,
+        "gy": -11
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": -11
+      },
+      {
+        "type": "pine_large",
+        "gx": 4,
+        "gy": -11
+      },
+      {
+        "type": "drift_small",
+        "gx": 6,
+        "gy": -11
+      },
+      {
+        "type": "drift_small",
+        "gx": 9,
+        "gy": -11
+      },
+      {
+        "type": "drift_small",
+        "gx": 10,
+        "gy": -11
+      },
+      {
+        "type": "drift_small",
+        "gx": -10,
+        "gy": -10
+      },
+      {
+        "type": "drift_large",
+        "gx": -7,
+        "gy": -10
+      },
+      {
+        "type": "pine_small",
+        "gx": -4,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": 3,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": 6,
+        "gy": -10
+      },
+      {
+        "type": "drift_large",
+        "gx": 7,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": 12,
+        "gy": -10
+      },
+      {
+        "type": "drift_small",
+        "gx": -13,
+        "gy": -9
+      },
+      {
+        "type": "rock_small",
+        "gx": -12,
+        "gy": -9
+      },
+      {
+        "type": "drift_small",
+        "gx": -2,
+        "gy": -9
+      },
+      {
+        "type": "ice_small",
+        "gx": 15,
+        "gy": -9
+      },
+      {
+        "type": "drift_large",
+        "gx": -11,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": -7,
+        "gy": -8
+      },
+      {
+        "type": "drift_small",
+        "gx": -1,
+        "gy": -8
+      },
+      {
+        "type": "drift_small",
+        "gx": 3,
+        "gy": -8
+      },
+      {
+        "type": "ice_small",
+        "gx": 13,
+        "gy": -8
+      },
+      {
+        "type": "pine_small",
+        "gx": -12,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": -7,
+        "gy": -7
+      },
+      {
+        "type": "pine_small",
+        "gx": 0,
+        "gy": -7
+      },
+      {
+        "type": "rock_large",
+        "gx": 2,
+        "gy": -7
+      },
+      {
+        "type": "drift_small",
+        "gx": 6,
+        "gy": -7
+      },
+      {
+        "type": "drift_small",
+        "gx": 11,
+        "gy": -7
+      },
+      {
+        "type": "ice_large",
+        "gx": 12,
+        "gy": -7
+      },
+      {
+        "type": "ice_small",
+        "gx": 16,
+        "gy": -7
+      },
+      {
+        "type": "drift_small",
+        "gx": -11,
+        "gy": -6
+      },
+      {
+        "type": "drift_large",
+        "gx": 8,
+        "gy": -6
+      },
+      {
+        "type": "ice_small",
+        "gx": 15,
+        "gy": -6
+      },
+      {
+        "type": "drift_small",
+        "gx": -12,
+        "gy": -5
+      },
+      {
+        "type": "pine_small",
+        "gx": -11,
+        "gy": -5
+      },
+      {
+        "type": "drift_small",
+        "gx": -9,
+        "gy": -5
+      },
+      {
+        "type": "drift_small",
+        "gx": -5,
+        "gy": -5
+      },
+      {
+        "type": "pine_small",
+        "gx": -4,
+        "gy": -5
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": -5
+      },
+      {
+        "type": "rock_large",
+        "gx": 4,
+        "gy": -5
+      },
+      {
+        "type": "pine_small",
+        "gx": 7,
+        "gy": -5
+      },
+      {
+        "type": "drift_large",
+        "gx": 10,
+        "gy": -5
+      },
+      {
+        "type": "drift_small",
+        "gx": 12,
+        "gy": -5
+      },
+      {
+        "type": "rock_small",
+        "gx": 14,
+        "gy": -5
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": -4
+      },
+      {
+        "type": "drift_small",
+        "gx": -2,
+        "gy": -4
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": -4
+      },
+      {
+        "type": "pine_small",
+        "gx": 1,
+        "gy": -4
+      },
+      {
+        "type": "drift_small",
+        "gx": 2,
+        "gy": -4
+      },
+      {
+        "type": "drift_small",
+        "gx": 3,
+        "gy": -4
+      },
+      {
+        "type": "rock_small",
+        "gx": 8,
+        "gy": -4
+      },
+      {
+        "type": "rock_small",
+        "gx": 16,
+        "gy": -4
+      },
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": -3
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": -3
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": 4,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": 6,
+        "gy": -3
+      },
+      {
+        "type": "rock_small",
+        "gx": 9,
+        "gy": -3
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": 14,
+        "gy": -3
+      },
+      {
+        "type": "pine_small",
+        "gx": -9,
+        "gy": -2
+      },
+      {
+        "type": "drift_small",
+        "gx": -7,
+        "gy": -2
+      },
+      {
+        "type": "pine_small",
+        "gx": -6,
+        "gy": -2
+      },
+      {
+        "type": "pine_small",
+        "gx": -2,
+        "gy": -2
+      },
+      {
+        "type": "rock_large",
+        "gx": -1,
+        "gy": -2
+      },
+      {
+        "type": "pine_small",
+        "gx": 3,
+        "gy": -2
+      },
+      {
+        "type": "pine_small",
+        "gx": 9,
+        "gy": -2
+      },
+      {
+        "type": "drift_small",
+        "gx": 11,
+        "gy": -2
+      },
+      {
+        "type": "pine_small",
+        "gx": 13,
+        "gy": -2
+      },
+      {
+        "type": "ice_small",
+        "gx": 16,
+        "gy": -2
+      },
+      {
+        "type": "pine_large",
+        "gx": -11,
+        "gy": -1
+      },
+      {
+        "type": "pine_large",
+        "gx": -7,
+        "gy": -1
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": -1
+      },
+      {
+        "type": "drift_small",
+        "gx": 3,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": 9,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": 10,
+        "gy": -1
+      },
+      {
+        "type": "drift_small",
+        "gx": 11,
+        "gy": -1
+      },
+      {
+        "type": "ice_small",
+        "gx": 13,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": 14,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": -12,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": 0
+      },
+      {
+        "type": "pine_large",
+        "gx": -3,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": 1,
+        "gy": 0
+      },
+      {
+        "type": "drift_small",
+        "gx": 5,
+        "gy": 0
+      },
+      {
+        "type": "ice_small",
+        "gx": 15,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": 16,
+        "gy": 0
+      },
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": 1
+      },
+      {
+        "type": "pine_small",
+        "gx": -10,
+        "gy": 1
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": 1
+      },
+      {
+        "type": "pine_small",
+        "gx": 3,
+        "gy": 1
+      },
+      {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": 2
+      },
+      {
+        "type": "pine_large",
+        "gx": -3,
+        "gy": 2
+      },
+      {
+        "type": "rock_small",
+        "gx": 2,
+        "gy": 2
+      },
+      {
+        "type": "pine_small",
+        "gx": 11,
+        "gy": 2
+      },
+      {
+        "type": "pine_large",
+        "gx": 12,
+        "gy": 2
+      },
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": -12,
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": -6,
+        "gy": 3
+      },
+      {
+        "type": "pine_small",
+        "gx": -1,
+        "gy": 3
+      },
+      {
+        "type": "drift_small",
+        "gx": 16,
+        "gy": 3
+      },
+      {
+        "type": "drift_small",
+        "gx": -11,
+        "gy": 4
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": 4
+      },
+      {
+        "type": "pine_small",
+        "gx": -4,
+        "gy": 4
+      },
+      {
+        "type": "pine_small",
+        "gx": -3,
+        "gy": 4
+      },
+      {
+        "type": "drift_small",
+        "gx": -2,
+        "gy": 4
+      },
+      {
+        "type": "drift_small",
+        "gx": 16,
+        "gy": 4
+      },
+      {
+        "type": "drift_small",
+        "gx": -7,
+        "gy": 5
+      },
+      {
+        "type": "drift_small",
+        "gx": -6,
+        "gy": 5
+      },
+      {
+        "type": "rock_large",
+        "gx": -5,
+        "gy": 5
+      },
+      {
+        "type": "drift_small",
+        "gx": -2,
+        "gy": 5
+      },
+      {
+        "type": "drift_small",
+        "gx": 1,
+        "gy": 5
+      },
+      {
+        "type": "pine_small",
+        "gx": 12,
+        "gy": 5
+      },
+      {
+        "type": "drift_small",
+        "gx": 13,
+        "gy": 5
+      },
+      {
+        "type": "rock_small",
+        "gx": -13,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": -3,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": 2,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": 11,
+        "gy": 6
+      },
+      {
+        "type": "drift_small",
+        "gx": 15,
+        "gy": 6
+      },
+      {
+        "type": "rock_small",
+        "gx": -13,
+        "gy": 7
+      },
+      {
+        "type": "rock_large",
+        "gx": -12,
+        "gy": 7
+      },
+      {
+        "type": "pine_large",
+        "gx": -7,
+        "gy": 7
+      },
+      {
+        "type": "rock_small",
+        "gx": 16,
+        "gy": 7
+      },
+      {
+        "type": "drift_small",
+        "gx": -2,
+        "gy": 8
+      },
+      {
+        "type": "drift_large",
+        "gx": -1,
+        "gy": 8
+      },
+      {
+        "type": "rock_small",
+        "gx": 15,
+        "gy": 8
+      },
+      {
+        "type": "rock_large",
+        "gx": -11,
+        "gy": 9
+      },
+      {
+        "type": "drift_small",
+        "gx": -8,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
+        "gy": 9
+      },
+      {
+        "type": "drift_small",
+        "gx": 12,
+        "gy": 9
+      },
+      {
+        "type": "pine_large",
+        "gx": 14,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": -13,
+        "gy": 10
+      },
+      {
+        "type": "drift_small",
+        "gx": -12,
+        "gy": 10
+      },
+      {
+        "type": "pine_small",
+        "gx": -9,
+        "gy": 10
+      },
+      {
+        "type": "drift_small",
+        "gx": -4,
+        "gy": 10
+      },
+      {
+        "type": "pine_large",
+        "gx": -3,
+        "gy": 10
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": 10
+      },
+      {
+        "type": "rock_small",
+        "gx": 12,
+        "gy": 10
+      },
+      {
+        "type": "drift_small",
+        "gx": 13,
+        "gy": 10
+      },
+      {
+        "type": "drift_small",
+        "gx": -7,
+        "gy": 11
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
+        "gy": 11
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": 11
+      },
+      {
+        "type": "drift_small",
+        "gx": 1,
+        "gy": 11
+      },
+      {
+        "type": "pine_small",
+        "gx": 2,
+        "gy": 11
+      },
+      {
+        "type": "pine_large",
+        "gx": -8,
+        "gy": 12
+      },
+      {
+        "type": "rock_large",
+        "gx": -6,
+        "gy": 12
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": 0,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": 6,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": 9,
+        "gy": 12
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": 12
+      },
+      {
+        "type": "rock_small",
+        "gx": 11,
+        "gy": 12
+      },
+      {
+        "type": "pine_large",
+        "gx": -13,
+        "gy": 13
+      },
+      {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": 13
+      },
+      {
+        "type": "drift_large",
+        "gx": 0,
+        "gy": 13
+      },
+      {
+        "type": "pine_large",
+        "gx": 4,
+        "gy": 13
+      },
+      {
+        "type": "rock_small",
+        "gx": 14,
+        "gy": 13
+      },
+      {
+        "type": "pine_large",
+        "gx": 15,
+        "gy": 13
+      },
+      {
+        "type": "pine_small",
+        "gx": -11,
+        "gy": 14
+      },
+      {
+        "type": "rock_large",
+        "gx": -10,
+        "gy": 14
+      },
+      {
+        "type": "drift_large",
+        "gx": -3,
+        "gy": 14
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": 14
+      },
+      {
+        "type": "drift_small",
+        "gx": 13,
+        "gy": 14
+      },
+      {
+        "type": "drift_small",
+        "gx": -12,
+        "gy": 15
+      },
+      {
+        "type": "rock_small",
+        "gx": -11,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": -7,
+        "gy": 15
+      },
+      {
+        "type": "rock_small",
+        "gx": -6,
+        "gy": 15
+      },
+      {
+        "type": "drift_large",
+        "gx": -1,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 2,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 4,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 5,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 11,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 15,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": -10,
+        "gy": 16
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": 16
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
+        "gy": 16
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": 16
+      },
+      {
+        "type": "drift_small",
+        "gx": 12,
+        "gy": 16
+      },
+      {
+        "type": "pine_small",
+        "gx": 13,
+        "gy": 16
+      }
     ]
   },
   "items": {
@@ -506,16 +1553,28 @@
       "desc": "Zäher Tannenharz-Leim – dichtet Silo und Scheune gegen Schnee.",
       "storage": "barn"
     },
-    "snow_shovel": {
-      "id": "snow_shovel",
-      "name": "Schneeschaufel",
+    "land_deed": {
+      "id": "land_deed",
+      "name": "Grundbrief",
+      "category": "material",
+      "materialGroup": "land",
+      "sellPrice": 40,
+      "xp": 0,
+      "unlockLevel": 6,
+      "color": "#65A30D",
+      "desc": "Besiegelt den Kauf eines neuen Landstücks.",
+      "storage": "barn"
+    },
+    "mallet": {
+      "id": "mallet",
+      "name": "Holzhammer",
       "category": "material",
       "materialGroup": "land",
       "sellPrice": 40,
       "xp": 0,
       "unlockLevel": 6,
       "color": "#38BDF8",
-      "desc": "Räumt neues Land frei.",
+      "desc": "Schlägt die Grenzpflöcke für neues Land ein.",
       "storage": "barn"
     },
     "boundary_stake": {
@@ -527,19 +1586,51 @@
       "xp": 0,
       "unlockLevel": 6,
       "color": "#9A3412",
-      "desc": "Markiert die Grenzen eines neuen Grundstücks.",
+      "desc": "Markiert die Grenzen eines neuen Landstücks.",
       "storage": "barn"
     },
-    "survey_map": {
-      "id": "survey_map",
-      "name": "Flurkarte",
-      "category": "material",
-      "materialGroup": "land",
-      "sellPrice": 40,
+    "shovel": {
+      "id": "shovel",
+      "name": "Schaufel",
+      "category": "tool",
+      "sellPrice": 10,
       "xp": 0,
-      "unlockLevel": 6,
-      "color": "#65A30D",
-      "desc": "Alte Karte des Tals – zeigt, wo das neue Grundstück liegt.",
+      "unlockLevel": 1,
+      "color": "#60A5FA",
+      "desc": "Räumt Schneewehen weg.",
+      "storage": "barn"
+    },
+    "pickaxe": {
+      "id": "pickaxe",
+      "name": "Spitzhacke",
+      "category": "tool",
+      "sellPrice": 10,
+      "xp": 0,
+      "unlockLevel": 1,
+      "color": "#78716C",
+      "desc": "Bricht Felsen auf.",
+      "storage": "barn"
+    },
+    "icepick": {
+      "id": "icepick",
+      "name": "Eispickel",
+      "category": "tool",
+      "sellPrice": 10,
+      "xp": 0,
+      "unlockLevel": 1,
+      "color": "#22D3EE",
+      "desc": "Hackt Eisplatten los.",
+      "storage": "barn"
+    },
+    "spade": {
+      "id": "spade",
+      "name": "Spaten",
+      "category": "tool",
+      "sellPrice": 10,
+      "xp": 0,
+      "unlockLevel": 1,
+      "color": "#A16207",
+      "desc": "Gräbt Tannen samt Wurzel aus, zum Wiedereinpflanzen.",
       "storage": "barn"
     },
     "apples": {
@@ -1303,296 +2394,197 @@
         "y": -0.5,
         "r": 0.5
       }
+    },
+    "pine_large": {
+      "id": "pine_large",
+      "name": "Große Schneetanne",
+      "theme": "Winter",
+      "sprite": "deco_pine",
+      "cost": 90,
+      "xp": 25,
+      "unlockLevel": 4,
+      "glow": false,
+      "desc": "Alte, mächtige Alpentanne."
+    },
+    "path_snow": {
+      "id": "path_snow",
+      "name": "Schneepfad",
+      "theme": "Weg",
+      "group": "path",
+      "cost": 5,
+      "costStep": 0,
+      "xp": 0,
+      "unlockLevel": 1,
+      "glow": false,
+      "desc": "Festgetretener Schnee, der einfachste Weg."
+    },
+    "path_gravel": {
+      "id": "path_gravel",
+      "name": "Kiesweg",
+      "theme": "Weg",
+      "group": "path",
+      "cost": 8,
+      "costStep": 0,
+      "xp": 0,
+      "unlockLevel": 1,
+      "glow": false,
+      "desc": "Knirschender Kies, gut gestreut."
+    },
+    "path_planks": {
+      "id": "path_planks",
+      "name": "Holzbohlen",
+      "theme": "Weg",
+      "group": "path",
+      "cost": 10,
+      "costStep": 0,
+      "xp": 0,
+      "unlockLevel": 1,
+      "glow": false,
+      "desc": "Breite Bohlen aus Lärchenholz."
+    },
+    "path_cobble": {
+      "id": "path_cobble",
+      "name": "Kopfsteinpflaster",
+      "theme": "Weg",
+      "group": "path",
+      "cost": 25,
+      "costStep": 3,
+      "xp": 0,
+      "unlockLevel": 8,
+      "glow": false,
+      "desc": "Runde Steine wie im alten Dorf."
+    },
+    "path_flagstone": {
+      "id": "path_flagstone",
+      "name": "Natursteinplatten",
+      "theme": "Weg",
+      "group": "path",
+      "cost": 40,
+      "costStep": 5,
+      "xp": 0,
+      "unlockLevel": 14,
+      "glow": false,
+      "desc": "Große Platten aus Bergstein."
+    },
+    "path_star": {
+      "id": "path_star",
+      "name": "Sternenpflaster",
+      "theme": "Weg",
+      "group": "path",
+      "cost": 60,
+      "costStep": 8,
+      "xp": 0,
+      "unlockLevel": 20,
+      "glow": false,
+      "desc": "Pflaster mit eingelegten goldenen Sternen."
     }
   },
-  "landZones": [
-    {
-      "id": "west_forest",
-      "name": "Tannenwäldchen",
-      "desc": "Erweitert den westlichen Waldrand (2×10 Felder) für zusätzliche Beete & Deko.",
-      "bounds": {
-        "x0": 0,
-        "y0": 2,
-        "x1": 1,
-        "y1": 11
-      },
-      "cost": 120,
-      "unlockLevel": 2
+  "land": {
+    "fromLevel": 3,
+    "baseCost": 150,
+    "costGrowth": 1.15,
+    "materialsFromPlot": 2,
+    "materialStep": 2,
+    "materials": [
+      "land_deed",
+      "mallet",
+      "boundary_stake"
+    ],
+    "note": "Preis des k-ten gekauften Stücks (k ab 0): baseCost*costGrowth^k, auf 10 gerundet. Ab k >= materialsFromPlot je Material 1 + floor((k - materialsFromPlot) / materialStep)."
+  },
+  "obstacles": {
+    "drift_small": {
+      "id": "drift_small",
+      "name": "Schneewehe",
+      "tool": "shovel",
+      "toolQty": 1,
+      "xp": 2
     },
-    {
-      "id": "south_meadow",
-      "name": "Südwiese",
-      "desc": "Öffnet die sonnige Südwiese (14×2 Felder).",
-      "bounds": {
-        "x0": 0,
-        "y0": 12,
-        "x1": 13,
-        "y1": 13
-      },
-      "cost": 180,
-      "unlockLevel": 3
+    "drift_large": {
+      "id": "drift_large",
+      "name": "Große Schneewehe",
+      "tool": "shovel",
+      "toolQty": 2,
+      "xp": 5
     },
-    {
-      "id": "east_glade",
-      "name": "Schlittenlichtung",
-      "desc": "Schaltet die östliche Lichtung (2×10 Felder) frei.",
-      "bounds": {
-        "x0": 12,
-        "y0": 2,
-        "x1": 13,
-        "y1": 11
-      },
-      "cost": 250,
-      "unlockLevel": 4
+    "rock_small": {
+      "id": "rock_small",
+      "name": "Fels",
+      "tool": "pickaxe",
+      "toolQty": 1,
+      "xp": 4
     },
-    {
-      "id": "north_ridge",
-      "name": "Nordlicht-Gipfel",
-      "desc": "Erschließt das obere Panorama (14×2 Felder) hinter dem Chalet.",
-      "bounds": {
-        "x0": 0,
-        "y0": 0,
-        "x1": 13,
-        "y1": 1
-      },
-      "cost": 320,
-      "unlockLevel": 5
+    "rock_large": {
+      "id": "rock_large",
+      "name": "Großer Fels",
+      "tool": "pickaxe",
+      "toolQty": 2,
+      "xp": 10
     },
-    {
-      "id": "bachwiese",
-      "name": "Ostwiese",
-      "desc": "Weites Land im Osten (3×14 Felder).",
-      "bounds": {
-        "x0": 14,
-        "y0": 0,
-        "x1": 16,
-        "y1": 13
-      },
-      "cost": 600,
-      "unlockLevel": 6,
-      "materials": {
-        "snow_shovel": 1,
-        "boundary_stake": 1,
-        "survey_map": 1
-      }
+    "ice_small": {
+      "id": "ice_small",
+      "name": "Eisplatte",
+      "tool": "icepick",
+      "toolQty": 1,
+      "xp": 4
     },
-    {
-      "id": "tannenruecken",
-      "name": "Tannenrücken",
-      "desc": "Verschneiter Waldstreifen im Norden. (8×4 Felder)",
-      "bounds": {
-        "x0": 0,
-        "y0": -4,
-        "x1": 7,
-        "y1": -1
-      },
-      "cost": 700,
-      "unlockLevel": 7,
-      "materials": {
-        "snow_shovel": 1,
-        "boundary_stake": 1,
-        "survey_map": 1
-      }
+    "ice_large": {
+      "id": "ice_large",
+      "name": "Große Eisplatte",
+      "tool": "icepick",
+      "toolQty": 2,
+      "xp": 10
     },
-    {
-      "id": "nordlichtwiese",
-      "name": "Nordlichtwiese",
-      "desc": "Offene Wiese unter dem Nordlicht. (9×4 Felder)",
-      "bounds": {
-        "x0": 8,
-        "y0": -4,
-        "x1": 16,
-        "y1": -1
-      },
-      "cost": 800,
-      "unlockLevel": 8,
-      "materials": {
-        "snow_shovel": 2,
-        "boundary_stake": 1,
-        "survey_map": 1
-      }
+    "pine_small": {
+      "id": "pine_small",
+      "name": "Junge Tanne",
+      "tool": "spade",
+      "toolQty": 1,
+      "xp": 3,
+      "yieldsDeco": "pine"
     },
-    {
-      "id": "glockenhang",
-      "name": "Glockenhang",
-      "desc": "Sanfter Hang im Westen, oberhalb des Weges. (4×7 Felder)",
-      "bounds": {
-        "x0": -4,
-        "y0": 0,
-        "x1": -1,
-        "y1": 6
-      },
-      "cost": 950,
-      "unlockLevel": 9,
-      "materials": {
-        "snow_shovel": 2,
-        "boundary_stake": 2,
-        "survey_map": 1
-      }
-    },
-    {
-      "id": "schlittenhang",
-      "name": "Schlittenhang",
-      "desc": "Perfekt zum Rodeln, unterhalb des Weges. (4×7 Felder)",
-      "bounds": {
-        "x0": -4,
-        "y0": 7,
-        "x1": -1,
-        "y1": 13
-      },
-      "cost": 1100,
-      "unlockLevel": 10,
-      "materials": {
-        "snow_shovel": 2,
-        "boundary_stake": 2,
-        "survey_map": 2
-      }
-    },
-    {
-      "id": "plaetzchenwiese",
-      "name": "Plätzchenwiese",
-      "desc": "Weite Fläche im Süden. (8×4 Felder)",
-      "bounds": {
-        "x0": 0,
-        "y0": 14,
-        "x1": 7,
-        "y1": 17
-      },
-      "cost": 1300,
-      "unlockLevel": 11,
-      "materials": {
-        "snow_shovel": 3,
-        "boundary_stake": 2,
-        "survey_map": 2
-      }
-    },
-    {
-      "id": "sternenfeld",
-      "name": "Sternenfeld",
-      "desc": "Großes Feld im Südosten. (9×4 Felder)",
-      "bounds": {
-        "x0": 8,
-        "y0": 14,
-        "x1": 16,
-        "y1": 17
-      },
-      "cost": 1500,
-      "unlockLevel": 12,
-      "materials": {
-        "snow_shovel": 3,
-        "boundary_stake": 3,
-        "survey_map": 2
-      }
-    },
-    {
-      "id": "wichtelhain",
-      "name": "Wichtelhain",
-      "desc": "Lichtung im Osten, oberhalb des Weges. (4×7 Felder)",
-      "bounds": {
-        "x0": 17,
-        "y0": 0,
-        "x1": 20,
-        "y1": 6
-      },
-      "cost": 1700,
-      "unlockLevel": 13,
-      "materials": {
-        "snow_shovel": 3,
-        "boundary_stake": 3,
-        "survey_map": 3
-      }
-    },
-    {
-      "id": "rentierweide",
-      "name": "Rentierweide",
-      "desc": "Weide im Osten, unterhalb des Weges. (4×7 Felder)",
-      "bounds": {
-        "x0": 17,
-        "y0": 7,
-        "x1": 20,
-        "y1": 13
-      },
-      "cost": 1900,
-      "unlockLevel": 14,
-      "materials": {
-        "snow_shovel": 4,
-        "boundary_stake": 3,
-        "survey_map": 3
-      }
-    },
-    {
-      "id": "eiszapfenecke",
-      "name": "Eiszapfenecke",
-      "desc": "Stille Ecke im Nordwesten. (4×4 Felder)",
-      "bounds": {
-        "x0": -4,
-        "y0": -4,
-        "x1": -1,
-        "y1": -1
-      },
-      "cost": 2200,
-      "unlockLevel": 15,
-      "materials": {
-        "snow_shovel": 4,
-        "boundary_stake": 4,
-        "survey_map": 3
-      }
-    },
-    {
-      "id": "mistelwinkel",
-      "name": "Mistelwinkel",
-      "desc": "Ecke im Nordosten. (4×4 Felder)",
-      "bounds": {
-        "x0": 17,
-        "y0": -4,
-        "x1": 20,
-        "y1": -1
-      },
-      "cost": 2500,
-      "unlockLevel": 16,
-      "materials": {
-        "snow_shovel": 4,
-        "boundary_stake": 4,
-        "survey_map": 4
-      }
-    },
-    {
-      "id": "kerzenwinkel",
-      "name": "Kerzenwinkel",
-      "desc": "Ecke im Südwesten. (4×4 Felder)",
-      "bounds": {
-        "x0": -4,
-        "y0": 14,
-        "x1": -1,
-        "y1": 17
-      },
-      "cost": 2800,
-      "unlockLevel": 17,
-      "materials": {
-        "snow_shovel": 5,
-        "boundary_stake": 4,
-        "survey_map": 4
-      }
-    },
-    {
-      "id": "zimtsternecke",
-      "name": "Zimtsternecke",
-      "desc": "Ecke im Südosten. (4×4 Felder)",
-      "bounds": {
-        "x0": 17,
-        "y0": 14,
-        "x1": 20,
-        "y1": 17
-      },
-      "cost": 3200,
-      "unlockLevel": 18,
-      "materials": {
-        "snow_shovel": 5,
-        "boundary_stake": 5,
-        "survey_map": 4
-      }
+    "pine_large": {
+      "id": "pine_large",
+      "name": "Alte Tanne",
+      "tool": "spade",
+      "toolQty": 2,
+      "xp": 8,
+      "yieldsDeco": "pine_large"
     }
-  ],
+  },
+  "tools": {
+    "items": [
+      "shovel",
+      "pickaxe",
+      "icepick",
+      "spade"
+    ],
+    "prices": [
+      {
+        "fromLevel": 1,
+        "coins": 20
+      },
+      {
+        "fromLevel": 6,
+        "coins": 60
+      },
+      {
+        "fromLevel": 13,
+        "coins": 150
+      },
+      {
+        "fromLevel": 21,
+        "coins": 300
+      }
+    ],
+    "clearFindChance": 0.25,
+    "note": "Werkzeuge: Zufallsfund beim Ernten/Abholen/Räumen; fehlt eins, Sofortkauf zum Stufenpreis, wird sofort benutzt."
+  },
+  "drifts": {
+    "type": "drift_small",
+    "everySeconds": 28800,
+    "max": 5
+  },
   "levels": [
     {
       "level": 1,
@@ -2165,6 +3157,26 @@
     "station": {
       "w": 2,
       "h": 2
+    },
+    "farmStand": {
+      "w": 2,
+      "h": 2
+    },
+    "pine_large": {
+      "w": 2,
+      "h": 2
+    },
+    "drift_large": {
+      "w": 2,
+      "h": 2
+    },
+    "rock_large": {
+      "w": 2,
+      "h": 2
+    },
+    "ice_large": {
+      "w": 2,
+      "h": 2
     }
   },
   "field": {
@@ -2183,7 +3195,9 @@
     "inventory": {
       "wheat": 4,
       "berries": 2,
-      "egg": 2
+      "egg": 2,
+      "shovel": 1,
+      "pickaxe": 1
     },
     "objects": [
       {
@@ -2202,31 +3216,38 @@
       },
       {
         "kind": "prop",
+        "type": "farmStand",
+        "id": "farmStand",
+        "gx": 4,
+        "gy": 10
+      },
+      {
+        "kind": "prop",
         "type": "wishlistBoard",
         "id": "wishlistBoard",
         "gx": 10,
-        "gy": 5
+        "gy": 10
       },
       {
         "kind": "prop",
         "type": "sleigh",
         "id": "sleigh",
-        "gx": 11,
-        "gy": 5
+        "gx": 10,
+        "gy": 11
       },
       {
         "kind": "prop",
         "type": "mailbox",
         "id": "mailbox",
-        "gx": 3,
-        "gy": 5
+        "gx": 9,
+        "gy": 9
       },
       {
         "kind": "prop",
         "type": "dailyChest",
         "id": "dailyChest",
-        "gx": 6,
-        "gy": 3
+        "gx": 8,
+        "gy": 9
       },
       {
         "kind": "station",
@@ -2657,9 +3678,9 @@
       "resin"
     ],
     "land": [
-      "snow_shovel",
-      "boundary_stake",
-      "survey_map"
+      "land_deed",
+      "mallet",
+      "boundary_stake"
     ],
     "storageQtyEvery": 3
   }

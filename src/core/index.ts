@@ -1,14 +1,17 @@
 export * from './types';
 export { CONTENT, validateContent, footprintOf } from './content';
 export type { ContentPack } from './content';
-export { canPlace, validateLayout, buildOccupancy, isZoneUnlocked } from './map';
-export { terrainMap, buildTerrainMap, validateMap, ZONE_STARTER, ZONE_BORDER } from './terrain';
-export type { Tile, TerrainMap, TerrainKind, SurfaceKind } from './terrain';
+export { canPlace, validateLayout, buildOccupancy, isPlotOwned } from './map';
+export { terrainMap, buildTerrainMap, validateMap, plotIdAt, plotId, ZONE_BORDER } from './terrain';
+export type { Tile, TerrainMap, TerrainKind, SurfaceKind, Plot } from './terrain';
+export { plotsBought, nextPlotPrice, plotStatus, toolPrice, obstacleDef, clearCost, decoPrice } from './land';
+export type { PlotStatus } from './land';
+export { upgradeToV9, plotsForOldZones, ZONES_V8, ITEM_RENAMES_V9 } from './migrate';
 export {
-  SCHEMA_VERSION, createNewGame, levelForXp, levelProgress, storageOf, storageUsed, storageFree,
+  SCHEMA_VERSION, createNewGame, mapObstacles, obstacleId, levelForXp, levelProgress, storageOf, storageUsed, storageFree,
   storageUpgradeCost, storageUpgradeMaterials, fieldReadyAt, isFieldReady, masteryOf, craftSeconds, getObject, countObjects,
   goalReady, allGoals, activeChapter, dayKey
 } from './state';
 export { applyCommand, advanceTime, generateOrder } from './commands';
-export { serialize, deserialize, migrateLegacy, loadFromStore, saveToStore, SAVE_KEY, BACKUP_KEY, LEGACY_KEYS } from './save';
+export { serialize, deserialize, migrateLegacy, loadFromStore, saveToStore, SAVE_KEY, BACKUP_KEY, BEFORE_V9_KEY, LEGACY_KEYS } from './save';
 export { GameSession } from './session';

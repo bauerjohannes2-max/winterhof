@@ -7,7 +7,7 @@
 - **Hannes:** entscheidet, testet, gibt Live-Freigabe.
 
 ## Wer arbeitet gerade
-- Claude (24.11.): Baustein 2b Karten-Konzept im Kern. Rückfragen erledigt (Entscheidung 15, `KARTEN_KONZEPT.md`), alte Oberfläche gelöscht. Prüfen: `npm run check`.
+- Niemand. Baustein 2b fertig (24.11.), wartet auf Abnahme durch Hannes (Kartenbild `docs/qa/neustart/b02b_karte.png`, offen: Name des Sees). Danach Baustein 3. Prüfen: `npm run check`.
 
 ## Entscheidungen (Hannes, 23.11.2026)
 1. Offline-Spiel, aber server-fähig gebaut (Befehle + reiner Logik-Kern).
@@ -37,9 +37,11 @@
 - `src/content/winterhof.json` – **einzige Datenquelle** (Waren, Tiere, Gebäude, Level, Ziele, Lager, Aufträge, Start-Hof, Karte, Landstücke, Hindernisse, Werkzeuge).
 - `src/core/` – Logik-Kern in TypeScript, ohne DOM/Pixi/Audio:
   - `commands.ts` – jede Aktion als Befehl, `advanceTime` für Zeit-/Offline-Fortschritt
-  - `save.ts` – Speicherstand v8, Migration aus v2–v7 ohne Fortschrittsverlust, Sicherungskopie
+  - `save.ts` – Speicherstand v9, Migration aus v8 und v2–v7 ohne Fortschrittsverlust, Sicherungskopie (v8-Stand zusätzlich einmalig unter `winterhof_save_v8_before_v9`)
+  - `migrate.ts` – v8 → v9: alte Grundstücke → Landstücke, feste Stationen, Objekte umziehen statt löschen, Hindernisse nur auf fremdem Land
+  - `land.ts` – Regeln Landkauf, Räumen, Werkzeugpreis, Wegplatten-Preis
   - `session.ts` – hält den Stand, `dispatch`, `tick`, gedrosseltes Speichern
-  - `terrain.ts` – Karte (Gelände, Wege, Zonen) aus `winterhof.json → map`, Ebenen als Zeilen wie Tiled (Baustein 2)
+  - `terrain.ts` – Alpental (Schnee, Wald, Berge, See-Eis, Zufahrt, Hofplatz) und Landstücke aus `winterhof.json → map`, Ebenen wie Tiled, Hindernisse als Objekt-Ebene (Baustein 2 + 2b)
   - `map.ts` – Platzierung aus Gelände + Objektliste
 - `src/render/` – neue Darstellung (Einstieg `index.html`), liest nur den Kern und schickt Befehle. Alte Oberfläche (`main.js`, `world.js`, `engine/`) gelöscht 24.11. (Tag `v9-flickwerk`).
 - Browser-Test: Playwright mit Bildvergleich (`tests/browser/`).

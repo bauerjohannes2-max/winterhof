@@ -30,7 +30,7 @@ export class GameSession {
     this._state = this.loadReport.state;
     const adv = advanceTime(this._state, this.now());
     this._state = adv.state;
-    if (this.loadReport.source !== 'v8') this.saveNow();
+    if (this.loadReport.source !== 'current') this.saveNow();
   }
 
   get state(): Readonly<GameState> {

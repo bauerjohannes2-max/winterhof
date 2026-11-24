@@ -1,13 +1,13 @@
 // ============================================================================
-// Winterhof Core – Gelände (Baustein 2: Karte als Daten)
-// Einzige Quelle: winterhof.json → map (Ebenen terrain/surface) + landZones.
+// Winterhof Core – Gelände und Landstücke (Baustein 2 + 2b, docs/KARTEN_KONZEPT.md)
+// Einzige Quelle: winterhof.json → map (Ebenen terrain/surface, plots, obstacles).
 // Statisch: wird einmal gelesen, nie pro Frame neu berechnet. Kein DOM, keine Grafik.
 // ============================================================================
-import { CONTENT, type ContentPack } from './content';
+import { CONTENT, footprintOf, type ContentPack } from './content';
 
-export type TerrainKind = 'snow' | 'forest';
+export type TerrainKind = 'snow' | 'forest' | 'mountain' | 'ice';
 export type SurfaceKind = 'none' | 'road' | 'plaza';
-export const ZONE_STARTER = 'starter';
+/** Zone außerhalb des Tals (Kulisse: Berge, Wald, See) */
 export const ZONE_BORDER = 'border';
 
 export interface Tile {
@@ -15,8 +15,21 @@ export interface Tile {
   readonly gy: number;
   readonly terrain: TerrainKind;
   readonly surface: SurfaceKind;
-  /** Grundstück: 'starter', eine landZones-ID oder 'border' (außerhalb des Hofs) */
+  /** Landstück "Spalte,Reihe" oder 'border' (Kulisse) */
   readonly zone: string;
+}
+
+export interface Plot {
+  readonly id: string;
+  readonly col: number;
+  readonly row: number;
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+  /** Ab dieser Spielerstufe kaufbar */
+  readonly minLevel: number;
+  readonly isStart: boolean;
 }
 
 export interface TerrainMap {
@@ -27,13 +40,40 @@ export interface TerrainMap {
   tileAt(gx: number, gy: number): Tile | null;
   /** Alle Kacheln, Reihe für Reihe (gy, dann gx). */
   readonly tiles: readonly Tile[];
+  readonly plots: readonly Plot[];
+  plotById(id: string): Plot | null;
+  /** Landstücke, die eine Kante mit diesem teilen (keine Ecken) */
+  neighbors(id: string): readonly Plot[];
 }
 
-const TERRAIN_KINDS: readonly string[] = ['snow', 'forest'];
+const TERRAIN_KINDS: readonly string[] = ['snow', 'forest', 'mountain', 'ice'];
 const SURFACE_KINDS: readonly string[] = ['none', 'road', 'plaza'];
 
-interface Rect { x0: number; y0: number; x1: number; y1: number }
-const inRect = (r: Rect, gx: number, gy: number) => gx >= r.x0 && gx <= r.x1 && gy >= r.y0 && gy <= r.y1;
+export const plotId = (col: number, row: number) => `${col},${row}`;
+
+/** Landstück-ID an einer Kachel, oder null außerhalb des Tals. */
+export function plotIdAt(gx: number, gy: number, c: ContentPack = CONTENT): string | null {
+  const p = c.map.plots;
+  const col = Math.floor((gx - p.origin.gx) / p.size), row = Math.floor((gy - p.origin.gy) / p.size);
+  if (col < 0 || row < 0 || col >= p.cols || row >= p.rows) return null;
+  return plotId(col, row);
+}
+
+function listPlots(c: ContentPack): Plot[] {
+  const p = c.map.plots;
+  const out: Plot[] = [];
+  for (let row = 0; row < p.rows; row++) {
+    for (let col = 0; col < p.cols; col++) {
+      const id = plotId(col, row);
+      const x0 = p.origin.gx + col * p.size, y0 = p.origin.gy + row * p.size;
+      out.push({
+        id, col, row, x0, y0, x1: x0 + p.size - 1, y1: y0 + p.size - 1,
+        minLevel: p.levels[id] ?? c.land.fromLevel, isStart: p.start.includes(id)
+      });
+    }
+  }
+  return out;
+}
 
 /** Prüft die Kartendaten. Leere Liste = in Ordnung. */
 export function validateMap(c: ContentPack = CONTENT): string[] {
@@ -60,22 +100,64 @@ export function validateMap(c: ContentPack = CONTENT): string[] {
 
   const minGx = m.origin.gx, minGy = m.origin.gy;
   const maxGx = minGx + width - 1, maxGy = minGy + height - 1;
-  const zones: { id: string; r: Rect }[] = [{ id: ZONE_STARTER, r: m.starterBounds }, ...c.landZones.map((z) => ({ id: z.id, r: z.bounds }))];
-  for (let i = 0; i < zones.length; i++) {
-    const a = zones[i]!;
-    if (a.r.x0 > a.r.x1 || a.r.y0 > a.r.y1) errs.push(`Zone ${a.id}: Rechteck verdreht`);
-    if (a.r.x0 < minGx || a.r.y0 < minGy || a.r.x1 > maxGx || a.r.y1 > maxGy) errs.push(`Zone ${a.id}: liegt außerhalb der Karte`);
-    for (let j = i + 1; j < zones.length; j++) {
-      const b = zones[j]!;
-      if (a.r.x0 <= b.r.x1 && b.r.x0 <= a.r.x1 && a.r.y0 <= b.r.y1 && b.r.y0 <= a.r.y1) errs.push(`Zonen ${a.id} und ${b.id} überlappen`);
-    }
-    for (let gy = a.r.y0; gy <= a.r.y1; gy++) {
-      for (let gx = a.r.x0; gx <= a.r.x1; gx++) {
-        const ch = m.terrain[gy - minGy]?.[gx - minGx];
-        if (ch !== undefined && m.legend.terrain[ch] !== 'snow') { errs.push(`Zone ${a.id}: Wald auf ${gx},${gy}`); gy = a.r.y1; break; }
+  const terrainAt = (gx: number, gy: number) => m.legend.terrain[m.terrain[gy - minGy]?.[gx - minGx] ?? ''];
+  const surfaceAt = (gx: number, gy: number) => m.legend.surface[m.surface[gy - minGy]?.[gx - minGx] ?? ''];
+
+  // Landstücke: im Kartenrand, ganz Schnee, Start und Stufen gültig
+  const p = m.plots;
+  if (!(p.size >= 1 && p.cols >= 1 && p.rows >= 1)) return [...errs, 'plots: Maße ungültig'];
+  const tx1 = p.origin.gx + p.cols * p.size - 1, ty1 = p.origin.gy + p.rows * p.size - 1;
+  if (p.origin.gx < minGx || p.origin.gy < minGy || tx1 > maxGx || ty1 > maxGy) errs.push('Tal liegt außerhalb der Karte');
+  const plots = listPlots(c);
+  const ids = new Set(plots.map((x) => x.id));
+  if (p.start.length === 0) errs.push('plots.start ist leer');
+  for (const id of p.start) if (!ids.has(id)) errs.push(`plots.start: ${id} gibt es nicht`);
+  for (const [id, lvl] of Object.entries(p.levels)) {
+    if (!ids.has(id)) errs.push(`plots.levels: ${id} gibt es nicht`);
+    if (lvl < c.land.fromLevel) errs.push(`plots.levels: ${id} unter land.fromLevel`);
+  }
+  for (const pl of plots) {
+    let bad = false;
+    for (let gy = pl.y0; gy <= pl.y1 && !bad; gy++) {
+      for (let gx = pl.x0; gx <= pl.x1 && !bad; gx++) {
+        const t = terrainAt(gx, gy);
+        if (t !== undefined && t !== 'snow') { errs.push(`Landstück ${pl.id}: ${t} auf ${gx},${gy}`); bad = true; }
       }
     }
   }
+  // Start-Land hängt zusammen
+  const startSet = new Set(p.start);
+  const reach = new Set<string>();
+  const todo = p.start.slice(0, 1);
+  while (todo.length) {
+    const id = todo.pop()!;
+    if (reach.has(id)) continue;
+    reach.add(id);
+    const [cs, rs] = id.split(',').map(Number) as [number, number];
+    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const n = plotId(cs + dc, rs + dr);
+      if (startSet.has(n)) todo.push(n);
+    }
+  }
+  if (reach.size !== startSet.size) errs.push('plots.start hängt nicht zusammen');
+
+  // Hindernisse: im Tal, auf freiem Schnee, ganz in einem Landstück, keine Überlappung
+  const used = new Map<string, number>();
+  m.obstacles.forEach((o, i) => {
+    if (!c.obstacles[o.type]) { errs.push(`Hindernis ${i}: Art ${o.type} unbekannt`); return; }
+    const fp = footprintOf({ kind: 'obstacle', type: o.type }, c);
+    const home = plotIdAt(o.gx, o.gy, c);
+    for (let dy = 0; dy < fp.h; dy++) {
+      for (let dx = 0; dx < fp.w; dx++) {
+        const x = o.gx + dx, y = o.gy + dy, k = `${x},${y}`;
+        if (!home || plotIdAt(x, y, c) !== home) { errs.push(`Hindernis ${o.type} auf ${o.gx},${o.gy}: nicht in genau einem Landstück`); return; }
+        if (terrainAt(x, y) !== 'snow' || surfaceAt(x, y) !== 'none') { errs.push(`Hindernis ${o.type} auf ${o.gx},${o.gy}: kein freier Schnee`); return; }
+        const prev = used.get(k);
+        if (prev !== undefined) { errs.push(`Hindernisse ${prev} und ${i} überlappen auf ${k}`); return; }
+        used.set(k, i);
+      }
+    }
+  });
   return errs;
 }
 
@@ -86,7 +168,6 @@ export function buildTerrainMap(c: ContentPack = CONTENT): TerrainMap {
   const m = c.map;
   const width = m.terrain[0]!.length, height = m.terrain.length;
   const minGx = m.origin.gx, minGy = m.origin.gy;
-  const zoneRects: { id: string; r: Rect }[] = [{ id: ZONE_STARTER, r: m.starterBounds }, ...c.landZones.map((z) => ({ id: z.id, r: z.bounds }))];
   const tiles: Tile[] = [];
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -95,17 +176,25 @@ export function buildTerrainMap(c: ContentPack = CONTENT): TerrainMap {
         gx, gy,
         terrain: m.legend.terrain[m.terrain[y]![x]!] as TerrainKind,
         surface: m.legend.surface[m.surface[y]![x]!] as SurfaceKind,
-        zone: zoneRects.find((z) => inRect(z.r, gx, gy))?.id ?? ZONE_BORDER
+        zone: plotIdAt(gx, gy, c) ?? ZONE_BORDER
       });
     }
   }
+  const plots = listPlots(c);
+  const byId = new Map(plots.map((p) => [p.id, p]));
   return {
-    minGx, minGy, maxGx: minGx + width - 1, maxGy: minGy + height - 1, tiles,
+    minGx, minGy, maxGx: minGx + width - 1, maxGy: minGy + height - 1, tiles, plots,
     tileAt(gx, gy) {
       if (!Number.isInteger(gx) || !Number.isInteger(gy)) return null;
       const x = gx - minGx, y = gy - minGy;
       if (x < 0 || y < 0 || x >= width || y >= height) return null;
       return tiles[y * width + x] ?? null;
+    },
+    plotById: (id) => byId.get(id) ?? null,
+    neighbors(id) {
+      const p = byId.get(id);
+      if (!p) return [];
+      return [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dc, dr]) => byId.get(plotId(p.col + dc!, p.row + dr!))).filter((x): x is Plot => !!x);
     }
   };
 }

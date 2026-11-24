@@ -7,10 +7,19 @@ import {
   type Inventory, type ItemId, type MapObject, type StationObject, type Stats, type StorageKind
 } from './types';
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 export function emptyStats(): Stats {
   return Object.fromEntries(STAT_KEYS.map((k) => [k, 0])) as Stats;
+}
+
+/** Hindernisse der Karte als Objekte (feste IDs aus der Lage, damit Migration und Spielstand übereinstimmen). */
+export function mapObstacles(): MapObject[] {
+  return CONTENT.map.obstacles.map((o): MapObject => ({ id: obstacleId(o.gx, o.gy), kind: 'obstacle', type: o.type, gx: o.gx, gy: o.gy }));
+}
+
+export function obstacleId(gx: number, gy: number): string {
+  return `ob_${gx}_${gy}`;
 }
 
 export function createNewGame(nowMs: number, seed = 0x5eed1234): GameState {
@@ -29,10 +38,13 @@ export function createNewGame(nowMs: number, seed = 0x5eed1234): GameState {
         return { ...pos, kind: 'station', wrapped: false, queue: [], ready: [], craftedCount: 0 };
       case 'deco':
         return { ...pos, kind: 'deco' };
+      case 'obstacle':
+        return { ...pos, kind: 'obstacle' };
       default:
         return { ...pos, kind: 'prop' };
     }
   });
+  objects.push(...mapObstacles());
   return {
     schemaVersion: SCHEMA_VERSION,
     createdAt: nowMs,
@@ -48,7 +60,8 @@ export function createNewGame(nowMs: number, seed = 0x5eed1234): GameState {
     storage: { silo: CONTENT.storage.silo.baseCapacity, barn: CONTENT.storage.barn.baseCapacity },
     objects,
     storedDecos: {},
-    unlockedZones: [],
+    ownedPlots: [...CONTENT.map.plots.start],
+    nextDriftAt: nowMs + CONTENT.drifts.everySeconds * 1000,
     orders: [],
     stand: Array.from({ length: CONTENT.stand.slots }, () => null),
     villagerOffer: null,
