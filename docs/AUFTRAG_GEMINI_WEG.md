@@ -27,6 +27,14 @@ Jede Datei in **3 Varianten** `_a` (zurückhaltend), `_b`, `_c` (mutig). Sei mut
 - Isometrisch 2:1, Licht von oben links. **1 Kachel = 128 Weltpunkte**; ein Büschel ist etwa 30–45 Weltpunkte breit.
 - Kein Text, kein Wasserzeichen, kein Farbsaum an freigestellten Kanten. Eigene Grafik.
 
+## Runde 2 (Hannes 26.11. zu den Zielbildern)
+Hannes: Malstil von **C (mutig) „ultra nice“**, B auch schön; aber **Grasfarbe von uns besser** (`wiese.png`), und der Büschel-Ring um den Weg ist **viel zu groß** – ziel war nur, das Pixelige wegzubringen.
+Claude-Einschätzung: Wie bei Hay Day bleibt die Wiese ruhig (Gebäude, Felder, Tiere müssen darauf lesbar sein); Büschel sind Deko, vereinzelt. Der Malstil soll in Wiese und Erde stecken, nicht in einem Büschelwall.
+Lieferung `zielbild2_a..c.png` (1600 × 900, gleiche Wegform wie Runde 1, Pinselstil wie `zielbild_c`, Grasfarbe wie `wiese.png`):
+- **a – ruhig:** Wiese glatt gemalt mit weichen großen Hell-Dunkel-Wolken, kaum Halme. Wegrand **schmal**: Gras ragt nur in kleinen weichen Zacken über die Erde. **Vereinzelt** 1 Büschel im C-Stil je ~3 Kacheln Wegrand, 3–5 Büschel locker auf der Wiese.
+- **b – gemalte Wiese (Empfehlung):** wie a, aber die Wiese selbst trägt den C-Pinselstrich: viele weiche flache Halmstriche, wenig Kontrast, keine Büschel-Hügel. Wegrand schmal, Büschel vereinzelt.
+- **c – Büschelwiese:** Wiese überall dicht mit C-Büscheln (zum Vergleich, wie unruhig das wirkt).
+
 ## Regeln
 - STIL_REGELN.md gilt (§5 Kamera/Licht, §6 Bildqualität, §6a Mut).
 - **Nur Bilder liefern, keinen Code ändern.** Einbau (Shader `src/render/scene/ground.ts`) macht Claude.
