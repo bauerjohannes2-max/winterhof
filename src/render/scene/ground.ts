@@ -278,7 +278,15 @@ void main() {
     // Rillen längs des Wegs wie Hay Day: dünne Bänder gleichen Abstands zur Kante, in Stücke gebrochen
     float fine = smoothstep(3.0, 1.2, px);
     float r1 = noise(vec2(sd * 15.0, dot(g, vec2(0.5, 0.5)) * 1.3));
-    float brk = smoothstep(0.35, 0.65, noise(g * 1.6 + 4.0));
+    // Nur wo die Abstandslinien fast gerade laufen: in engen Kurven, um Grasinseln und an der Wegmitte (Grat des
+    // Abstandsfelds) bilden Rillen sonst kleine Bögen und Knicke. Krümmung = Laplace / Gefälle, beides aus 4 Nachbarn.
+    const float E = 0.22;
+    float sx1 = pathSd(g + vec2(E, 0.0)), sx0 = pathSd(g - vec2(E, 0.0));
+    float sy1 = pathSd(g + vec2(0.0, E)), sy0 = pathSd(g - vec2(0.0, E));
+    float grad = length(vec2(sx1 - sx0, sy1 - sy0)) / (2.0 * E);
+    float curv = abs(sx1 + sx0 + sy1 + sy0 - 4.0 * sd) / (E * E) / max(grad, 0.05);
+    float straight = smoothstep(1.0, 0.4, curv) * smoothstep(0.6, 0.9, grad);
+    float brk = smoothstep(0.35, 0.65, noise(g * 1.6 + 4.0)) * straight;
     float groove = smoothstep(0.7, 0.8, r1) * brk;
     float lip = smoothstep(0.5, 0.62, r1) * (1.0 - smoothstep(0.62, 0.7, r1)) * brk;
     pc *= 1.0 - 0.1 * groove * fine;
