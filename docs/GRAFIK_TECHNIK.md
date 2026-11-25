@@ -30,13 +30,14 @@ Vorbild: Hay Day (Bilder bringen ihren Boden mit) und Clash of Clans (jede Grund
 - **Gebacken** heißt: Ebenen 1–4 werden einmal in Bild-Kacheln von 8 × 8 Rasterfeldern vorgerechnet und nur neu gemalt, wenn sich dort etwas ändert (Bauen, Verschieben). Das spart am Handy am meisten Leistung.
 - **Tiefe (vorn/hinten)** in Ebene 5: Sortiert wird nach der vordersten Ecke der Grundfläche (`gx + gy + w + h`), bei Gleichstand nach Bildschirmhöhe. Figuren werden nach ihrem Fußpunkt sortiert. Das prüft ein Test.
 
-## 4. Bild-Vertrag je Objekt (in `winterhof.json` → `art.objects`)
+## 4. Bild-Vertrag je Objekt (Größe in `winterhof.json` → `sizes`, Bild in `art.sprites`, Baustein 5b)
 | Feld | Bedeutung |
 |---|---|
-| `sprite` | Bildname im Atlas |
-| `footprint` | Grundfläche in Kacheln, z. B. 2 × 2 |
-| `heightTiles` | Bildhöhe in Kacheln, die Breite ergibt sich aus dem Bild (nie verzerren) |
-| `anchor` | Bodenpunkt im Bild (0–1), liegt genau auf der Mitte der Grundfläche |
+| `sprites.<bild>.file` | Bild in `art_src/spiel{m}/objekte{tps}` (Atlas per AssetPack) |
+| `sprites.<bild>.size` | Schlüssel im Größenkatalog `sizes` (eine Quelle für Kern und Bild) |
+| `sizes.<typ>.w`, `.h` | Grundfläche in Kacheln, z. B. 2 × 2 |
+| `sizes.<typ>.heightTiles` | Bildhöhe in Kacheln, die Breite ergibt sich aus dem Bild (nie verzerren) |
+| `sprites.<bild>.anchorY` | Bodenpunkt im Bild (0–1), liegt genau auf der Mitte der Grundfläche |
 | `pad` | Standfläche: `snow` (festgetreten), `none` oder `apron` (Bild bringt Vorplatz mit) |
 | `shadow` | Größe des Kontaktschattens im Verhältnis zur Grundfläche |
 

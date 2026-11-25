@@ -39,9 +39,33 @@ export interface AnimalDef {
   feedQty: number;
   produceItem: ItemId;
   produceTime: number;
+  /** Preis des ersten Tiers; jedes weitere derselben Art kostet mehr (animalCostStep) */
   cost: number;
   unlockLevel: number;
-  maxCount: number;
+}
+
+/** Gehege einer Tierart wie Hay Day (Entsch. 44, 45, 48): Gehege kaufen, dann Tiere einzeln bis capacity. */
+export interface PenDef {
+  id: string;
+  name: string;
+  animal: string;
+  capacity: number;
+  /** levels[i]: ab dieser Stufe ist das (i+1)-te Gehege dieser Art erlaubt */
+  levels: number[];
+  /** costs[i]: Preis des (i+1)-ten Geheges */
+  costs: number[];
+}
+
+/**
+ * Eintrag im Größenkatalog (winterhof.json → sizes, Baustein 5b, Regeln docs/GROESSEN_KATALOG.md).
+ * Schlüssel = Objekt-Typ. w × h = Grundfläche im Raster; ohne w/h nicht platzierbar (Tier, Person, Pflanze).
+ */
+export interface SizeDef {
+  group: 'building' | 'landmark' | 'prop' | 'field' | 'pen' | 'animal' | 'person' | 'crop' | 'deco' | 'path' | 'obstacle';
+  w?: number;
+  h?: number;
+  /** ganze Bildhöhe in Kacheln inkl. Grundfläche; 0 = flach */
+  heightTiles: number;
 }
 
 export interface StationDef {
@@ -113,7 +137,8 @@ export interface LevelDef {
 
 export type Condition =
   | { kind: 'stat'; stat: StatKey; goal: number }
-  | { kind: 'hasObject'; objectKind: MapObject['kind']; type: string; ready?: boolean };
+  | { kind: 'hasObject'; objectKind: MapObject['kind']; type: string; ready?: boolean }
+  | { kind: 'hasAnimal'; type: string };
 
 export interface GoalDef {
   id: string;
@@ -177,13 +202,20 @@ export interface FieldObject extends MapObjectBase {
   plantedAt: number;
 }
 
-export interface AnimalObject extends MapObjectBase {
-  kind: 'animal';
+/** Ein Tier im Gehege (kein eigenes Kartenobjekt, Entsch. 44) */
+export interface PenAnimal {
+  id: ObjectId;
   nick: string;
   /** hungry = muss gefüttert werden, producing = arbeitet bis readyAt, ready = Produkt abholbar */
   state: 'hungry' | 'producing' | 'ready';
   readyAt: number;
   lastPet: number;
+}
+
+/** Gehege: belegt seine Grundfläche, hält bis capacity Tiere einer Art (type = Gehege-Typ) */
+export interface PenObject extends MapObjectBase {
+  kind: 'pen';
+  animals: PenAnimal[];
 }
 
 export interface ProductionJob {
@@ -215,7 +247,7 @@ export interface ObstacleObject extends MapObjectBase {
   kind: 'obstacle';
 }
 
-export type MapObject = FieldObject | AnimalObject | StationObject | DecoObject | PropObject | ObstacleObject;
+export type MapObject = FieldObject | PenObject | StationObject | DecoObject | PropObject | ObstacleObject;
 
 // ---------------------------------------------------------------- Spielstand
 export interface OrderLine { item: ItemId; qty: number }
@@ -304,14 +336,17 @@ export type Command =
   | { type: 'plant'; fieldId: ObjectId; crop: ItemId }
   | { type: 'harvest'; fieldId: ObjectId }
   | { type: 'harvestAll' }
-  | { type: 'feedAnimal'; animalId: ObjectId }
-  | { type: 'collectAnimal'; animalId: ObjectId }
-  | { type: 'petAnimal'; animalId: ObjectId }
+  /** Ein Tippen füttert alle hungrigen Tiere im Gehege, so weit das Futter reicht */
+  | { type: 'feedPen'; penId: ObjectId }
+  /** Ein Tippen holt alle fertigen Produkte ab, so weit das Lager reicht */
+  | { type: 'collectPen'; penId: ObjectId }
+  | { type: 'petAnimal'; penId: ObjectId; animalId: ObjectId }
   | { type: 'startProduction'; stationId: ObjectId; item: ItemId }
   | { type: 'collectProduct'; stationId: ObjectId }
   | { type: 'unwrapStation'; stationId: ObjectId }
   | { type: 'buyStation'; stationType: string; gx: number; gy: number }
-  | { type: 'buyAnimal'; animalType: string; gx: number; gy: number }
+  | { type: 'buyPen'; penType: string; gx: number; gy: number }
+  | { type: 'buyAnimal'; penId: ObjectId }
   | { type: 'buyField'; gx: number; gy: number }
   | { type: 'buyDeco'; decoType: string; gx: number; gy: number }
   | { type: 'placeStoredDeco'; decoType: string; gx: number; gy: number }
@@ -331,7 +366,7 @@ export type Command =
   | { type: 'claimGoal'; goalId: string }
   | { type: 'setSetting'; key: keyof GameState['settings']; value: unknown }
   | { type: 'rename'; villageName?: string; playerName?: string }
-  | { type: 'renameAnimal'; animalId: ObjectId; nick: string }
+  | { type: 'renameAnimal'; penId: ObjectId; animalId: ObjectId; nick: string }
   | { type: 'greetVillager' }
   | { type: 'packGift'; items: Inventory }
   | { type: 'receiveGift'; parcelId: string; items: Inventory };
@@ -344,13 +379,14 @@ export type GameEvent =
   | { type: 'levelUp'; level: number; coinBonus: number }
   | { type: 'planted'; fieldId: ObjectId; crop: ItemId }
   | { type: 'harvested'; fieldId: ObjectId; crop: ItemId; qty: number }
-  | { type: 'animalFed'; animalId: ObjectId }
-  | { type: 'animalCollected'; animalId: ObjectId; item: ItemId }
-  | { type: 'animalPetted'; animalId: ObjectId }
+  | { type: 'animalsFed'; penId: ObjectId; animalIds: ObjectId[] }
+  | { type: 'animalsCollected'; penId: ObjectId; animalIds: ObjectId[]; item: ItemId; qty: number }
+  | { type: 'animalPetted'; penId: ObjectId; animalId: ObjectId }
+  | { type: 'animalAdded'; penId: ObjectId; animalId: ObjectId }
   | { type: 'productionStarted'; stationId: ObjectId; item: ItemId }
   | { type: 'productionFinished'; stationId: ObjectId; item: ItemId }
   | { type: 'productCollected'; stationId: ObjectId; item: ItemId }
-  | { type: 'animalReady'; animalId: ObjectId }
+  | { type: 'animalReady'; penId: ObjectId; animalId: ObjectId }
   | { type: 'objectPlaced'; objectId: ObjectId }
   | { type: 'objectMoved'; objectId: ObjectId }
   | { type: 'objectStored'; objectId: ObjectId }

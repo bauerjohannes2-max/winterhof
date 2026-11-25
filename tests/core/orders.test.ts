@@ -1,7 +1,7 @@
 // Baustein 2c: Aufträge passend zum Hof, Mischung per Kartenstapel, Lohn-Art, steigende Tierpreise.
 import { describe, expect, it } from 'vitest';
 import {
-  CONTENT, animalPrice, applyCommand, composeOrder, createNewGame, itemTier, makeableItems, orderValueTarget, type GameState
+  CONTENT, animalCount, animalPrice, applyCommand, composeOrder, createNewGame, itemTier, makeableItems, orderValueTarget, type GameState
 } from '../../src/core';
 
 const T0 = Date.UTC(2026, 10, 24, 9, 0, 0);
@@ -11,7 +11,7 @@ function midGame(seed = 3): GameState {
   s.level = 12;
   // Patisserie + Rentier dazu: macht mehrstufige Waren (Beerentarte aus Butterplätzchen, Sternenmilch) möglich
   s.objects.push({ id: 'st_test', kind: 'station', type: 'patisserie', gx: -10, gy: -10, wrapped: false, queue: [], ready: [], craftedCount: 0 });
-  s.objects.push({ id: 'a_test', kind: 'animal', type: 'reindeer', gx: -12, gy: -12, nick: 'Test', state: 'hungry', readyAt: T0, lastPet: 0 });
+  s.objects.push({ id: 'pen_test', kind: 'pen', type: 'reindeer_pen', gx: -12, gy: -12, animals: [{ id: 'a_test', nick: 'Test', state: 'hungry', readyAt: T0, lastPet: 0 }] });
   return s;
 }
 
@@ -68,14 +68,12 @@ describe('Münz-Ausgaben', () => {
   it('jedes weitere Tier derselben Art kostet mehr (Hay Day)', () => {
     const s = createNewGame(T0, 1);
     s.coins = 10_000;
-    const owned = s.objects.filter((o) => o.kind === 'animal' && o.type === 'chicken').length;
+    const owned = animalCount(s, 'chicken');
     const first = animalPrice(s, 'chicken');
     expect(first).toBe(Math.round(CONTENT.animals.chicken!.cost * (1 + CONTENT.animalCostStep * owned) / 5) * 5);
-    // erstes freies Feld im Start-Hof
-    let r = null;
-    for (let i = 0; i < 100 && !r?.ok; i++) r = applyCommand(s, { type: 'buyAnimal', animalType: 'chicken', gx: 2 + (i % 10), gy: 2 + Math.floor(i / 10) }, T0);
-    expect(r?.ok).toBe(true);
-    if (r?.ok) {
+    const r = applyCommand(s, { type: 'buyAnimal', penId: 'pen_1' }, T0);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
       expect(s.coins - r.state.coins).toBe(first);
       expect(animalPrice(r.state, 'chicken')).toBeGreaterThan(first);
     }

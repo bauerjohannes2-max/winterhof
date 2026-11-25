@@ -24,19 +24,19 @@
         "gx": -13,
         "gy": -13
       },
-      "size": 5,
-      "cols": 6,
-      "rows": 6,
+      "size": 6,
+      "cols": 5,
+      "rows": 5,
       "start": [
-        "3,3",
-        "4,3",
-        "3,4",
-        "4,4"
+        "2,2",
+        "3,2",
+        "2,3",
+        "3,3"
       ],
       "levels": {
-        "5,0": 13,
-        "5,1": 13,
-        "5,2": 13
+        "4,0": 13,
+        "4,1": 13,
+        "4,2": 13
       }
     },
     "meadow": {
@@ -181,9 +181,9 @@
       "............................................................",
       "............................................................",
       "............................................................",
-      "............................................................",
       ".................................PPPP.......................",
       ".................................PPPP.......................",
+      "..................................RR........................",
       "..................................RR........................",
       "..................................RR........................",
       "..................................RR........................",
@@ -197,273 +197,253 @@
     ],
     "obstacles": [
       {
-        "type": "rock_small",
+        "type": "drift_large",
         "gx": -13,
         "gy": -13
       },
       {
         "type": "rock_small",
-        "gx": -12,
-        "gy": -13
-      },
-      {
-        "type": "drift_large",
-        "gx": -6,
+        "gx": -8,
         "gy": -13
       },
       {
         "type": "drift_small",
+        "gx": -6,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
         "gx": -3,
         "gy": -13
       },
       {
         "type": "rock_small",
-        "gx": 1,
+        "gx": -2,
         "gy": -13
-      },
-      {
-        "type": "drift_small",
-        "gx": 2,
-        "gy": -13
-      },
-      {
-        "type": "drift_small",
-        "gx": 4,
-        "gy": -13
-      },
-      {
-        "type": "pine_small",
-        "gx": 11,
-        "gy": -13
-      },
-      {
-        "type": "pine_small",
-        "gx": 16,
-        "gy": -13
-      },
-      {
-        "type": "rock_small",
-        "gx": -13,
-        "gy": -12
-      },
-      {
-        "type": "rock_small",
-        "gx": -12,
-        "gy": -12
-      },
-      {
-        "type": "drift_small",
-        "gx": -9,
-        "gy": -12
-      },
-      {
-        "type": "drift_small",
-        "gx": -7,
-        "gy": -12
-      },
-      {
-        "type": "rock_large",
-        "gx": -1,
-        "gy": -12
-      },
-      {
-        "type": "rock_small",
-        "gx": 1,
-        "gy": -12
-      },
-      {
-        "type": "pine_small",
-        "gx": 9,
-        "gy": -12
-      },
-      {
-        "type": "pine_small",
-        "gx": 10,
-        "gy": -12
-      },
-      {
-        "type": "pine_small",
-        "gx": 11,
-        "gy": -12
-      },
-      {
-        "type": "pine_small",
-        "gx": 14,
-        "gy": -12
-      },
-      {
-        "type": "pine_small",
-        "gx": 15,
-        "gy": -12
-      },
-      {
-        "type": "drift_small",
-        "gx": 16,
-        "gy": -12
-      },
-      {
-        "type": "rock_small",
-        "gx": 5,
-        "gy": -11
-      },
-      {
-        "type": "drift_large",
-        "gx": 7,
-        "gy": -11
-      },
-      {
-        "type": "pine_small",
-        "gx": 9,
-        "gy": -11
-      },
-      {
-        "type": "pine_small",
-        "gx": 10,
-        "gy": -11
-      },
-      {
-        "type": "pine_small",
-        "gx": 11,
-        "gy": -11
-      },
-      {
-        "type": "drift_small",
-        "gx": 14,
-        "gy": -11
-      },
-      {
-        "type": "drift_large",
-        "gx": -13,
-        "gy": -10
-      },
-      {
-        "type": "rock_small",
-        "gx": -9,
-        "gy": -10
-      },
-      {
-        "type": "rock_large",
-        "gx": -8,
-        "gy": -10
-      },
-      {
-        "type": "drift_small",
-        "gx": -6,
-        "gy": -10
-      },
-      {
-        "type": "drift_small",
-        "gx": -4,
-        "gy": -10
       },
       {
         "type": "rock_small",
         "gx": -1,
-        "gy": -10
+        "gy": -13
       },
       {
         "type": "rock_small",
         "gx": 0,
-        "gy": -10
+        "gy": -13
       },
       {
-        "type": "rock_large",
+        "type": "rock_small",
+        "gx": 2,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": 3,
+        "gy": -13
+      },
+      {
+        "type": "drift_small",
         "gx": 5,
-        "gy": -10
+        "gy": -13
       },
       {
-        "type": "pine_small",
+        "type": "ice_small",
         "gx": 14,
-        "gy": -10
+        "gy": -13
+      },
+      {
+        "type": "ice_small",
+        "gx": 16,
+        "gy": -13
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
+        "gy": -12
       },
       {
         "type": "rock_small",
         "gx": -1,
-        "gy": -9
+        "gy": -12
+      },
+      {
+        "type": "rock_small",
+        "gx": 0,
+        "gy": -12
       },
       {
         "type": "drift_small",
         "gx": 2,
-        "gy": -9
-      },
-      {
-        "type": "rock_small",
-        "gx": 4,
-        "gy": -9
-      },
-      {
-        "type": "pine_small",
-        "gx": 15,
-        "gy": -9
+        "gy": -12
       },
       {
         "type": "rock_large",
+        "gx": 7,
+        "gy": -12
+      },
+      {
+        "type": "rock_small",
+        "gx": 9,
+        "gy": -12
+      },
+      {
+        "type": "ice_small",
+        "gx": 11,
+        "gy": -12
+      },
+      {
+        "type": "ice_small",
+        "gx": 13,
+        "gy": -12
+      },
+      {
+        "type": "ice_small",
+        "gx": 15,
+        "gy": -12
+      },
+      {
+        "type": "rock_small",
         "gx": -13,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": -11,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": -7,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": 4,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": 5,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
-        "gx": 6,
-        "gy": -8
+        "gy": -11
       },
       {
         "type": "drift_small",
-        "gx": 8,
-        "gy": -8
-      },
-      {
-        "type": "rock_small",
         "gx": -11,
-        "gy": -7
+        "gy": -11
       },
       {
         "type": "rock_small",
         "gx": -10,
-        "gy": -7
+        "gy": -11
       },
       {
         "type": "rock_small",
-        "gx": -8,
-        "gy": -7
-      },
-      {
-        "type": "drift_small",
-        "gx": -4,
-        "gy": -7
+        "gx": -9,
+        "gy": -11
       },
       {
         "type": "rock_small",
-        "gx": -2,
-        "gy": -7
+        "gx": 3,
+        "gy": -11
       },
       {
         "type": "rock_small",
-        "gx": -1,
-        "gy": -7
+        "gx": 6,
+        "gy": -11
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
         "gx": 9,
+        "gy": -11
+      },
+      {
+        "type": "ice_small",
+        "gx": 12,
+        "gy": -11
+      },
+      {
+        "type": "ice_small",
+        "gx": 14,
+        "gy": -11
+      },
+      {
+        "type": "drift_small",
+        "gx": -3,
+        "gy": -10
+      },
+      {
+        "type": "rock_small",
+        "gx": 2,
+        "gy": -10
+      },
+      {
+        "type": "ice_small",
+        "gx": 12,
+        "gy": -10
+      },
+      {
+        "type": "ice_small",
+        "gx": 13,
+        "gy": -10
+      },
+      {
+        "type": "drift_small",
+        "gx": -13,
+        "gy": -9
+      },
+      {
+        "type": "rock_small",
+        "gx": -11,
+        "gy": -9
+      },
+      {
+        "type": "drift_small",
+        "gx": -7,
+        "gy": -9
+      },
+      {
+        "type": "drift_small",
+        "gx": 0,
+        "gy": -9
+      },
+      {
+        "type": "drift_small",
+        "gx": 4,
+        "gy": -9
+      },
+      {
+        "type": "rock_small",
+        "gx": 8,
+        "gy": -9
+      },
+      {
+        "type": "rock_small",
+        "gx": 9,
+        "gy": -9
+      },
+      {
+        "type": "pine_small",
+        "gx": -10,
+        "gy": -8
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": -8
+      },
+      {
+        "type": "drift_small",
+        "gx": 15,
+        "gy": -8
+      },
+      {
+        "type": "pine_small",
+        "gx": -11,
+        "gy": -7
+      },
+      {
+        "type": "pine_small",
+        "gx": -10,
+        "gy": -7
+      },
+      {
+        "type": "drift_small",
+        "gx": -3,
+        "gy": -7
+      },
+      {
+        "type": "rock_small",
+        "gx": 5,
+        "gy": -7
+      },
+      {
+        "type": "drift_large",
+        "gx": 7,
         "gy": -7
       },
       {
@@ -472,18 +452,53 @@
         "gy": -7
       },
       {
-        "type": "ice_small",
-        "gx": 14,
-        "gy": -7
-      },
-      {
         "type": "rock_small",
-        "gx": 2,
+        "gx": -11,
         "gy": -6
       },
       {
-        "type": "ice_small",
-        "gx": 12,
+        "type": "pine_small",
+        "gx": -10,
+        "gy": -6
+      },
+      {
+        "type": "pine_small",
+        "gx": -9,
+        "gy": -6
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": -6
+      },
+      {
+        "type": "rock_small",
+        "gx": -7,
+        "gy": -6
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": -6
+      },
+      {
+        "type": "rock_small",
+        "gx": -1,
+        "gy": -6
+      },
+      {
+        "type": "drift_small",
+        "gx": 1,
+        "gy": -6
+      },
+      {
+        "type": "rock_large",
+        "gx": 3,
+        "gy": -6
+      },
+      {
+        "type": "rock_small",
+        "gx": 5,
         "gy": -6
       },
       {
@@ -492,48 +507,48 @@
         "gy": -6
       },
       {
-        "type": "drift_large",
-        "gx": -13,
+        "type": "rock_small",
+        "gx": -12,
         "gy": -5
       },
       {
         "type": "rock_small",
-        "gx": -11,
-        "gy": -5
-      },
-      {
-        "type": "drift_small",
         "gx": -10,
         "gy": -5
       },
       {
-        "type": "drift_small",
-        "gx": -3,
-        "gy": -5
-      },
-      {
-        "type": "rock_large",
-        "gx": -1,
+        "type": "rock_small",
+        "gx": -7,
         "gy": -5
       },
       {
         "type": "rock_small",
-        "gx": 2,
+        "gx": -6,
         "gy": -5
       },
       {
         "type": "rock_small",
-        "gx": 5,
+        "gx": -5,
         "gy": -5
       },
       {
         "type": "rock_small",
-        "gx": 6,
+        "gx": -4,
         "gy": -5
       },
       {
         "type": "rock_small",
-        "gx": 7,
+        "gx": -2,
+        "gy": -5
+      },
+      {
+        "type": "ice_small",
+        "gx": 13,
+        "gy": -5
+      },
+      {
+        "type": "ice_small",
+        "gx": 14,
         "gy": -5
       },
       {
@@ -543,447 +558,382 @@
       },
       {
         "type": "rock_small",
-        "gx": -10,
+        "gx": -13,
         "gy": -4
       },
       {
         "type": "rock_small",
+        "gx": -9,
+        "gy": -4
+      },
+      {
+        "type": "pine_small",
         "gx": -8,
         "gy": -4
       },
       {
         "type": "drift_small",
-        "gx": -6,
+        "gx": -7,
+        "gy": -4
+      },
+      {
+        "type": "rock_large",
+        "gx": -3,
         "gy": -4
       },
       {
         "type": "rock_small",
-        "gx": 1,
+        "gx": 2,
         "gy": -4
       },
       {
         "type": "rock_small",
-        "gx": 5,
-        "gy": -4
-      },
-      {
-        "type": "rock_small",
-        "gx": 6,
+        "gx": 3,
         "gy": -4
       },
       {
         "type": "drift_small",
+        "gx": 5,
+        "gy": -4
+      },
+      {
+        "type": "pine_small",
+        "gx": 8,
+        "gy": -4
+      },
+      {
+        "type": "pine_small",
+        "gx": 9,
+        "gy": -4
+      },
+      {
+        "type": "pine_small",
         "gx": 10,
         "gy": -4
       },
       {
         "type": "ice_small",
-        "gx": 14,
+        "gx": 13,
         "gy": -4
       },
       {
-        "type": "rock_large",
-        "gx": -10,
+        "type": "rock_small",
+        "gx": -12,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": -1,
         "gy": -3
       },
       {
         "type": "rock_small",
-        "gx": -8,
+        "gx": 1,
         "gy": -3
+      },
+      {
+        "type": "pine_small",
+        "gx": 8,
+        "gy": -3
+      },
+      {
+        "type": "drift_small",
+        "gx": 16,
+        "gy": -3
+      },
+      {
+        "type": "pine_small",
+        "gx": -11,
+        "gy": -2
+      },
+      {
+        "type": "drift_small",
+        "gx": -6,
+        "gy": -2
+      },
+      {
+        "type": "rock_small",
+        "gx": -3,
+        "gy": -2
+      },
+      {
+        "type": "rock_small",
+        "gx": 2,
+        "gy": -2
+      },
+      {
+        "type": "pine_small",
+        "gx": 7,
+        "gy": -2
+      },
+      {
+        "type": "drift_small",
+        "gx": 14,
+        "gy": -2
+      },
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": -1
+      },
+      {
+        "type": "rock_small",
+        "gx": -1,
+        "gy": -1
+      },
+      {
+        "type": "pine_small",
+        "gx": 10,
+        "gy": -1
+      },
+      {
+        "type": "ice_small",
+        "gx": 12,
+        "gy": -1
+      },
+      {
+        "type": "drift_small",
+        "gx": 16,
+        "gy": -1
+      },
+      {
+        "type": "pine_small",
+        "gx": -13,
+        "gy": 0
+      },
+      {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": 0
       },
       {
         "type": "drift_small",
         "gx": -3,
-        "gy": -3
+        "gy": 0
       },
       {
         "type": "drift_small",
-        "gx": -13,
-        "gy": -2
+        "gx": 11,
+        "gy": 0
       },
       {
-        "type": "rock_small",
-        "gx": -8,
-        "gy": -2
+        "type": "ice_small",
+        "gx": 12,
+        "gy": 0
       },
       {
-        "type": "rock_small",
-        "gx": 4,
-        "gy": -2
+        "type": "ice_small",
+        "gx": 15,
+        "gy": 0
+      },
+      {
+        "type": "ice_small",
+        "gx": 16,
+        "gy": 0
       },
       {
         "type": "ice_large",
-        "gx": 15,
-        "gy": -2
+        "gx": 11,
+        "gy": 1
       },
       {
-        "type": "rock_small",
-        "gx": -9,
-        "gy": -1
+        "type": "ice_small",
+        "gx": 14,
+        "gy": 1
+      },
+      {
+        "type": "ice_small",
+        "gx": 15,
+        "gy": 1
+      },
+      {
+        "type": "ice_small",
+        "gx": 16,
+        "gy": 1
       },
       {
         "type": "rock_small",
         "gx": -8,
-        "gy": -1
+        "gy": 2
+      },
+      {
+        "type": "rock_small",
+        "gx": -7,
+        "gy": 2
+      },
+      {
+        "type": "rock_small",
+        "gx": -3,
+        "gy": 2
+      },
+      {
+        "type": "rock_small",
+        "gx": -2,
+        "gy": 2
+      },
+      {
+        "type": "drift_small",
+        "gx": 10,
+        "gy": 2
+      },
+      {
+        "type": "drift_small",
+        "gx": -12,
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": -10,
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": 3
       },
       {
         "type": "rock_small",
         "gx": -4,
-        "gy": -1
+        "gy": 3
+      },
+      {
+        "type": "rock_small",
+        "gx": -3,
+        "gy": 3
       },
       {
         "type": "rock_small",
         "gx": -2,
-        "gy": -1
+        "gy": 3
       },
       {
         "type": "drift_small",
-        "gx": 0,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": 2,
-        "gy": -1
-      },
-      {
-        "type": "rock_large",
-        "gx": 3,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": 7,
-        "gy": -1
-      },
-      {
-        "type": "ice_small",
-        "gx": 13,
-        "gy": -1
-      },
-      {
-        "type": "ice_small",
-        "gx": 14,
-        "gy": -1
-      },
-      {
-        "type": "rock_small",
-        "gx": -9,
-        "gy": 0
-      },
-      {
-        "type": "rock_small",
-        "gx": -8,
-        "gy": 0
-      },
-      {
-        "type": "rock_large",
-        "gx": -7,
-        "gy": 0
-      },
-      {
-        "type": "rock_small",
-        "gx": -2,
-        "gy": 0
-      },
-      {
-        "type": "rock_small",
-        "gx": 6,
-        "gy": 0
-      },
-      {
-        "type": "rock_large",
-        "gx": 8,
-        "gy": 0
-      },
-      {
-        "type": "rock_small",
-        "gx": 10,
-        "gy": 0
+        "gx": 12,
+        "gy": 3
       },
       {
         "type": "drift_small",
-        "gx": 14,
-        "gy": 0
-      },
-      {
-        "type": "ice_small",
-        "gx": 15,
-        "gy": 0
-      },
-      {
-        "type": "drift_small",
-        "gx": -13,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
         "gx": -1,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
-        "gx": 4,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
-        "gx": 7,
-        "gy": 1
-      },
-      {
-        "type": "rock_small",
-        "gx": 10,
-        "gy": 1
-      },
-      {
-        "type": "drift_small",
-        "gx": -10,
-        "gy": 2
-      },
-      {
-        "type": "drift_small",
-        "gx": -7,
-        "gy": 2
-      },
-      {
-        "type": "rock_large",
-        "gx": -2,
-        "gy": 2
-      },
-      {
-        "type": "rock_small",
-        "gx": 2,
-        "gy": 2
-      },
-      {
-        "type": "pine_small",
-        "gx": 11,
-        "gy": 2
-      },
-      {
-        "type": "drift_small",
-        "gx": 16,
-        "gy": 2
+        "gy": 4
       },
       {
         "type": "pine_small",
         "gx": -13,
-        "gy": 3
-      },
-      {
-        "type": "pine_small",
-        "gx": -12,
-        "gy": 3
+        "gy": 5
       },
       {
         "type": "pine_small",
         "gx": -11,
-        "gy": 3
+        "gy": 5
       },
       {
         "type": "drift_small",
-        "gx": -5,
-        "gy": 3
-      },
-      {
-        "type": "rock_small",
-        "gx": -3,
-        "gy": 3
+        "gx": -4,
+        "gy": 5
       },
       {
         "type": "drift_small",
-        "gx": 0,
-        "gy": 3
-      },
-      {
-        "type": "drift_small",
-        "gx": 14,
-        "gy": 3
-      },
-      {
-        "type": "pine_small",
-        "gx": -13,
-        "gy": 4
+        "gx": 16,
+        "gy": 5
       },
       {
         "type": "pine_small",
         "gx": -12,
-        "gy": 4
+        "gy": 6
       },
       {
-        "type": "pine_small",
-        "gx": -10,
-        "gy": 4
+        "type": "drift_small",
+        "gx": -11,
+        "gy": 6
       },
       {
         "type": "drift_small",
         "gx": -8,
-        "gy": 4
+        "gy": 6
       },
       {
-        "type": "rock_small",
-        "gx": -3,
-        "gy": 4
+        "type": "drift_small",
+        "gx": 13,
+        "gy": 6
       },
       {
         "type": "pine_large",
-        "gx": 12,
-        "gy": 4
+        "gx": -13,
+        "gy": 7
       },
       {
         "type": "rock_small",
-        "gx": -2,
-        "gy": 5
-      },
-      {
-        "type": "pine_small",
-        "gx": 14,
-        "gy": 5
-      },
-      {
-        "type": "drift_small",
-        "gx": 16,
-        "gy": 5
-      },
-      {
-        "type": "drift_small",
-        "gx": -13,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": -10,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": -7,
-        "gy": 6
+        "gx": -6,
+        "gy": 7
       },
       {
         "type": "rock_small",
         "gx": -4,
-        "gy": 6
-      },
-      {
-        "type": "rock_small",
-        "gx": -3,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": 2,
-        "gy": 6
-      },
-      {
-        "type": "drift_small",
-        "gx": 11,
-        "gy": 6
-      },
-      {
-        "type": "rock_large",
-        "gx": -5,
         "gy": 7
       },
       {
         "type": "pine_small",
-        "gx": 0,
-        "gy": 7
-      },
-      {
-        "type": "pine_small",
-        "gx": 1,
-        "gy": 7
-      },
-      {
-        "type": "pine_small",
-        "gx": 13,
-        "gy": 7
-      },
-      {
-        "type": "drift_small",
-        "gx": 16,
-        "gy": 7
-      },
-      {
-        "type": "rock_small",
         "gx": -11,
-        "gy": 8
-      },
-      {
-        "type": "rock_large",
-        "gx": -10,
-        "gy": 8
-      },
-      {
-        "type": "rock_small",
-        "gx": -8,
-        "gy": 8
-      },
-      {
-        "type": "rock_small",
-        "gx": -7,
         "gy": 8
       },
       {
         "type": "rock_small",
         "gx": -6,
         "gy": 8
+      },
+      {
+        "type": "rock_small",
+        "gx": -5,
+        "gy": 8
+      },
+      {
+        "type": "pine_small",
+        "gx": 14,
+        "gy": 8
+      },
+      {
+        "type": "pine_small",
+        "gx": -12,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": -6,
+        "gy": 9
+      },
+      {
+        "type": "pine_small",
+        "gx": 13,
+        "gy": 9
+      },
+      {
+        "type": "pine_small",
+        "gx": 15,
+        "gy": 9
+      },
+      {
+        "type": "rock_small",
+        "gx": -9,
+        "gy": 10
+      },
+      {
+        "type": "rock_small",
+        "gx": -8,
+        "gy": 10
+      },
+      {
+        "type": "rock_small",
+        "gx": -3,
+        "gy": 10
       },
       {
         "type": "pine_small",
         "gx": -1,
-        "gy": 8
-      },
-      {
-        "type": "pine_small",
-        "gx": 0,
-        "gy": 8
-      },
-      {
-        "type": "pine_small",
-        "gx": 1,
-        "gy": 8
-      },
-      {
-        "type": "drift_small",
-        "gx": -13,
-        "gy": 9
-      },
-      {
-        "type": "rock_small",
-        "gx": -8,
-        "gy": 9
-      },
-      {
-        "type": "rock_small",
-        "gx": -6,
-        "gy": 9
-      },
-      {
-        "type": "drift_small",
-        "gx": -3,
-        "gy": 9
-      },
-      {
-        "type": "pine_small",
-        "gx": 13,
-        "gy": 9
-      },
-      {
-        "type": "pine_small",
-        "gx": 14,
-        "gy": 9
-      },
-      {
-        "type": "drift_small",
-        "gx": -11,
-        "gy": 10
-      },
-      {
-        "type": "rock_small",
-        "gx": -8,
         "gy": 10
       },
       {
@@ -993,62 +943,67 @@
       },
       {
         "type": "pine_small",
-        "gx": 13,
-        "gy": 10
-      },
-      {
-        "type": "pine_small",
         "gx": 14,
         "gy": 10
       },
       {
-        "type": "pine_small",
-        "gx": 15,
-        "gy": 10
-      },
-      {
-        "type": "drift_small",
-        "gx": -13,
+        "type": "rock_small",
+        "gx": -10,
         "gy": 11
       },
       {
-        "type": "drift_small",
-        "gx": 0,
+        "type": "rock_small",
+        "gx": -8,
         "gy": 11
       },
       {
-        "type": "pine_small",
-        "gx": 2,
+        "type": "rock_small",
+        "gx": -3,
+        "gy": 11
+      },
+      {
+        "type": "rock_small",
+        "gx": 5,
+        "gy": 11
+      },
+      {
+        "type": "rock_small",
+        "gx": 6,
         "gy": 11
       },
       {
         "type": "drift_large",
-        "gx": -7,
+        "gx": -12,
         "gy": 12
       },
       {
-        "type": "rock_large",
+        "type": "rock_small",
+        "gx": -10,
+        "gy": 12
+      },
+      {
+        "type": "rock_small",
         "gx": -5,
         "gy": 12
       },
       {
-        "type": "drift_small",
+        "type": "rock_small",
         "gx": -3,
         "gy": 12
       },
       {
-        "type": "rock_large",
+        "type": "drift_small",
+        "gx": -2,
+        "gy": 12
+      },
+      {
+        "type": "drift_small",
         "gx": 3,
         "gy": 12
       },
       {
-        "type": "drift_small",
-        "gx": 9,
-        "gy": 12
-      },
-      {
-        "type": "drift_small",
-        "gx": 11,
+        "type": "rock_small",
+        "gx": 5,
         "gy": 12
       },
       {
@@ -1057,18 +1012,38 @@
         "gy": 12
       },
       {
-        "type": "drift_small",
-        "gx": -13,
-        "gy": 13
+        "type": "pine_small",
+        "gx": 15,
+        "gy": 12
       },
       {
         "type": "pine_small",
-        "gx": -11,
+        "gx": 16,
+        "gy": 12
+      },
+      {
+        "type": "rock_small",
+        "gx": -4,
         "gy": 13
       },
       {
         "type": "rock_small",
+        "gx": -3,
+        "gy": 13
+      },
+      {
+        "type": "pine_small",
         "gx": 0,
+        "gy": 13
+      },
+      {
+        "type": "rock_small",
+        "gx": 6,
+        "gy": 13
+      },
+      {
+        "type": "drift_small",
+        "gx": 11,
         "gy": 13
       },
       {
@@ -1077,13 +1052,13 @@
         "gy": 13
       },
       {
-        "type": "pine_small",
+        "type": "pine_large",
         "gx": 15,
         "gy": 13
       },
       {
         "type": "pine_small",
-        "gx": -10,
+        "gx": -11,
         "gy": 14
       },
       {
@@ -1092,68 +1067,48 @@
         "gy": 14
       },
       {
-        "type": "rock_small",
-        "gx": -6,
-        "gy": 14
-      },
-      {
-        "type": "rock_small",
-        "gx": -4,
-        "gy": 14
-      },
-      {
-        "type": "rock_small",
-        "gx": -3,
-        "gy": 14
-      },
-      {
         "type": "pine_small",
-        "gx": 4,
+        "gx": 2,
         "gy": 14
       },
       {
         "type": "drift_small",
-        "gx": 10,
+        "gx": 6,
         "gy": 14
       },
       {
         "type": "pine_small",
-        "gx": 13,
+        "gx": 9,
         "gy": 14
       },
       {
-        "type": "pine_large",
-        "gx": 15,
-        "gy": 14
-      },
-      {
-        "type": "pine_large",
-        "gx": -12,
+        "type": "drift_small",
+        "gx": -13,
         "gy": 15
       },
       {
         "type": "pine_small",
+        "gx": -11,
+        "gy": 15
+      },
+      {
+        "type": "pine_large",
         "gx": -10,
         "gy": 15
       },
       {
+        "type": "drift_small",
+        "gx": -5,
+        "gy": 15
+      },
+      {
         "type": "pine_small",
-        "gx": -9,
-        "gy": 15
-      },
-      {
-        "type": "rock_small",
-        "gx": -2,
-        "gy": 15
-      },
-      {
-        "type": "rock_small",
-        "gx": 0,
-        "gy": 15
-      },
-      {
-        "type": "rock_small",
         "gx": 1,
+        "gy": 15
+      },
+      {
+        "type": "pine_small",
+        "gx": 2,
         "gy": 15
       },
       {
@@ -1162,18 +1117,13 @@
         "gy": 15
       },
       {
-        "type": "pine_small",
+        "type": "rock_small",
         "gx": 5,
         "gy": 15
       },
       {
-        "type": "pine_small",
+        "type": "rock_small",
         "gx": 6,
-        "gy": 15
-      },
-      {
-        "type": "drift_large",
-        "gx": 9,
         "gy": 15
       },
       {
@@ -1187,48 +1137,28 @@
         "gy": 15
       },
       {
-        "type": "pine_small",
-        "gx": 14,
-        "gy": 15
-      },
-      {
-        "type": "pine_small",
-        "gx": -9,
+        "type": "drift_small",
+        "gx": -8,
         "gy": 16
       },
       {
         "type": "drift_small",
-        "gx": -6,
+        "gx": -2,
         "gy": 16
       },
       {
-        "type": "rock_small",
-        "gx": 0,
-        "gy": 16
-      },
-      {
-        "type": "rock_small",
-        "gx": 1,
-        "gy": 16
-      },
-      {
-        "type": "rock_small",
+        "type": "pine_small",
         "gx": 2,
         "gy": 16
       },
       {
-        "type": "rock_small",
-        "gx": 3,
+        "type": "pine_small",
+        "gx": 4,
         "gy": 16
       },
       {
-        "type": "pine_small",
-        "gx": 5,
-        "gy": 16
-      },
-      {
-        "type": "pine_small",
-        "gx": 6,
+        "type": "drift_small",
+        "gx": 9,
         "gy": 16
       },
       {
@@ -1238,7 +1168,12 @@
       },
       {
         "type": "pine_small",
-        "gx": 14,
+        "gx": 13,
+        "gy": 16
+      },
+      {
+        "type": "pine_small",
+        "gx": 16,
         "gy": 16
       }
     ],
@@ -2032,7 +1967,6 @@
       "produceTime": 120,
       "cost": 55,
       "unlockLevel": 1,
-      "maxCount": 4,
       "soundPitch": 1.25,
       "desc": "Frisst Goldweizen und legt landfrische Eier (2 Min.)."
     },
@@ -2047,7 +1981,6 @@
       "produceTime": 240,
       "cost": 125,
       "unlockLevel": 1,
-      "maxCount": 3,
       "soundPitch": 1.05,
       "desc": "Liebt Winterbeeren und schenkt cremige Wintermilch (4 Min.)."
     },
@@ -2062,7 +1995,6 @@
       "produceTime": 300,
       "cost": 165,
       "unlockLevel": 2,
-      "maxCount": 3,
       "soundPitch": 0.9,
       "desc": "Schenkt weiche Kuschelwolle für die Geschenkewerkstatt (5 Min.)."
     },
@@ -2077,7 +2009,6 @@
       "produceTime": 360,
       "cost": 420,
       "unlockLevel": 7,
-      "maxCount": 3,
       "soundPitch": 0.8,
       "desc": "Trägt Brennholz aus dem Wald herbei (6 Min.)."
     },
@@ -2092,9 +2023,90 @@
       "produceTime": 480,
       "cost": 650,
       "unlockLevel": 11,
-      "maxCount": 3,
       "soundPitch": 1.4,
       "desc": "Fliegt ins Dorf und bringt Briefe für die Wichtelpost (8 Min.)."
+    }
+  },
+  "pens": {
+    "chicken_pen": {
+      "id": "chicken_pen",
+      "name": "Hühnerhof",
+      "animal": "chicken",
+      "capacity": 6,
+      "levels": [
+        1,
+        8,
+        15
+      ],
+      "costs": [
+        150,
+        1500,
+        6000
+      ]
+    },
+    "reindeer_pen": {
+      "id": "reindeer_pen",
+      "name": "Rentier-Koppel",
+      "animal": "reindeer",
+      "capacity": 6,
+      "levels": [
+        1,
+        9,
+        16
+      ],
+      "costs": [
+        250,
+        2000,
+        8000
+      ]
+    },
+    "sheep_pen": {
+      "id": "sheep_pen",
+      "name": "Schafweide",
+      "animal": "sheep",
+      "capacity": 6,
+      "levels": [
+        2,
+        10,
+        17
+      ],
+      "costs": [
+        300,
+        2400,
+        9000
+      ]
+    },
+    "donkey_pen": {
+      "id": "donkey_pen",
+      "name": "Eselkoppel",
+      "animal": "donkey",
+      "capacity": 6,
+      "levels": [
+        7,
+        14,
+        21
+      ],
+      "costs": [
+        700,
+        4000,
+        12000
+      ]
+    },
+    "owl_pen": {
+      "id": "owl_pen",
+      "name": "Eulen-Voliere",
+      "animal": "owl",
+      "capacity": 6,
+      "levels": [
+        11,
+        18,
+        25
+      ],
+      "costs": [
+        1000,
+        5000,
+        15000
+      ]
     }
   },
   "stations": {
@@ -2583,16 +2595,16 @@
   },
   "land": {
     "fromLevel": 3,
-    "baseCost": 300,
-    "costGrowth": 1.25,
+    "baseCost": 430,
+    "costGrowth": 1.38,
     "materialsFromPlot": 2,
-    "materialStep": 2,
+    "materialStep": 1,
     "materials": [
       "land_deed",
       "mallet",
       "boundary_stake"
     ],
-    "note": "Preis des k-ten gekauften Stücks (k ab 0): baseCost*costGrowth^k, auf 10 gerundet. Ab k >= materialsFromPlot je Material 1 + floor((k - materialsFromPlot) / materialStep)."
+    "note": "Preis des k-ten gekauften Stücks (k ab 0): baseCost*costGrowth^k, auf 10 gerundet. Ab k >= materialsFromPlot je Material 1 + floor((k - materialsFromPlot) / materialStep). Baustein 5b (Landstück 6×6 statt 5×5): Preise auf die Fläche umgerechnet, gleiche Münzen je Kachel wie vorher (300 → 430, Wachstum 1,25^1,44 ≈ 1,38)."
   },
   "obstacles": {
     "drift_small": {
@@ -3129,8 +3141,7 @@
       "xp": 75,
       "conditions": [
         {
-          "kind": "hasObject",
-          "objectKind": "animal",
+          "kind": "hasAnimal",
           "type": "reindeer"
         },
         {
@@ -3255,66 +3266,304 @@
       "speedMult": 0.8
     }
   ],
-  "footprints": {
+  "sizes": {
     "chalet": {
+      "group": "building",
+      "w": 3,
+      "h": 3,
+      "heightTiles": 2.3
+    },
+    "bakery": {
+      "group": "building",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 1.7
     },
-    "christmasTree": {
+    "patisserie": {
+      "group": "building",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 1.7
     },
-    "wishlistBoard": {
-      "w": 1,
-      "h": 1
-    },
-    "sleigh": {
-      "w": 1,
-      "h": 1
-    },
-    "mailbox": {
-      "w": 1,
-      "h": 1
-    },
-    "dailyChest": {
-      "w": 1,
-      "h": 1
-    },
-    "field": {
-      "w": 1,
-      "h": 1
-    },
-    "animal": {
-      "w": 1,
-      "h": 1
-    },
-    "deco": {
-      "w": 1,
-      "h": 1
-    },
-    "station": {
+    "gift_workshop": {
+      "group": "building",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 1.7
+    },
+    "wreath_shop": {
+      "group": "building",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 1.7
+    },
+    "teahouse": {
+      "group": "building",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 1.5
+    },
+    "apple_stand": {
+      "group": "building",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 1.5
+    },
+    "almond_hut": {
+      "group": "building",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 1.5
+    },
+    "wichtel_post": {
+      "group": "building",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 1.8
+    },
+    "toy_workshop": {
+      "group": "building",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 1.9
     },
     "farmStand": {
+      "group": "building",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 1.4
+    },
+    "christmasTree": {
+      "group": "landmark",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 2.8
+    },
+    "wishlistBoard": {
+      "group": "prop",
+      "w": 2,
+      "h": 1,
+      "heightTiles": 1.3
+    },
+    "sleigh": {
+      "group": "prop",
+      "w": 2,
+      "h": 1,
+      "heightTiles": 1.0
+    },
+    "mailbox": {
+      "group": "prop",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.8
+    },
+    "dailyChest": {
+      "group": "prop",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.5
+    },
+    "field": {
+      "group": "field",
+      "w": 2,
+      "h": 2,
+      "heightTiles": 1.35
+    },
+    "chicken_pen": {
+      "group": "pen",
+      "w": 3,
+      "h": 3,
+      "heightTiles": 1.9
+    },
+    "owl_pen": {
+      "group": "pen",
+      "w": 3,
+      "h": 3,
+      "heightTiles": 1.9
+    },
+    "sheep_pen": {
+      "group": "pen",
+      "w": 4,
+      "h": 4,
+      "heightTiles": 2.4
+    },
+    "reindeer_pen": {
+      "group": "pen",
+      "w": 4,
+      "h": 4,
+      "heightTiles": 2.4
+    },
+    "donkey_pen": {
+      "group": "pen",
+      "w": 4,
+      "h": 4,
+      "heightTiles": 2.4
+    },
+    "chicken": {
+      "group": "animal",
+      "heightTiles": 0.36
+    },
+    "owl": {
+      "group": "animal",
+      "heightTiles": 0.4
+    },
+    "sheep": {
+      "group": "animal",
+      "heightTiles": 0.55
+    },
+    "donkey": {
+      "group": "animal",
+      "heightTiles": 0.75
+    },
+    "reindeer": {
+      "group": "animal",
+      "heightTiles": 0.85
+    },
+    "person": {
+      "group": "person",
+      "heightTiles": 0.8
+    },
+    "crop": {
+      "group": "crop",
+      "heightTiles": 0.5
+    },
+    "pine": {
+      "group": "deco",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 1.3
     },
     "pine_large": {
+      "group": "deco",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 2.4
+    },
+    "snowman": {
+      "group": "deco",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.9
+    },
+    "lantern": {
+      "group": "deco",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 1.4
+    },
+    "giftpile": {
+      "group": "deco",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.6
+    },
+    "light_reindeer": {
+      "group": "deco",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.9
+    },
+    "big_nutcracker": {
+      "group": "deco",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 1.6
+    },
+    "bench": {
+      "group": "deco",
+      "w": 2,
+      "h": 1,
+      "heightTiles": 0.7
+    },
+    "lightarch": {
+      "group": "deco",
+      "w": 2,
+      "h": 1,
+      "heightTiles": 1.5
+    },
+    "gingerbread_gate": {
+      "group": "deco",
+      "w": 2,
+      "h": 1,
+      "heightTiles": 1.7
+    },
+    "path_snow": {
+      "group": "path",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0
+    },
+    "path_gravel": {
+      "group": "path",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0
+    },
+    "path_planks": {
+      "group": "path",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0
+    },
+    "path_cobble": {
+      "group": "path",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0
+    },
+    "path_flagstone": {
+      "group": "path",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0
+    },
+    "path_star": {
+      "group": "path",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0
+    },
+    "drift_small": {
+      "group": "obstacle",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.6
+    },
+    "rock_small": {
+      "group": "obstacle",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.8
+    },
+    "ice_small": {
+      "group": "obstacle",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 0.55
     },
     "drift_large": {
+      "group": "obstacle",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 1.2
     },
     "rock_large": {
+      "group": "obstacle",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 1.5
     },
     "ice_large": {
+      "group": "obstacle",
       "w": 2,
-      "h": 2
+      "h": 2,
+      "heightTiles": 1.1
+    },
+    "pine_small": {
+      "group": "obstacle",
+      "w": 1,
+      "h": 1,
+      "heightTiles": 1.3
     }
   },
   "field": {
@@ -3342,64 +3591,64 @@
         "kind": "prop",
         "type": "chalet",
         "id": "chalet",
-        "gx": 4,
-        "gy": 3
+        "gx": 1,
+        "gy": 1
       },
       {
         "kind": "prop",
         "type": "christmasTree",
         "id": "christmasTree",
-        "gx": 8,
-        "gy": 3
+        "gx": 6,
+        "gy": 1
       },
       {
         "kind": "prop",
         "type": "farmStand",
         "id": "farmStand",
         "gx": 4,
-        "gy": 10
+        "gy": 9
       },
       {
         "kind": "prop",
         "type": "wishlistBoard",
         "id": "wishlistBoard",
-        "gx": 10,
-        "gy": 10
+        "gx": 6,
+        "gy": 8
       },
       {
         "kind": "prop",
         "type": "sleigh",
         "id": "sleigh",
-        "gx": 10,
-        "gy": 11
+        "gx": 8,
+        "gy": 8
       },
       {
         "kind": "prop",
         "type": "mailbox",
         "id": "mailbox",
-        "gx": 9,
+        "gx": 10,
         "gy": 9
       },
       {
         "kind": "prop",
         "type": "dailyChest",
         "id": "dailyChest",
-        "gx": 8,
-        "gy": 9
+        "gx": 10,
+        "gy": 10
       },
       {
         "kind": "station",
         "type": "bakery",
         "id": "st_bakery",
-        "gx": 3,
-        "gy": 8
+        "gx": 0,
+        "gy": 6
       },
       {
         "kind": "field",
         "type": "field",
         "id": "f_1",
-        "gx": 6,
-        "gy": 8,
+        "gx": 2,
+        "gy": 5,
         "crop": "wheat",
         "ripe": true
       },
@@ -3407,8 +3656,8 @@
         "kind": "field",
         "type": "field",
         "id": "f_2",
-        "gx": 7,
-        "gy": 8,
+        "gx": 4,
+        "gy": 5,
         "crop": "wheat",
         "ripe": true
       },
@@ -3416,8 +3665,8 @@
         "kind": "field",
         "type": "field",
         "id": "f_3",
-        "gx": 6,
-        "gy": 9,
+        "gx": 2,
+        "gy": 7,
         "crop": "wheat",
         "ripe": true
       },
@@ -3425,26 +3674,31 @@
         "kind": "field",
         "type": "field",
         "id": "f_4",
-        "gx": 7,
-        "gy": 9,
+        "gx": 4,
+        "gy": 7,
         "crop": "wheat",
         "ripe": true
       },
       {
-        "kind": "animal",
-        "type": "chicken",
-        "id": "a_1",
-        "gx": 9,
-        "gy": 8,
-        "nick": "Flöckchen",
-        "ready": true
+        "kind": "pen",
+        "type": "chicken_pen",
+        "id": "pen_1",
+        "gx": 7,
+        "gy": 4,
+        "animals": [
+          {
+            "id": "a_1",
+            "nick": "Flöckchen",
+            "ready": true
+          }
+        ]
       },
       {
         "kind": "deco",
         "type": "lantern",
         "id": "d_1",
         "gx": 3,
-        "gy": 7
+        "gy": 9
       },
       {
         "kind": "deco",
@@ -3457,8 +3711,8 @@
         "kind": "deco",
         "type": "snowman",
         "id": "d_3",
-        "gx": 7,
-        "gy": 5
+        "gx": 5,
+        "gy": 3
       }
     ]
   },
@@ -3478,344 +3732,124 @@
     "sellFactor": 0.3
   },
   "art": {
-    "tilePx": 116,
-    "note": "Höhen in Kacheln (1 Kachel = Kachelbreite 116 px Weltmaß). Breite ergibt sich IMMER aus dem Bild-Seitenverhältnis.",
-    "categories": {
-      "house": {
-        "label": "Gebäude 2x2",
-        "heightTiles": [
-          1.5,
-          2.4
-        ]
-      },
-      "landmark": {
-        "label": "Wahrzeichen 2x2",
-        "heightTiles": [
-          1.6,
-          2.8
-        ]
-      },
-      "prop": {
-        "label": "Hof-Objekt 1x1",
-        "heightTiles": [
-          0.45,
-          1
-        ]
-      },
-      "deco": {
-        "label": "Deko 1x1",
-        "heightTiles": [
-          0.45,
-          1.2
-        ]
-      },
-      "animal": {
-        "label": "Tier",
-        "heightTiles": [
-          0.25,
-          0.75
-        ]
-      },
-      "person": {
-        "label": "Person",
-        "heightTiles": [
-          0.5,
-          0.65
-        ]
-      },
-      "crop": {
-        "label": "Feldfrucht",
-        "heightTiles": [
-          0.4,
-          0.8
-        ]
-      },
-      "ground": {
-        "label": "Boden 1x1",
-        "heightTiles": [
-          0.4,
-          0.7
-        ]
-      }
-    },
-    "relations": [
-      {
-        "smaller": "animal_chicken",
-        "larger": "animal_sheep"
-      },
-      {
-        "smaller": "animal_sheep",
-        "larger": "animal_reindeer"
-      },
-      {
-        "smaller": "animal_chicken",
-        "larger": "alpine_villager",
-        "maxRatio": 0.7
-      },
-      {
-        "smaller": "animal_sheep",
-        "larger": "alpine_villager",
-        "maxRatio": 0.9
-      },
-      {
-        "smaller": "alpine_villager",
-        "larger": "christmas_bakery",
-        "maxRatio": 0.36
-      },
-      {
-        "smaller": "alpine_villager",
-        "larger": "winter_chalet",
-        "maxRatio": 0.36
-      },
-      {
-        "smaller": "christmas_bakery",
-        "larger": "winter_chalet"
-      },
-      {
-        "smaller": "alpine_villager",
-        "larger": "deco_lantern"
-      },
-      {
-        "smaller": "crop_wheat",
-        "larger": "alpine_villager"
-      },
-      {
-        "smaller": "winter_chalet",
-        "larger": "christmas_tree"
-      }
-    ],
+    "tilePx": 128,
+    "note": "Bilder je Objekt (Quelle art_src/spiel{m}/objekte{tps}, AssetPack). size = Schlüssel in sizes (Grundfläche + Bildhöhe, eine Quelle), anchorY = Bodenpunkt im Bild (0 oben, 1 unten). Breite ergibt sich IMMER aus dem Bild-Seitenverhältnis, nie verzerren. Prüfung: python scripts/pruefe_assets.py.",
     "minSourcePxPerWorldPx": 1.6,
     "sprites": {
       "winter_chalet": {
-        "file": "winter_chalet.webp",
-        "category": "house",
-        "footprint": {
-          "w": 2,
-          "h": 2
-        },
-        "heightTiles": 1.897,
+        "file": "winter_chalet.png",
+        "size": "chalet",
         "anchorY": 0.86
       },
       "christmas_bakery": {
-        "file": "christmas_bakery.webp",
-        "category": "house",
-        "footprint": {
-          "w": 2,
-          "h": 2
-        },
-        "heightTiles": 1.69,
+        "file": "christmas_bakery.png",
+        "size": "bakery",
         "anchorY": 0.86
       },
       "punch_stand": {
-        "file": "punch_stand.webp",
-        "category": "house",
-        "footprint": {
-          "w": 2,
-          "h": 2
-        },
-        "heightTiles": 1.509,
+        "file": "punch_stand.png",
+        "size": "teahouse",
         "anchorY": 0.86
       },
       "patisserie_house": {
-        "file": "patisserie_house.webp",
-        "category": "house",
-        "footprint": {
-          "w": 2,
-          "h": 2
-        },
-        "heightTiles": 1.69,
+        "file": "patisserie_house.png",
+        "size": "patisserie",
         "anchorY": 0.86
       },
       "gift_workshop": {
-        "file": "gift_workshop.webp",
-        "category": "house",
-        "footprint": {
-          "w": 2,
-          "h": 2
-        },
-        "heightTiles": 1.69,
+        "file": "gift_workshop.png",
+        "size": "gift_workshop",
         "anchorY": 0.86
       },
       "christmas_tree": {
-        "file": "christmas_tree.webp",
-        "category": "landmark",
-        "footprint": {
-          "w": 2,
-          "h": 2
-        },
-        "heightTiles": 2.2,
+        "file": "christmas_tree.png",
+        "size": "christmasTree",
         "anchorY": 0.86
       },
       "wishlist_board": {
-        "file": "wishlist_board.webp",
-        "category": "prop",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.793,
+        "file": "wishlist_board.png",
+        "size": "wishlistBoard",
         "anchorY": 0.88
       },
       "gift_mailbox": {
-        "file": "gift_mailbox.webp",
-        "category": "prop",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.569,
+        "file": "gift_mailbox.png",
+        "size": "mailbox",
         "anchorY": 0.88
       },
       "reindeer_sleigh": {
-        "file": "reindeer_sleigh.webp",
-        "category": "prop",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.931,
+        "file": "reindeer_sleigh.png",
+        "size": "sleigh",
         "anchorY": 0.88
       },
       "treasure_chest": {
-        "file": "treasure_chest.webp",
-        "category": "prop",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.5,
+        "file": "treasure_chest.png",
+        "size": "dailyChest",
         "anchorY": 0.88
       },
       "deco_pine": {
-        "file": "deco_pine.webp",
-        "category": "deco",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 1.086,
+        "file": "deco_pine.png",
+        "size": "pine",
         "anchorY": 0.88
       },
       "deco_snowman": {
-        "file": "deco_snowman.webp",
-        "category": "deco",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.638,
+        "file": "deco_snowman.png",
+        "size": "snowman",
         "anchorY": 0.88
       },
       "deco_lantern": {
-        "file": "deco_lantern.webp",
-        "category": "deco",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.621,
+        "file": "deco_lantern.png",
+        "size": "lantern",
         "anchorY": 0.88
       },
       "animal_chicken": {
-        "file": "animal_chicken.webp",
-        "category": "animal",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.36,
+        "file": "animal_chicken.png",
+        "size": "chicken",
         "anchorY": 0.88
       },
       "animal_sheep": {
-        "file": "animal_sheep.webp",
-        "category": "animal",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.48,
+        "file": "animal_sheep.png",
+        "size": "sheep",
         "anchorY": 0.88
       },
       "animal_reindeer": {
-        "file": "animal_reindeer.webp",
-        "category": "animal",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.672,
+        "file": "animal_reindeer.png",
+        "size": "reindeer",
         "anchorY": 0.88
       },
       "alpine_villager": {
-        "file": "alpine_villager.webp",
-        "category": "person",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.569,
+        "file": "alpine_villager.png",
+        "size": "person",
         "anchorY": 0.92
       },
       "alpine_villager_green": {
-        "file": "alpine_villager_green.webp",
-        "category": "person",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.569,
+        "file": "alpine_villager_green.png",
+        "size": "person",
         "anchorY": 0.92
       },
       "alpine_villager_navy": {
-        "file": "alpine_villager_navy.webp",
-        "category": "person",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.569,
+        "file": "alpine_villager_navy.png",
+        "size": "person",
         "anchorY": 0.92
       },
       "crop_wheat": {
-        "file": "crop_wheat.webp",
-        "category": "crop",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.55,
+        "file": "crop_wheat.png",
+        "size": "crop",
         "anchorY": 0.72
       },
       "crop_berries": {
-        "file": "crop_berries.webp",
-        "category": "crop",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.55,
+        "file": "crop_berries.png",
+        "size": "crop",
         "anchorY": 0.72
       },
       "crop_matcha": {
-        "file": "crop_matcha.webp",
-        "category": "crop",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.55,
+        "file": "crop_matcha.png",
+        "size": "crop",
         "anchorY": 0.72
       },
       "snow_field_plot": {
-        "file": "snow_field_plot.webp",
-        "category": "ground",
-        "footprint": {
-          "w": 1,
-          "h": 1
-        },
-        "heightTiles": 0.569,
-        "anchorY": 0.62,
-        "fitWidthTiles": 1.02
+        "file": "snow_field_plot.png",
+        "size": "field",
+        "anchorY": 0.62
       }
     }
   },

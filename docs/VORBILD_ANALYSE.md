@@ -36,7 +36,7 @@ Quellen angesehen: Hay-Day-Wiki (Farm-Karte, Gebäude-Einzelbilder), Clash-Wiki 
 - **Hay Day Wege:** 3 einfache Wege ab Stufe 1 für wenige Münzen, edlere später, Preis steigt je Kauf.
 - **Hay Day Fischsee:** eigener Bereich ab Stufe 27 nach Boots-Reparatur, Angelplätze per Erweiterung.
 - **Clash:** rund 40 Hindernisse beim Start, Pflanzen wachsen alle 8 h nach (max. 45, mit 1 Feld Abstand), Steine nie. Räumen gibt Erfahrung, manchmal Edelsteine. „Hindernis-Schaufel“ macht ein Hindernis zur verschiebbaren Deko (Vorbild für unser Tannen-Ausgraben).
-- **Umgesetzt (Kern):** Landstücke 5×5 nur angrenzend, Land-Material in gleicher Menge, Werkzeug-Sofortkauf nach Stufe, nur Schneewehen wachsen nach (8 h, max. 5, 1 Feld Abstand), Tanne → Deko, Wegplatten mit steigendem Preis.
+- **Umgesetzt (Kern):** Landstücke (heute 6×6, Entsch. 44) nur angrenzend, Land-Material in gleicher Menge, Werkzeug-Sofortkauf nach Stufe, nur Schneewehen wachsen nach (8 h, max. 5, 1 Feld Abstand), Tanne → Deko, Wegplatten mit steigendem Preis.
 - **Natürliche Verteilung (24.11., Nachbesserung 2b):** Hay Day setzt Hindernisse sichtbar in Gruppen (TNT räumt eine ganze Steingruppe, Tümpel und Baumgruppen an Rändern). Technik nach Red Blob Games (Poisson-Scheibe statt reinem Zufall, Dichte über Rauschen/Gegend steuern) und Erfahrungsberichten zur Objekt-Platzierung: reiner Zufall gibt Klumpen und Löcher, Mindestabstand + Gegend gibt natürliche Gruppen. Quellen: redblobgames.com/x/1830-jittered-grid, redblobgames.com/articles/noise/introduction.org, pocketgamer.com (Hay Day TNT/Erweiterung).
 
 ## 7. Wirtschaft (24.11., Baustein 2c)
@@ -80,3 +80,13 @@ Quellen angesehen: Hay-Day-Wiki (Farm-Karte, Gebäude-Einzelbilder), Clash-Wiki 
 - **Bäume:** weicher dunkler Fleck unter der Krone. **Felder:** liegen ohne Rahmen und fast ohne Schatten auf der Wiese. **Wege:** Gras ragt über die Kante, Fahrspuren, Laub.
 - **Atmosphäre:** wandernde helle Nebel-/Lichtschleier über allem (Grafik-Runde).
 - **Folgerung für uns:** Gras-Textur ruhig halten (Halme mit wenig Kontrast, `scripts/wiese_halme.py`); Trockenflecken im Shader in Weltkoordinaten (in der Textur wiederholen sie sich als Muster); Deko als eigene Ebene, die Gebäuden und Wegen ausweicht; Standfläche je Gebäude in Baustein 7/8.
+
+## 12. Größenverhältnisse (25.11., gemessen an Hannes' Hay-Day-Screenshots, gleiche Zoomstufe; Maß = Höhe des Bauern)
+
+- Haus: 2,45 Bauern hoch; Grundfläche etwa 3,2 × 2,1 Bauern (bei Person 0,8 Kachel ≈ 2,6 × 1,7 Kacheln, also wie unser 2 × 2).
+
+- Feld (Weizen): Seite etwa 2,3 Bauern (≈ 2 × 2 Kacheln bei Person 0,8); unser 1×1-Feld ist halb so breit.
+
+- Zufahrt: etwa 2,5 Bauern breit (≈ 2 Kacheln). Hühnerstall auf Stelzen 1,2 Bauern hoch, Huhn 0,42 Bauer.
+
+- Folgerung: Person 0,8 Kachel (Variante B) trifft Haus/Person; für Hay-Day-Maß zusätzlich Feld 2 × 2, Zufahrt 2 Kacheln, Tiere kleiner (Variante D auf der Klickseite).

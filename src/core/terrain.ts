@@ -157,7 +157,7 @@ export function validateMap(c: ContentPack = CONTENT): string[] {
   const used = new Map<string, number>();
   m.obstacles.forEach((o, i) => {
     if (!c.obstacles[o.type]) { errs.push(`Hindernis ${i}: Art ${o.type} unbekannt`); return; }
-    const fp = footprintOf({ kind: 'obstacle', type: o.type }, c);
+    const fp = footprintOf({ type: o.type }, c);
     const home = plotIdAt(o.gx, o.gy, c);
     for (let dy = 0; dy < fp.h; dy++) {
       for (let dx = 0; dx < fp.w; dx++) {

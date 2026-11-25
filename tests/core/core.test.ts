@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CONTENT, GameSession, advanceTime, applyCommand, canPlace, createNewGame, deserialize, getObject,
+  CONTENT, GameSession, advanceTime, animalCount, applyCommand, canPlace, createNewGame, deserialize, getObject, terrainMap,
   isFieldReady, serialize, storageUsed, storageUpgradeMaterials, validateContent, validateLayout, type Command, type GameState
 } from '../../src/core';
 
@@ -74,7 +74,7 @@ describe('Lager', () => {
     let s = createNewGame(T0);
     s = { ...s, inventory: { wheat: s.storage.silo } };
     // Ei geht in die Scheune, obwohl das Silo voll ist
-    s = ok(s, { type: 'collectAnimal', animalId: 'a_1' });
+    s = ok(s, { type: 'collectPen', penId: 'pen_1' });
     expect(s.inventory.egg).toBe(1);
   });
   it('Ausbau kostet Münzen und erhöht Kapazität', () => {
@@ -86,21 +86,106 @@ describe('Lager', () => {
   });
 });
 
-describe('Tiere', () => {
-  it('Abholen -> hungrig -> füttern -> arbeitet -> fertig', () => {
+describe('Tiere im Gehege (Entsch. 44, 45, 48)', () => {
+  const pen = (s: GameState, id = 'pen_1') => getObject(s, id, 'pen')!;
+  /** erster freier Platz w×h auf eigenem Land (Hindernisse vorher entfernt) */
+  const spot = (s: GameState, w: number, h: number) => {
+    for (const id of s.ownedPlots) {
+      const p = terrainMap().plotById(id)!;
+      for (let gy = p.y0; gy <= p.y1; gy++) for (let gx = p.x0; gx <= p.x1; gx++) if (canPlace(s, gx, gy, w, h).ok) return { gx, gy };
+    }
+    return null;
+  };
+  it('Start: Hühnerhof mit 1 Huhn; Abholen -> hungrig -> füttern -> arbeitet -> fertig', () => {
     let s = createNewGame(T0);
-    s = ok(s, { type: 'collectAnimal', animalId: 'a_1' });
-    expect(err(s, { type: 'collectAnimal', animalId: 'a_1' })).toBe('not_ready');
-    s = ok(s, { type: 'feedAnimal', animalId: 'a_1' });
-    expect(getObject(s, 'a_1', 'animal')!.state).toBe('producing');
+    expect(pen(s).type).toBe('chicken_pen');
+    expect(pen(s).animals.map((a) => a.nick)).toEqual(['Flöckchen']);
+    s = ok(s, { type: 'collectPen', penId: 'pen_1' });
+    expect(err(s, { type: 'collectPen', penId: 'pen_1' })).toBe('not_ready');
+    s = ok(s, { type: 'feedPen', penId: 'pen_1' });
+    expect(pen(s).animals[0]!.state).toBe('producing');
     const later = advanceTime(s, T0 + CONTENT.animals.chicken!.produceTime * 1000).state;
-    expect(getObject(later, 'a_1', 'animal')!.state).toBe('ready');
+    expect(pen(later).animals[0]!.state).toBe('ready');
   });
   it('Füttern ohne Futter scheitert', () => {
     let s = createNewGame(T0);
-    s = ok(s, { type: 'collectAnimal', animalId: 'a_1' });
+    s = ok(s, { type: 'collectPen', penId: 'pen_1' });
     s = { ...s, inventory: {} };
-    expect(err(s, { type: 'feedAnimal', animalId: 'a_1' })).toBe('missing_items');
+    expect(err(s, { type: 'feedPen', penId: 'pen_1' })).toBe('missing_items');
+  });
+  it('ein Tippen füttert alle hungrigen Tiere, so weit das Futter reicht', () => {
+    let s = createNewGame(T0);
+    s = { ...s, coins: 10_000 };
+    for (let i = 0; i < 3; i++) s = ok(s, { type: 'buyAnimal', penId: 'pen_1' });
+    expect(pen(s).animals.length).toBe(4);
+    s = ok(s, { type: 'collectPen', penId: 'pen_1' });   // Start-Huhn ist fertig
+    s = { ...s, inventory: { wheat: 3 * CONTENT.animals.chicken!.feedQty } };
+    s = ok(s, { type: 'feedPen', penId: 'pen_1' });
+    expect(pen(s).animals.filter((a) => a.state === 'producing').length).toBe(3);
+    expect(s.inventory.wheat ?? 0).toBe(0);
+    expect(s.stats.fed).toBe(3);
+  });
+  it('ein Tippen holt alle fertigen Produkte, so weit das Lager reicht', () => {
+    let s = createNewGame(T0);
+    s = { ...s, coins: 10_000 };
+    for (let i = 0; i < 2; i++) s = ok(s, { type: 'buyAnimal', penId: 'pen_1' });
+    s = { ...s, inventory: { wheat: 10 } };
+    s = ok(s, { type: 'collectPen', penId: 'pen_1' });
+    s = ok(s, { type: 'feedPen', penId: 'pen_1' });
+    s = advanceTime(s, T0 + CONTENT.animals.chicken!.produceTime * 1000).state;
+    expect(pen(s).animals.every((a) => a.state === 'ready')).toBe(true);
+    // Scheune hat nur noch Platz für 1 Ei: 1 wird abgeholt, 2 warten (nichts geht verloren)
+    s = { ...s, inventory: { ...s.inventory, egg: 0, wool: s.storage.barn - 1 } };
+    s = ok(s, { type: 'collectPen', penId: 'pen_1' });
+    expect(s.inventory.egg).toBe(1);
+    expect(pen(s).animals.filter((a) => a.state === 'ready').length).toBe(2);
+    expect(err(s, { type: 'collectPen', penId: 'pen_1' })).toBe('storage_full');
+  });
+  it('Gehege fasst 6 Tiere; jedes weitere Tier kostet mehr', () => {
+    let s = createNewGame(T0);
+    s = { ...s, coins: 100_000 };
+    let last = 0;
+    for (let i = 1; i < CONTENT.pens.chicken_pen!.capacity; i++) {
+      const before = s.coins;
+      s = ok(s, { type: 'buyAnimal', penId: 'pen_1' });
+      expect(before - s.coins).toBeGreaterThan(last);
+      last = before - s.coins;
+    }
+    expect(pen(s).animals.length).toBe(6);
+    expect(err(s, { type: 'buyAnimal', penId: 'pen_1' })).toBe('limit');
+  });
+  it('weiteres Gehege erst ab Stufe, Preis aus den Daten, Platz wird geprüft', () => {
+    let s = createNewGame(T0);
+    s = { ...s, coins: 100_000, objects: s.objects.filter((o) => o.kind !== 'obstacle') };
+    const def = CONTENT.pens.chicken_pen!;
+    const at = spot(s, 3, 3)!;
+    expect(at).not.toBeNull();
+    expect(err(s, { type: 'buyPen', penType: 'chicken_pen', ...at })).toBe('locked');
+    s = { ...s, level: def.levels[1]! };
+    const before = s.coins;
+    s = ok(s, { type: 'buyPen', penType: 'chicken_pen', ...at });
+    expect(before - s.coins).toBe(def.costs[1]);
+    expect(s.objects.filter((o) => o.kind === 'pen' && o.type === 'chicken_pen').length).toBe(2);
+    expect(err(s, { type: 'buyPen', penType: 'chicken_pen', ...at })).toBe('locked');   // 3. Gehege erst ab levels[2]
+    s = { ...s, level: 30 };
+    expect(err(s, { type: 'buyPen', penType: 'chicken_pen', ...at })).toBe('blocked');  // Platz belegt
+    const third = spot(s, 3, 3)!;
+    s = ok(s, { type: 'buyPen', penType: 'chicken_pen', ...third });
+    expect(err(s, { type: 'buyPen', penType: 'chicken_pen', ...(spot(s, 3, 3) ?? third) })).toBe('limit');
+  });
+  it('Rentier: erst Koppel kaufen, dann Tier; Kapitel 3 zählt Tiere im Gehege', () => {
+    let s = createNewGame(T0);
+    s = { ...s, coins: 100_000, objects: s.objects.filter((o) => o.kind !== 'obstacle') };
+    s = { ...s, ownedPlots: [...s.ownedPlots, '1,2', '1,3'] };
+    const at = spot(s, 4, 4)!;
+    s = ok(s, { type: 'buyPen', penType: 'reindeer_pen', ...at });
+    const koppel = s.objects.find((o) => o.kind === 'pen' && o.type === 'reindeer_pen')!;
+    const ch3 = CONTENT.chapters.find((c) => c.id === 'ch_3')!;
+    const hasReindeer = (st: GameState) => ch3.conditions.filter((c) => c.kind === 'hasAnimal').every(() => animalCount(st, 'reindeer') > 0);
+    expect(hasReindeer(s)).toBe(false);
+    s = ok(s, { type: 'buyAnimal', penId: koppel.id });
+    expect(hasReindeer(s)).toBe(true);
+    expect(ch3.conditions.some((c) => c.kind === 'hasAnimal' && c.type === 'reindeer')).toBe(true);
   });
 });
 
@@ -144,26 +229,28 @@ describe('Platzierung', () => {
     const s = createNewGame(T0);
     expect(canPlace(s, 7, 10, 1, 1).ok).toBe(false);  // Hofplatz
     expect(canPlace(s, 7, 12, 1, 1).ok).toBe(false);  // Zufahrt (fremdes Land)
-    expect(canPlace(s, 0, 4, 1, 1).ok).toBe(false);   // fremdes Land
-    expect(canPlace(s, 6, 8, 1, 1).ok).toBe(false);   // Feld
-    expect(canPlace(s, 2, 6, 1, 1).ok).toBe(false);   // Schneewehe
-    expect(canPlace(s, 9, 6, 1, 1).ok).toBe(true);
+    expect(canPlace(s, -2, 4, 1, 1).ok).toBe(false);  // fremdes Land
+    expect(canPlace(s, 3, 6, 1, 1).ok).toBe(false);   // Feld (2×2 ab 2,5)
+    expect(canPlace(s, 9, 6, 1, 1).ok).toBe(false);   // Gehege (3×3 ab 7,4)
+    expect(canPlace(s, -1, 4, 1, 1).ok).toBe(false);  // Schneewehe
+    expect(canPlace(s, 9, 1, 1, 1).ok).toBe(true);
   });
   it('Kaufen + Bewegen + Einlagern', () => {
     let s = { ...createNewGame(T0), coins: 1000 };
-    s = ok(s, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 6 });
+    s = ok(s, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 1 });
     const id = s.objects[s.objects.length - 1]!.id;
     expect(err(s, { type: 'moveObject', objectId: id, gx: 7, gy: 10 })).toBe('blocked');
-    s = ok(s, { type: 'moveObject', objectId: id, gx: 3, gy: 6 });
+    s = ok(s, { type: 'moveObject', objectId: id, gx: 0, gy: 0 });
     s = ok(s, { type: 'storeDeco', decoId: id });
     expect(s.storedDecos.pine).toBe(1);
-    s = ok(s, { type: 'placeStoredDeco', decoType: 'pine', gx: 9, gy: 6 });
+    s = ok(s, { type: 'placeStoredDeco', decoType: 'pine', gx: 9, gy: 1 });
     expect(s.storedDecos.pine).toBeUndefined();
     expect(validateLayout(s)).toEqual([]);
   });
   it('Neues Gebäude kommt verpackt und muss ausgepackt werden', () => {
     let s = { ...createNewGame(T0), coins: 1000 };
-    s = ok(s, { type: 'buyStation', stationType: 'teahouse', gx: 10, gy: 8 });
+    expect(err(s, { type: 'buyStation', stationType: 'teahouse', gx: 10, gy: 1 })).toBe('blocked'); // 2×2 ragt aus dem Land
+    s = ok(s, { type: 'buyStation', stationType: 'teahouse', gx: 8, gy: 0 });
     const st = s.objects.find((o) => o.kind === 'station' && o.type === 'teahouse')!;
     expect(err(s, { type: 'startProduction', stationId: st.id, item: 'winter_punch' })).toBe('locked');
     s = ok(s, { type: 'unwrapStation', stationId: st.id });
@@ -244,8 +331,8 @@ describe('Zeit, Level, Ziele, Truhe', () => {
 });
 
 describe('Speicherstand', () => {
-  it('v9 speichern und laden ist verlustfrei', () => {
-    const s = advanceTime(ok({ ...createNewGame(T0), coins: 500 }, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 6 }), T0).state;
+  it('v10 speichern und laden ist verlustfrei', () => {
+    const s = advanceTime(ok({ ...createNewGame(T0), coins: 500 }, { type: 'buyDeco', decoType: 'pine', gx: 9, gy: 1 }), T0).state;
     const r = deserialize(serialize(s), T0);
     expect(r.source).toBe('current');
     expect(r.state).toEqual(s);
@@ -276,7 +363,8 @@ describe('Speicherstand', () => {
     expect(s.xp).toBe(300);
     expect(s.level).toBe(3);
     expect(s.inventory).toEqual({ wheat: 12, egg: 3, butterplaetzchen: 2, mallet: 2, shovel: 1, pickaxe: 1 }); // Material umbenannt, Startpaket
-    expect(s.ownedPlots).toEqual(expect.arrayContaining(['3,3', '4,4', '2,3', '2,4']));    // Westzone -> Landstücke
+    expect(s.ownedPlots).toEqual(expect.arrayContaining(CONTENT.map.plots.start));         // Start-Land
+    expect(s.ownedPlots.length).toBeGreaterThan(CONTENT.map.plots.start.length);              // gekaufte Westzone bleibt ein gekauftes Stück
     expect(r.warnings.some((w) => w.includes('alterKram'))).toBe(true);
     expect(getObject(s, 'f_1', 'field')!.crop).toBe('berries');          // Feld bleibt bepflanzt
     expect(getObject(s, 'f_9', 'field')).not.toBeNull();                  // Feld in Westzone bleibt
@@ -287,7 +375,11 @@ describe('Speicherstand', () => {
     expect(s.objects.some((o) => o.type === 'teahouse')).toBe(false);    // nie gebaut
     expect(getObject(s, 'd_7', 'deco')).not.toBeNull();
     expect(getObject(s, 'd_8', 'deco')).toMatchObject({ gx: 4, gy: 6 });   // alte Straße ist jetzt Schnee: bleibt stehen
-    expect(getObject(s, 'wishlistBoard', 'prop')).toMatchObject({ gx: 10, gy: 10 }); // feste Station am Hofplatz
+    const home = CONTENT.start.objects.find((o) => o.type === 'wishlistBoard')!;
+    expect(getObject(s, 'wishlistBoard', 'prop')).toMatchObject({ gx: home.gx, gy: home.gy }); // feste Station am Hofplatz
+    expect(getObject(s, 'a_1', 'pen')).toBeNull();
+    const pen = s.objects.find((o) => o.kind === 'pen')!;
+    expect(pen.kind === 'pen' && pen.animals).toEqual([{ id: 'a_1', nick: 'Flöckchen', state: 'producing', readyAt: T0 + 9000, lastPet: 0 }]);
     expect(s.stand[0]).toMatchObject({ item: 'egg', sold: true });
     expect(s.stats.storageUpgrades).toBe(1);
     expect(s.claimedGoals).toEqual(['ach_harvest', 'ch_1']);
@@ -336,9 +428,9 @@ describe('Winterpost, Dorfbewohner, Tiernamen', () => {
     ok(s, { type: 'greetVillager' }, T0 + 46_000);
   });
   it('Tier umbenennen', () => {
-    const s = ok(createNewGame(T0), { type: 'renameAnimal', animalId: 'a_1', nick: '  Gacki<b>  ' });
-    expect(getObject(s, 'a_1', 'animal')!.nick).toBe('Gackib');
-    expect(err(s, { type: 'renameAnimal', animalId: 'a_1', nick: '   ' })).toBe('invalid');
+    const s = ok(createNewGame(T0), { type: 'renameAnimal', penId: 'pen_1', animalId: 'a_1', nick: '  Gacki<b>  ' });
+    expect(getObject(s, 'pen_1', 'pen')!.animals[0]!.nick).toBe('Gackib');
+    expect(err(s, { type: 'renameAnimal', penId: 'pen_1', animalId: 'a_1', nick: '   ' })).toBe('invalid');
   });
 });
 

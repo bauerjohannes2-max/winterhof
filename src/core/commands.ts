@@ -10,12 +10,12 @@ import { composeOrder, makeableItems } from './orders';
 import { nextRandom, pick, randInt } from './rng';
 import { terrainMap } from './terrain';
 import {
-  allGoals, animalPrice, craftSeconds, dayKey, getObject, goalReady, isFieldReady, levelForXp,
+  allGoals, animalPrice, craftSeconds, dayKey, getObject, goalReady, isFieldReady, levelForXp, nextPen,
   storageFree, storageOf, storageUpgradeCost, storageUpgradeMaterials, countObjects
 } from './state';
 import type {
-  Command, CommandError, CommandResult, ErrorCode, GameEvent, GameState, Inventory,
-  ItemId, MapObject, Order, StatKey, StationObject
+  AnimalDef, Command, CommandError, CommandResult, ErrorCode, GameEvent, GameState, Inventory,
+  ItemId, Order, StatKey, StationObject
 } from './types';
 
 // ---------------------------------------------------------------- Hilfen
@@ -103,13 +103,18 @@ function requireLevel(s: GameState, lvl: number, what: string) {
   if (s.level < lvl) fail('locked', `${what} ab Stufe ${lvl}.`, { level: lvl });
 }
 
-function requirePlace(c: Ctx, kind: MapObject['kind'], type: string, gx: number, gy: number, ignore: string | null = null) {
-  const fp = footprintOf({ kind, type });
+function requirePlace(c: Ctx, type: string, gx: number, gy: number, ignore: string | null = null) {
+  const fp = footprintOf({ type });
   const r = canPlace(c.s, gx, gy, fp.w, fp.h, ignore);
   if (!r.ok) fail('blocked', 'Dort ist kein Platz.', { reason: r.reason });
 }
 
 function itemValue(item: ItemId): number { return CONTENT.items[item]?.sellPrice ?? 0; }
+
+/** Tierart eines Gehege-Typs (Daten sind geprüft, validateContent) */
+function animalOfPen(penType: string): AnimalDef {
+  return CONTENT.animals[CONTENT.pens[penType]?.animal ?? ''] ?? fail('invalid', 'Unbekanntes Gehege.');
+}
 
 // ---------------------------------------------------------------- Aufträge (Regeln in orders.ts)
 export function generateOrder(s: GameState, now: number, availableAt = now): Order {
@@ -134,9 +139,12 @@ export function advanceTime(state: GameState, nowRaw: number): { state: GameStat
 
   for (const o of s.objects) {
     if (o.kind === 'station' && !o.wrapped) tickStation(c, o);
-    if (o.kind === 'animal' && o.state === 'producing' && now >= o.readyAt) {
-      o.state = 'ready';
-      c.ev.push({ type: 'animalReady', animalId: o.id });
+    if (o.kind !== 'pen') continue;
+    for (const a of o.animals) {
+      if (a.state === 'producing' && now >= a.readyAt) {
+        a.state = 'ready';
+        c.ev.push({ type: 'animalReady', penId: o.id, animalId: a.id });
+      }
     }
   }
 
@@ -291,36 +299,49 @@ function run(c: Ctx, cmd: Command): void {
       if (done === 0) fail('storage_full', 'Silo ist voll.', { storage: 'silo' });
       return;
     }
-    case 'feedAnimal': {
-      const a = getObject(s, cmd.animalId, 'animal') ?? fail('not_found', 'Tier nicht gefunden.');
-      if (a.state !== 'hungry') fail('busy', a.state === 'ready' ? 'Erst das Produkt abholen.' : 'Das Tier ist satt.');
-      const def = CONTENT.animals[a.type]!;
-      spend(c, { [def.feedItem]: def.feedQty });
-      a.state = 'producing';
-      a.readyAt = c.now + def.produceTime * 1000;
-      stat(c, 'fed');
-      c.ev.push({ type: 'animalFed', animalId: a.id });
+    case 'feedPen': {
+      // Hay Day: ein Wisch füttert alle hungrigen Tiere, so weit das Futter reicht
+      const pen = getObject(s, cmd.penId, 'pen') ?? fail('not_found', 'Gehege nicht gefunden.');
+      const def = animalOfPen(pen.type);
+      const hungry = pen.animals.filter((a) => a.state === 'hungry');
+      if (hungry.length === 0) fail(pen.animals.length === 0 ? 'not_found' : 'busy', pen.animals.length === 0 ? 'Im Gehege lebt noch kein Tier.' : 'Alle Tiere sind satt.');
+      const n = Math.min(hungry.length, Math.floor((s.inventory[def.feedItem] ?? 0) / def.feedQty));
+      if (n === 0) fail('missing_items', 'Es fehlt Futter.', { [def.feedItem]: def.feedQty });
+      spend(c, { [def.feedItem]: def.feedQty * n });
+      const fed = hungry.slice(0, n);
+      for (const a of fed) {
+        a.state = 'producing';
+        a.readyAt = c.now + def.produceTime * 1000;
+      }
+      stat(c, 'fed', n);
+      c.ev.push({ type: 'animalsFed', penId: pen.id, animalIds: fed.map((a) => a.id) });
       return;
     }
-    case 'collectAnimal': {
-      const a = getObject(s, cmd.animalId, 'animal') ?? fail('not_found', 'Tier nicht gefunden.');
-      if (a.state !== 'ready') fail('not_ready', 'Noch nicht fertig.');
-      const def = CONTENT.animals[a.type]!;
-      gain(c, { [def.produceItem]: 1 }, a.id);
-      a.state = 'hungry';
-      addXp(c, CONTENT.items[def.produceItem]?.xp ?? 0, a.id);
-      stat(c, 'collected');
-      c.ev.push({ type: 'animalCollected', animalId: a.id, item: def.produceItem });
-      maybeFind(c, a.id, CONTENT.materials.dropChance);
+    case 'collectPen': {
+      // Ein Wisch holt alle fertigen Produkte ab, so weit das Lager reicht
+      const pen = getObject(s, cmd.penId, 'pen') ?? fail('not_found', 'Gehege nicht gefunden.');
+      const def = animalOfPen(pen.type);
+      const ready = pen.animals.filter((a) => a.state === 'ready');
+      if (ready.length === 0) fail('not_ready', 'Noch nichts fertig.');
+      const n = Math.min(ready.length, storageFree(s, storageOf(def.produceItem)));
+      if (n === 0) ensureSpace(s, { [def.produceItem]: 1 });
+      const got = ready.slice(0, n);
+      gain(c, { [def.produceItem]: n }, pen.id);
+      for (const a of got) a.state = 'hungry';
+      addXp(c, (CONTENT.items[def.produceItem]?.xp ?? 0) * n, pen.id);
+      stat(c, 'collected', n);
+      c.ev.push({ type: 'animalsCollected', penId: pen.id, animalIds: got.map((a) => a.id), item: def.produceItem, qty: n });
+      for (let i = 0; i < n; i++) maybeFind(c, pen.id, CONTENT.materials.dropChance);
       return;
     }
     case 'petAnimal': {
-      const a = getObject(s, cmd.animalId, 'animal') ?? fail('not_found', 'Tier nicht gefunden.');
+      const pen = getObject(s, cmd.penId, 'pen') ?? fail('not_found', 'Gehege nicht gefunden.');
+      const a = pen.animals.find((x) => x.id === cmd.animalId) ?? fail('not_found', 'Tier nicht gefunden.');
       if (c.now - a.lastPet < 60_000) fail('busy', 'Gerade erst gestreichelt.');
       a.lastPet = c.now;
       stat(c, 'pets');
-      addXp(c, 1, a.id);
-      c.ev.push({ type: 'animalPetted', animalId: a.id });
+      addXp(c, 1, pen.id);
+      c.ev.push({ type: 'animalPetted', penId: pen.id, animalId: a.id });
       return;
     }
     case 'startProduction': {
@@ -363,29 +384,41 @@ function run(c: Ctx, cmd: Command): void {
       const def = CONTENT.stations[cmd.stationType] ?? fail('invalid', 'Unbekanntes Gebäude.');
       requireLevel(s, def.unlockLevel, def.name);
       if (countObjects(s, 'station', def.id) > 0) fail('limit', 'Dieses Gebäude hast du schon.');
-      requirePlace(c, 'station', def.id, cmd.gx, cmd.gy);
+      requirePlace(c, def.id, cmd.gx, cmd.gy);
       payCoins(c, def.cost);
       const id = newId(s, 'st');
       s.objects.push({ id, kind: 'station', type: def.id, gx: cmd.gx, gy: cmd.gy, wrapped: true, queue: [], ready: [], craftedCount: 0 });
       c.ev.push({ type: 'objectPlaced', objectId: id });
       return;
     }
+    case 'buyPen': {
+      const def = CONTENT.pens[cmd.penType] ?? fail('invalid', 'Unbekanntes Gehege.');
+      const next = nextPen(s, def.id) ?? fail('limit', `Mehr ${def.name} gehen nicht.`);
+      requireLevel(s, next.level, def.name);
+      requirePlace(c, def.id, cmd.gx, cmd.gy);
+      payCoins(c, next.cost);
+      const id = newId(s, 'pen');
+      s.objects.push({ id, kind: 'pen', type: def.id, gx: cmd.gx, gy: cmd.gy, animals: [] });
+      c.ev.push({ type: 'objectPlaced', objectId: id });
+      return;
+    }
     case 'buyAnimal': {
-      const def = CONTENT.animals[cmd.animalType] ?? fail('invalid', 'Unbekanntes Tier.');
+      const pen = getObject(s, cmd.penId, 'pen') ?? fail('not_found', 'Gehege nicht gefunden.');
+      const pdef = CONTENT.pens[pen.type]!;
+      const def = animalOfPen(pen.type);
       requireLevel(s, def.unlockLevel, def.name);
-      if (countObjects(s, 'animal', def.id) >= def.maxCount) fail('limit', `Maximal ${def.maxCount} ${def.name}.`);
-      requirePlace(c, 'animal', def.id, cmd.gx, cmd.gy);
+      if (pen.animals.length >= pdef.capacity) fail('limit', `Das Gehege ist voll (${pdef.capacity} Tiere).`);
       payCoins(c, animalPrice(s, def.id));
       const id = newId(s, 'a');
-      s.objects.push({ id, kind: 'animal', type: def.id, gx: cmd.gx, gy: cmd.gy, nick: def.name, state: 'hungry', readyAt: c.now, lastPet: 0 });
-      c.ev.push({ type: 'objectPlaced', objectId: id });
+      pen.animals.push({ id, nick: def.name, state: 'hungry', readyAt: c.now, lastPet: 0 });
+      c.ev.push({ type: 'animalAdded', penId: pen.id, animalId: id });
       return;
     }
     case 'buyField': {
       const cfg = CONTENT.field;
       requireLevel(s, cfg.unlockLevel, 'Felder');
       if (countObjects(s, 'field') >= cfg.maxCount) fail('limit', `Maximal ${cfg.maxCount} Felder.`);
-      requirePlace(c, 'field', 'field', cmd.gx, cmd.gy);
+      requirePlace(c, 'field', cmd.gx, cmd.gy);
       payCoins(c, cfg.cost + cfg.costStep * countObjects(s, 'field'));
       const id = newId(s, 'f');
       s.objects.push({ id, kind: 'field', type: 'field', gx: cmd.gx, gy: cmd.gy, crop: null, plantedAt: c.now });
@@ -395,7 +428,7 @@ function run(c: Ctx, cmd: Command): void {
     case 'buyDeco': {
       const def = CONTENT.decorations[cmd.decoType] ?? fail('invalid', 'Unbekannte Deko.');
       requireLevel(s, def.unlockLevel, def.name);
-      requirePlace(c, 'deco', def.id, cmd.gx, cmd.gy);
+      requirePlace(c, def.id, cmd.gx, cmd.gy);
       payCoins(c, decoPrice(s, def.id));
       const id = newId(s, 'd');
       s.objects.push({ id, kind: 'deco', type: def.id, gx: cmd.gx, gy: cmd.gy });
@@ -405,7 +438,7 @@ function run(c: Ctx, cmd: Command): void {
     }
     case 'placeStoredDeco': {
       if ((s.storedDecos[cmd.decoType] ?? 0) <= 0) fail('missing_items', 'Nicht im Lager.');
-      requirePlace(c, 'deco', cmd.decoType, cmd.gx, cmd.gy);
+      requirePlace(c, cmd.decoType, cmd.gx, cmd.gy);
       s.storedDecos[cmd.decoType]! -= 1;
       if (s.storedDecos[cmd.decoType] === 0) delete s.storedDecos[cmd.decoType];
       const id = newId(s, 'd');
@@ -424,7 +457,7 @@ function run(c: Ctx, cmd: Command): void {
       const o = s.objects.find((x) => x.id === cmd.objectId) ?? fail('not_found', 'Objekt nicht gefunden.');
       if (o.kind === 'obstacle') fail('locked', 'Hindernisse lassen sich nicht verschieben, nur räumen.');
       if (o.kind === 'prop' && CONTENT.map.fixed.includes(o.type)) fail('locked', 'Steht fest am Hofplatz.');
-      requirePlace(c, o.kind, o.type, cmd.gx, cmd.gy, o.id);
+      requirePlace(c, o.type, cmd.gx, cmd.gy, o.id);
       o.gx = cmd.gx;
       o.gy = cmd.gy;
       c.ev.push({ type: 'objectMoved', objectId: o.id });
@@ -592,7 +625,8 @@ function run(c: Ctx, cmd: Command): void {
       return;
     }
     case 'renameAnimal': {
-      const a = getObject(s, cmd.animalId, 'animal') ?? fail('not_found', 'Tier nicht gefunden.');
+      const pen = getObject(s, cmd.penId, 'pen') ?? fail('not_found', 'Gehege nicht gefunden.');
+      const a = pen.animals.find((x) => x.id === cmd.animalId) ?? fail('not_found', 'Tier nicht gefunden.');
       const v = cmd.nick.replace(/[<>]/g, '').trim().slice(0, 18);
       if (!v) fail('invalid', 'Name leer.');
       a.nick = v;

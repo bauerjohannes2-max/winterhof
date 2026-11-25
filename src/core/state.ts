@@ -3,11 +3,12 @@
 // ============================================================================
 import { CONTENT } from './content';
 import {
-  STAT_KEYS, type AnimalObject, type FieldObject, type GameState, type GoalDef, type Condition,
+  STAT_KEYS, type FieldObject, type GameState, type GoalDef, type Condition, type PenObject,
   type Inventory, type ItemId, type MapObject, type StationObject, type Stats, type StorageKind
 } from './types';
 
-export const SCHEMA_VERSION = 9;
+/** v10 (Baustein 5b): Größenkatalog, Landstücke 6×6, Felder 2×2, Tiere in Gehegen */
+export const SCHEMA_VERSION = 10;
 
 export function emptyStats(): Stats {
   return Object.fromEntries(STAT_KEYS.map((k) => [k, 0])) as Stats;
@@ -32,8 +33,11 @@ export function createNewGame(nowMs: number, seed = 0x5eed1234): GameState {
         const grow = crop ? CONTENT.items[crop]?.growTime ?? 0 : 0;
         return { ...pos, kind: 'field', crop, plantedAt: o.ripe ? nowMs - grow * 1000 : nowMs };
       }
-      case 'animal':
-        return { ...pos, kind: 'animal', nick: o.nick ?? '', state: o.ready ? 'ready' : 'hungry', readyAt: nowMs, lastPet: 0 };
+      case 'pen':
+        return {
+          ...pos, kind: 'pen',
+          animals: (o.animals ?? []).map((a) => ({ id: a.id, nick: a.nick, state: a.ready ? 'ready' : 'hungry', readyAt: nowMs, lastPet: 0 }))
+        };
       case 'station':
         return { ...pos, kind: 'station', wrapped: false, queue: [], ready: [], craftedCount: 0 };
       case 'deco':
@@ -163,6 +167,7 @@ export function countObjects(state: GameState, kind: MapObject['kind'], type?: s
 
 export function conditionMet(state: GameState, c: Condition): boolean {
   if (c.kind === 'stat') return (state.stats[c.stat] ?? 0) >= c.goal;
+  if (c.kind === 'hasAnimal') return animalCount(state, c.type) > 0;
   return state.objects.some((o) => {
     if (o.kind !== c.objectKind || o.type !== c.type) return false;
     if (c.ready && o.kind === 'station') return !(o as StationObject).wrapped;
@@ -183,8 +188,26 @@ export function activeChapter(state: GameState): GoalDef | null {
   return CONTENT.chapters.find((c) => !state.claimedGoals.includes(c.id)) ?? null;
 }
 
-export function animalById(state: GameState, id: string): AnimalObject | null {
-  return getObject(state, id, 'animal');
+/** Gehege einer Tierart auf dem Hof */
+export function pensOf(state: GameState, animal: string): PenObject[] {
+  return state.objects.filter((o): o is PenObject => o.kind === 'pen' && CONTENT.pens[o.type]?.animal === animal);
+}
+
+/** Wie viele Tiere dieser Art leben auf dem Hof (über alle Gehege) */
+export function animalCount(state: GameState, animal: string): number {
+  return pensOf(state, animal).reduce((n, p) => n + p.animals.length, 0);
+}
+
+/**
+ * Das nächste Gehege dieser Art: Preis und Mindeststufe, oder null, wenn alle Gehege gebaut sind.
+ * Hay Day: weitere Gehege derselben Art kommen erst mit höherer Stufe.
+ */
+export function nextPen(state: GameState, penType: string): { cost: number; level: number } | null {
+  const def = CONTENT.pens[penType];
+  if (!def) return null;
+  const k = state.objects.filter((o) => o.kind === 'pen' && o.type === penType).length;
+  if (k >= def.levels.length) return null;
+  return { cost: def.costs[k]!, level: def.levels[k]! };
 }
 
 /** Lokaler Kalendertag als Schlüssel (für Tagestruhe). Zeitzone über Offset in Minuten steuerbar (Tests). */
@@ -197,6 +220,5 @@ export function dayKey(nowMs: number, tzOffsetMin = new Date(nowMs).getTimezoneO
 export function animalPrice(state: GameState, animalType: string): number {
   const def = CONTENT.animals[animalType];
   if (!def) return 0;
-  const owned = countObjects(state, 'animal', animalType);
-  return Math.round(def.cost * (1 + CONTENT.animalCostStep * owned) / 5) * 5;
+  return Math.round(def.cost * (1 + CONTENT.animalCostStep * animalCount(state, animalType)) / 5) * 5;
 }

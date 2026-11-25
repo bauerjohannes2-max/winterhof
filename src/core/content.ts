@@ -4,13 +4,15 @@
 import raw from '../content/winterhof.json';
 import type {
   AnimalDef, DecoDef, DriftRules, Footprint, GoalDef, ItemDef, LandRules, LevelDef,
-  MapObject, MaterialRules, ObstacleDef, OrderRules, StationDef, StorageDef, StorageKind, ToolRules
+  MapObject, MaterialRules, ObstacleDef, OrderRules, PenDef, SizeDef, StationDef, StorageDef, StorageKind, ToolRules
 } from './types';
 
 export interface ContentPack {
   items: Record<string, ItemDef>;
   cropIds: string[];
   animals: Record<string, AnimalDef>;
+  /** Gehege je Tierart (Schlüssel = Gehege-Typ) */
+  pens: Record<string, PenDef>;
   stations: Record<string, StationDef>;
   decorations: Record<string, DecoDef>;
   land: LandRules;
@@ -29,7 +31,11 @@ export interface ContentPack {
   stand: { slots: number; sellSeconds: number; maxPriceFactor: number };
   villagerOffers: { intervalSeconds: number; lifetimeSeconds: number; priceFactor: number };
   mastery: { at: number; stars: number; speedMult: number }[];
-  footprints: Record<string, Footprint>;
+  /**
+   * Größenkatalog (Baustein 5b, Maßstab D, Entsch. 42–47): Grundfläche + Bildhöhe je Objekt-Typ.
+   * Eine Quelle für Kern (Grundfläche) und Bilder (art.sprites verweisen per size darauf).
+   */
+  sizes: Record<string, SizeDef>;
   field: { cost: number; costStep: number; maxCount: number; unlockLevel: number };
   market: { sellFactor: number };
   /** Tipps auf dem Ladebild (Baustein 3), wechseln je Start und alle paar Sekunden */
@@ -62,11 +68,23 @@ export interface ContentPack {
   start: {
     coins: number;
     inventory: Record<string, number>;
-    objects: Array<{ kind: MapObject['kind']; type: string; id: string; gx: number; gy: number; crop?: string; ripe?: boolean; nick?: string; ready?: boolean }>;
+    objects: Array<{
+      kind: MapObject['kind']; type: string; id: string; gx: number; gy: number;
+      crop?: string; ripe?: boolean;
+      animals?: { id: string; nick: string; ready?: boolean }[];
+    }>;
   };
 }
 
 export const CONTENT = raw as unknown as ContentPack;
+
+/** Alle Typen, die auf der Karte stehen können. */
+function placeableTypes(c: ContentPack): string[] {
+  return [
+    ...Object.keys(c.stations), ...Object.keys(c.pens), ...Object.keys(c.decorations), ...Object.keys(c.obstacles),
+    ...c.start.objects.map((o) => o.type), 'field'
+  ];
+}
 
 /** Prüft die Inhalte auf Widersprüche (läuft in Tests und beim Start im Dev-Modus). */
 export function validateContent(c: ContentPack = CONTENT): string[] {
@@ -82,6 +100,31 @@ export function validateContent(c: ContentPack = CONTENT): string[] {
   for (const [id, a] of Object.entries(c.animals)) {
     if (!c.items[a.feedItem]) errs.push(`Tier ${id}: Futter ${a.feedItem} unbekannt`);
     if (!c.items[a.produceItem]) errs.push(`Tier ${id}: Produkt ${a.produceItem} unbekannt`);
+    if (Object.values(c.pens).filter((p) => p.animal === id).length !== 1) errs.push(`Tier ${id}: braucht genau ein Gehege`);
+    if (c.sizes[id]?.group !== 'animal') errs.push(`Tier ${id}: fehlt im Größenkatalog`);
+  }
+  for (const [id, p] of Object.entries(c.pens)) {
+    if (p.id !== id) errs.push(`Gehege-ID passt nicht: ${id}`);
+    const a = c.animals[p.animal];
+    if (!a) { errs.push(`Gehege ${id}: Tier ${p.animal} unbekannt`); continue; }
+    if (!(Number.isInteger(p.capacity) && p.capacity >= 1)) errs.push(`Gehege ${id}: capacity ungültig`);
+    if (p.levels.length === 0 || p.levels.length !== p.costs.length) errs.push(`Gehege ${id}: levels und costs passen nicht zusammen`);
+    if (p.levels[0] !== a.unlockLevel) errs.push(`Gehege ${id}: erstes Gehege muss mit dem Tier kommen (Stufe ${a.unlockLevel})`);
+    for (let i = 1; i < p.levels.length; i++) if (p.levels[i]! <= p.levels[i - 1]!) errs.push(`Gehege ${id}: levels nicht aufsteigend`);
+    if (c.sizes[id]?.group !== 'pen') errs.push(`Gehege ${id}: im Größenkatalog nicht als Gehege`);
+  }
+  // Größenkatalog: jedes platzierbare Objekt hat eine ganze Grundfläche und eine Höhe
+  for (const type of placeableTypes(c)) {
+    const sz = c.sizes[type];
+    if (!sz) { errs.push(`Größenkatalog: ${type} fehlt`); continue; }
+    if (!(Number.isInteger(sz.w) && Number.isInteger(sz.h) && sz.w! >= 1 && sz.h! >= 1)) errs.push(`Größenkatalog: ${type} ohne gültige Grundfläche`);
+  }
+  for (const [id, sz] of Object.entries(c.sizes)) if (!(sz.heightTiles >= 0)) errs.push(`Größenkatalog: ${id} ohne Höhe`);
+  for (const o of c.start.objects) {
+    if (o.kind !== 'pen') continue;
+    const p = c.pens[o.type];
+    if (!p) errs.push(`Start: Gehege ${o.type} unbekannt`);
+    else if ((o.animals ?? []).length > p.capacity) errs.push(`Start: Gehege ${o.id} zu voll`);
   }
   for (const [id, s] of Object.entries(c.stations)) {
     for (const r of s.recipes) if (c.items[r]?.station !== id) errs.push(`Station ${id}: Rezept ${r} gehört nicht dazu`);
@@ -102,14 +145,14 @@ export function validateContent(c: ContentPack = CONTENT): string[] {
     if (!(o.toolQty >= 1)) errs.push(`Hindernis ${id}: toolQty fehlt`);
     if (o.yieldsDeco) {
       if (!c.decorations[o.yieldsDeco]) errs.push(`Hindernis ${id}: Deko ${o.yieldsDeco} unbekannt`);
-      const a = footprintOf({ kind: 'obstacle', type: id }, c), b = footprintOf({ kind: 'deco', type: o.yieldsDeco }, c);
-      if (a.w !== b.w || a.h !== b.h) errs.push(`Hindernis ${id}: Deko ${o.yieldsDeco} hat andere Grundfläche`);
+      const a = c.sizes[id], b = c.sizes[o.yieldsDeco];
+      if (a?.w !== b?.w || a?.h !== b?.h) errs.push(`Hindernis ${id}: Deko ${o.yieldsDeco} hat andere Grundfläche`);
     }
   }
   if (!c.obstacles[c.drifts.type]) errs.push(`drifts.type ${c.drifts.type} ist kein Hindernis`);
   for (const t of c.map.fixed) if (!c.start.objects.some((o) => o.kind === 'prop' && o.type === t)) errs.push(`Feste Station ${t} fehlt im Start-Hof`);
   for (const d of Object.values(c.decorations)) {
-    if (d.group === 'path' && (footprintOf({ kind: 'deco', type: d.id }, c).w !== 1 || footprintOf({ kind: 'deco', type: d.id }, c).h !== 1)) errs.push(`Wegplatte ${d.id} muss 1×1 sein`);
+    if (d.group === 'path' && (c.sizes[d.id]?.w !== 1 || c.sizes[d.id]?.h !== 1)) errs.push(`Wegplatte ${d.id} muss 1×1 sein`);
     if ((d.costStep ?? 0) < 0) errs.push(`Deko ${d.id}: costStep negativ`);
   }
   for (let i = 1; i < c.levels.length; i++) {
@@ -126,6 +169,14 @@ export function validateContent(c: ContentPack = CONTENT): string[] {
   return errs;
 }
 
-export function footprintOf(obj: { kind: MapObject['kind']; type: string }, c: ContentPack = CONTENT): Footprint {
-  return c.footprints[obj.type] ?? c.footprints[obj.kind] ?? { w: 1, h: 1 };
+/** Grundfläche eines Objekt-Typs aus dem Größenkatalog. Fehlt sie, sind die Daten falsch (validateContent meldet es). */
+export function footprintOf(obj: { type: string }, c: ContentPack = CONTENT): Footprint {
+  const sz = c.sizes[obj.type];
+  if (sz?.w === undefined || sz.h === undefined) throw new Error(`Größenkatalog: keine Grundfläche für ${obj.type}`);
+  return { w: sz.w, h: sz.h };
+}
+
+/** Gehege-Typ einer Tierart */
+export function penTypeFor(animal: string, c: ContentPack = CONTENT): string | null {
+  return Object.values(c.pens).find((p) => p.animal === animal)?.id ?? null;
 }

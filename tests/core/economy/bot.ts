@@ -5,8 +5,16 @@
 import { expect } from 'vitest';
 import {
   CONTENT, advanceTime, applyCommand, buildOccupancy, canPlace, clearCost, createNewGame, decoPrice, footprintOf, isFieldReady, isPlotOwned,
-  nextPlotPrice, obstacleDef, plotStatus, storageFree, terrainMap, type Command, type GameState
+  nextPen, nextPlotPrice, obstacleDef, plotStatus, storageFree, terrainMap, type Command, type GameState, type PenObject
 } from '../../../src/core';
+
+const FIELD = footprintOf({ type: 'field' });
+/** Tierart eines Geheges */
+const animalOf = (p: PenObject) => CONTENT.animals[CONTENT.pens[p.type]!.animal]!;
+/** Mitte des Start-Lands in Landstück-Spalten/Reihen: Land wächst von dort aus */
+const START_PLOTS = terrainMap().plots.filter((p) => p.isStart);
+const START_COL = START_PLOTS.reduce((n, p) => n + p.col, 0) / START_PLOTS.length;
+const START_ROW = START_PLOTS.reduce((n, p) => n + p.row, 0) / START_PLOTS.length;
 
 const tally = { toolCoins: 0, cleared: 0, earned: 0, decoCoins: 0, bySource: {} as Record<string, number> };
 
@@ -41,7 +49,8 @@ function botLand(s0: GameState, now: number): GameState {
   // Ein neues Gebäude (neue Rezepte) geht vor: dafür spart der Spieler, Land kauft er dann nur bei Platznot
   const savingForStation = Object.values(CONTENT.stations).some((d) => d.unlockLevel <= s.level && !s.objects.some((o) => o.type === d.id));
   if (!freeSpot(s, 2, 2) || (!savingForStation && s.coins > price.coins + 600)) {
-    const next = terrainMap().plots.filter((p) => plotStatus(s, p) === 'buyable').sort((a, b) => Math.abs(a.col - 3.5) + Math.abs(a.row - 3.5) - Math.abs(b.col - 3.5) - Math.abs(b.row - 3.5))[0];
+    const d = (p: { col: number; row: number }) => Math.abs(p.col - START_COL) + Math.abs(p.row - START_ROW);
+    const next = terrainMap().plots.filter((p) => plotStatus(s, p) === 'buyable').sort((a, b) => d(a) - d(b))[0];
     if (next) s = tryCmd(s, { type: 'unlockPlot', plotId: next.id }, now);
   }
   return s;
@@ -66,7 +75,7 @@ function demand(s: GameState): { missing: Map<string, number>; reserved: Map<str
   for (const o of s.objects) {
     if (o.kind === 'station') for (const q of [...o.queue.map((x) => x.item), ...o.ready]) add(supply, q, 1);
     if (o.kind === 'field' && o.crop) add(supply, o.crop, CONTENT.items[o.crop]!.harvestYield ?? 2);
-    if (o.kind === 'animal' && o.state !== 'hungry') add(supply, CONTENT.animals[o.type]!.produceItem, 1);
+    if (o.kind === 'pen') for (const a of o.animals) if (a.state !== 'hungry') add(supply, animalOf(o).produceItem, 1);
   }
   const missing = new Map<string, number>(), reserved = new Map<string, number>();
   const expand = (item: string, qty: number, depth: number): void => {
@@ -82,7 +91,7 @@ function demand(s: GameState): { missing: Map<string, number>; reserved: Map<str
     if (a) expand(a.feedItem, a.feedQty * lack, depth + 1);
   };
   for (const o of s.orders) for (const l of o.lines) expand(l.item, l.qty, 0);
-  for (const o of s.objects) if (o.kind === 'animal') { const a = CONTENT.animals[o.type]!; expand(a.feedItem, a.feedQty, 0); }
+  for (const o of s.objects) if (o.kind === 'pen') { const a = animalOf(o); expand(a.feedItem, a.feedQty * o.animals.length, 0); }
   return { missing, reserved };
 }
 
@@ -94,7 +103,7 @@ function botStep(s0: GameState, now: number, sessionStart = false): GameState {
   // 1. ernten, abholen
   for (const o of s.objects) {
     if (o.kind === 'field' && isFieldReady(o, now)) s = tryCmd(s, { type: 'harvest', fieldId: o.id }, now);
-    if (o.kind === 'animal' && o.state === 'ready') s = tryCmd(s, { type: 'collectAnimal', animalId: o.id }, now);
+    if (o.kind === 'pen' && o.animals.some((a) => a.state === 'ready')) s = tryCmd(s, { type: 'collectPen', penId: o.id }, now);
     if (o.kind === 'station') for (let i = 0; i < 6; i++) s = tryCmd(s, { type: 'collectProduct', stationId: o.id }, now);
     if (o.kind === 'station' && o.wrapped) s = tryCmd(s, { type: 'unwrapStation', stationId: o.id }, now);
   }
@@ -107,7 +116,7 @@ function botStep(s0: GameState, now: number, sessionStart = false): GameState {
     if (stuck) s = tryCmd(s, { type: 'skipOrder', orderId: stuck.id }, now);
   }
   // 3. Tiere füttern, dann nach Bedarf pflanzen: was den offenen Aufträgen und dem Futter fehlt, zuerst
-  for (const o of s.objects) if (o.kind === 'animal' && o.state === 'hungry') s = tryCmd(s, { type: 'feedAnimal', animalId: o.id }, now);
+  for (const o of s.objects) if (o.kind === 'pen' && o.animals.some((a) => a.state === 'hungry')) s = tryCmd(s, { type: 'feedPen', penId: o.id }, now);
   let d = demand(s);
   const cropNeed = [...d.missing].filter(([i]) => CONTENT.items[i]!.category === 'crop' && CONTENT.items[i]!.unlockLevel <= s.level);
   for (const o of s.objects) {
@@ -150,16 +159,24 @@ function botStep(s0: GameState, now: number, sessionStart = false): GameState {
       if (at) s = tryCmd(s, { type: 'buyStation', stationType: id, ...at }, now);
     }
   }
-  for (const id of Object.keys(CONTENT.animals)) {
+  // Gehege wie Hay Day: ist kein Platz mehr frei, kommt (wenn erlaubt) ein weiteres Gehege derselben Art dazu
+  for (const pdef of Object.values(CONTENT.pens)) {
+    const room = () => s.objects.find((o): o is PenObject => o.kind === 'pen' && o.type === pdef.id && o.animals.length < pdef.capacity);
+    const next = nextPen(s, pdef.id);
+    if (!room() && next && s.level >= next.level && s.coins > next.cost + 300) {
+      const fp = footprintOf({ type: pdef.id });
+      const at = freeSpot(s, fp.w, fp.h);
+      if (at) s = tryCmd(s, { type: 'buyPen', penType: pdef.id, ...at }, now);
+    }
     for (let i = 0; i < 10 && s.coins > 300; i++) {
-      const at = freeSpot(s, 1, 1);
+      const pen = room();
       const before = s;
-      if (at) s = tryCmd(s, { type: 'buyAnimal', animalType: id, ...at }, now);
+      if (pen) s = tryCmd(s, { type: 'buyAnimal', penId: pen.id }, now);
       if (s === before) break;
     }
   }
   for (let i = 0; i < 40 && s.coins > 200; i++) {
-    const at = freeSpot(s, 1, 1);
+    const at = freeSpot(s, FIELD.w, FIELD.h);
     const before = s;
     if (at) s = tryCmd(s, { type: 'buyField', ...at }, now);
     if (s === before) break;
@@ -172,7 +189,7 @@ function botStep(s0: GameState, now: number, sessionStart = false): GameState {
   for (let i = 0; i < Math.min(3, decoRoom) && decos.length; i++) {
     const d = decos.find((x) => decoPrice(s, x.id) <= s.coins - reserve);
     if (!d) break;
-    const fp = footprintOf({ kind: 'deco', type: d.id });
+    const fp = footprintOf({ type: d.id });
     const at = freeSpot(s, fp.w, fp.h);
     if (!at) break;
     const price = decoPrice(s, d.id);
@@ -223,7 +240,7 @@ export function runBot(seed: number): Run {
 /** Leitplanken je Verlauf (Entscheidung 18). Absolute Bänder, damit Glück den Fortschritt nicht bestimmt:
  * Stufe 14–16 nach Woche 1 heißt höchstens 2 Stufen Unterschied zwischen beliebigen Verläufen. */
 export function checkRun(r: Run): void {
-  console.log(`Verlauf ${r.seed}: Stufe je Tag ${r.levelByDay.join(',')} | eingenommen ${r.earned} | Deko ${r.deco} | Münzen je Tag ${r.coinsByDay.join(',')} (Ziel ${r.goalByDay.join(',')}) | Aufträge ${r.orders} | Land ${r.land} | geräumt ${r.cleared}`);
+  console.log(`Verlauf ${r.seed}: Stufe je Tag ${r.levelByDay.join(',')} | eingenommen ${r.earned} | Deko ${r.deco} | Münzen je Tag ${r.coinsByDay.join(',')} (Ziel ${r.goalByDay.join(',')}) | Aufträge ${r.orders} | Land ${r.land} | geräumt ${r.cleared} | Quellen ${Object.entries(r.bySource).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${v}`).join(", ")}`);
   const at = `Verlauf ${r.seed}`;
   expect(r.levelByDay[0], at).toBeGreaterThanOrEqual(3);        // Tag 1: spürbarer Fortschritt
   expect(r.levelByDay[0], at).toBeLessThanOrEqual(8);           // ...aber nicht durchgespielt
@@ -243,5 +260,7 @@ export function checkRun(r: Run): void {
 export const SAVE_BUFFER = 1_000;
 
 /** Einnahmen in Woche 1 (Münzen), Band mit Faktor 1,5 (Ziel Entscheidung 18). Gemessen 24.11. Nacht mit Bedarfs-Bot,
- * 12 Zufallsverläufe: 108.000–131.000 (Faktor 1,2). Vorher mit fester Pflanzliste 55.000–104.000 (Faktor 1,9). */
-export const EARNED_BAND = [90_000, 135_000] as const;
+ * 12 Zufallsverläufe: 108.000–131.000 (Faktor 1,2). Vorher mit fester Pflanzliste 55.000–104.000 (Faktor 1,9).
+ * Neu gemessen 25.11. (Baustein 5b, Entsch. 49): 6 Tiere je Gehege statt 3–4 je Art verdoppeln den Überschuss-Verkauf
+ * (10.000 → 25.000), 12 Verläufe 104.000–140.000 (Faktor 1,35), Stufe unverändert 15–16. Band [90k, 135k] → [100k, 150k]. */
+export const EARNED_BAND = [100_000, 150_000] as const;

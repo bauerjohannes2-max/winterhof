@@ -17,7 +17,7 @@ import { Geometry, GlProgram, Mesh, Shader, type Texture } from 'pixi.js';
 import type { MeadowShape } from '../../core';
 import { TILE_H, TILE_W, type Rect } from './iso';
 
-/** Weltbreite einer Gras-Textur-Wiederholung (wie die Karten-Bilder: 320 bei 116er-Kachel → 128er-Kachel) */
+/** Weltbreite einer Gras-Textur-Wiederholung (Karten-Skizzen rechnen intern mit 116er-Bildmaß, umgerechnet auf die 128er-Kachel) */
 export const GRASS_REPEAT = 352;
 /** Höchstzahl Wellen der Wiesenform im Shader */
 export const MAX_WAVES = 12;

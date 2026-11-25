@@ -26,7 +26,7 @@ P = m['plots']
 TX0, TY0, SIZE = P['origin']['gx'], P['origin']['gy'], P['size']
 TX1, TY1 = TX0 + P['cols'] * SIZE - 1, TY0 + P['rows'] * SIZE - 1   # Tal: -13..16
 ROAD_X = (7, 8)             # Zufahrt, 2 Felder breit
-PLAZA = (6, 10, 9, 11)      # Hofplatz x0, y0, x1, y1
+PLAZA = (6, 9, 9, 10)       # Hofplatz x0, y0, x1, y1 (vorn im Start-Land 2×2 Stücke, Entsch. 48)
 LAKE_C, LAKE_R = (24.5, -6.0), (5.2, 8.4)
 LAKE_NAME = 'Sternsee'      # Hannes 24.11.
 
@@ -114,11 +114,11 @@ for gy in range(TY0, TY1 + 1):
             blocked.add((gx, gy))
 # Start-Hof: von Hand gesetzt (Einführung: zwei Schneewehen, ein Fels, zwei kleine Tannen)
 obstacles = [
-    {'type': 'drift_small', 'gx': 2, 'gy': 6},
-    {'type': 'drift_small', 'gx': 11, 'gy': 6},
-    {'type': 'rock_small', 'gx': 2, 'gy': 2},
-    {'type': 'pine_small', 'gx': 11, 'gy': 2},
-    {'type': 'pine_small', 'gx': 2, 'gy': 11},
+    {'type': 'drift_small', 'gx': -1, 'gy': 4},
+    {'type': 'drift_small', 'gx': 10, 'gy': 2},
+    {'type': 'rock_small', 'gx': -1, 'gy': -1},
+    {'type': 'pine_small', 'gx': 10, 'gy': -1},
+    {'type': 'pine_small', 'gx': -1, 'gy': 10},
 ]
 # Abstandsfelder zur Kulisse
 cells = [(OX + x, OY + y, m['terrain'][y][x]) for y in range(H) for x in range(W)]
@@ -157,6 +157,8 @@ def put(kind, gx, gy, size):
     return True
 
 
+# Dichte je Kachel wie bei 5×5-Stücken (5..9 je 25 Kacheln), auf die Stückgröße umgerechnet (Entsch. 44)
+MIN_PER, MAX_PER = round(5 * SIZE * SIZE / 25), round(9 * SIZE * SIZE / 25)
 rnd = random.Random('winterhof-gruppen-v2')
 # 1. Gruppen-Mittelpunkte: Poisson-Scheibe (Mindestabstand), damit Gruppen nicht verkleben
 centers = []
@@ -196,7 +198,7 @@ for cx, cy in centers:
             group.append((gx, gy))
             members -= 1
 
-# 3. Lose Schneewehen überall (blaues Rauschen: Mindestabstand 3), dann je Landstück mindestens 5 Hindernisse
+# 3. Lose Schneewehen überall (blaues Rauschen: Mindestabstand 3), dann je Landstück mindestens MIN_PER Hindernisse
 cand = [(x, y) for y in range(TY0, TY1 + 1) for x in range(TX0, TX1 + 1)]
 rnd.shuffle(cand)
 loose = []
@@ -212,21 +214,21 @@ for row in range(P['rows']):
         x0, y0 = TX0 + col * SIZE, TY0 + row * SIZE
         have = sum(1 for o in obstacles if plot_of(o['gx'], o['gy']) == (col, row))
         tries = 0
-        while have < 5 and tries < 200:
+        while have < MIN_PER and tries < 200:
             tries += 1
             gx, gy = x0 + rnd.randint(0, SIZE - 1), y0 + rnd.randint(0, SIZE - 1)
             near = any(abs(gx - o['gx']) <= 1 and abs(gy - o['gy']) <= 1 for o in obstacles)
             if (not near or tries > 120) and put('drift', gx, gy, 1):   # Abstand nur, solange es Platz gibt
                 have += 1
 
-# 4. Kein Landstück überladen (höchstens 9): zuerst lose Schneewehen, dann Randglieder entfernen
+# 4. Kein Landstück überladen (höchstens MAX_PER): zuerst lose Schneewehen, dann Randglieder entfernen
 for row in range(P['rows']):
     for col in range(P['cols']):
         if (col, row) in START:
             continue
         mine = [o for o in obstacles if plot_of(o['gx'], o['gy']) == (col, row)]
         mine.sort(key=lambda o: (not o['type'].startswith('drift'), o['type'].endswith('large')))
-        for o in mine[:max(0, len(mine) - 9)]:
+        for o in mine[:max(0, len(mine) - MAX_PER)]:
             obstacles.remove(o)
 
 for o in obstacles:

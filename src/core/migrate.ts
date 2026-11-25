@@ -1,13 +1,15 @@
 // ============================================================================
-// Winterhof Core – Migration auf Spielstand v9 (Baustein 2b: Alpental, Landstücke, Hindernisse)
-// Regel: Nichts geht verloren. Eigenes Land wird nie kleiner, kein Objekt verschwindet.
-// docs/KARTEN_KONZEPT.md → „Migration“.
+// Winterhof Core – Migration auf Spielstand v10 (Baustein 5b: Größenkatalog, Landstücke 6×6,
+// Felder 2×2, Tiere in Gehegen). Gilt für jeden alten Stand (v2–v9), ein gemeinsamer Weg.
+// Regel: Nichts geht verloren. Eigenes Land wird nie kleiner, jedes gekaufte Stück bleibt ein
+// gekauftes Stück, kein Objekt verschwindet, Felder behalten Saat und Wachstum, Tiere ziehen
+// ohne Verlust ins Gehege. docs/KARTEN_KONZEPT.md → „Migration“, Entscheidung 44.
 // ============================================================================
-import { CONTENT, footprintOf } from './content';
+import { CONTENT, footprintOf, penTypeFor } from './content';
 import { buildOccupancy, canPlace } from './map';
 import { SCHEMA_VERSION, mapObstacles } from './state';
 import { plotIdAt, terrainMap, type Plot } from './terrain';
-import type { GameState, Inventory, MapObject } from './types';
+import type { GameState, Inventory, MapObject, PenAnimal, PenObject } from './types';
 
 interface Rect { x0: number; y0: number; x1: number; y1: number }
 
@@ -33,6 +35,9 @@ export const ZONES_V8: Readonly<Record<string, Rect>> = {
   zimtsternecke: { x0: 17, y0: 14, x1: 20, y1: 17 }
 };
 
+/** Landstück-Raster v9 (eingefroren): Tal 30×30 aus 6×6 Stücken à 5×5, Start „3,3“ bis „4,4“. */
+export const PLOTS_V9 = { origin: { gx: -13, gy: -13 }, size: 5, cols: 6, rows: 6, start: ['3,3', '4,3', '3,4', '4,4'] } as const;
+
 /** Land-Material bis v8 → ab v9 (Entscheidung 15). */
 export const ITEM_RENAMES_V9: Readonly<Record<string, string>> = { snow_shovel: 'mallet', survey_map: 'land_deed' };
 
@@ -45,23 +50,70 @@ export function renameItemsV9(inv: Inventory): Inventory {
   return out;
 }
 
-/** Landstücke, die ein altes Grundstück berührt (das Land wird dadurch nie kleiner). */
-export function plotsForOldZones(oldZones: readonly string[]): string[] {
-  const out = new Set<string>(CONTENT.map.plots.start);
-  for (const z of ['starter', ...oldZones]) {
-    const r = ZONES_V8[z];
-    if (!r) continue;
-    for (let gy = r.y0; gy <= r.y1; gy++) for (let gx = r.x0; gx <= r.x1; gx++) {
-      const id = plotIdAt(gx, gy);
-      if (id) out.add(id);
-    }
+/** Ein altes Stück Land: welche Kacheln gehörten dem Spieler, wie viele Stücke hatte er gekauft. */
+export interface OldLand { tiles: Set<string>; bought: number }
+
+const key = (gx: number, gy: number) => `${gx},${gy}`;
+
+function addRect(tiles: Set<string>, r: Rect) {
+  for (let gy = r.y0; gy <= r.y1; gy++) for (let gx = r.x0; gx <= r.x1; gx++) tiles.add(key(gx, gy));
+}
+
+/** Eigenes Land bis v8 (Grundstücke). Jedes Grundstück außer dem Start war ein Kauf. */
+export function oldLandV8(oldZones: readonly string[]): OldLand {
+  const tiles = new Set<string>();
+  const zones = new Set(['starter', ...oldZones.filter((z) => z in ZONES_V8)]);
+  for (const z of zones) addRect(tiles, ZONES_V8[z]!);
+  return { tiles, bought: zones.size - 1 };
+}
+
+/** Eigenes Land in v9 (Landstücke 5×5). */
+export function oldLandV9(ownedPlots: readonly string[]): OldLand {
+  const tiles = new Set<string>();
+  const p = PLOTS_V9;
+  let bought = 0;
+  for (const id of new Set(ownedPlots)) {
+    const [col, row] = id.split(',').map(Number) as [number, number];
+    if (!(col >= 0 && row >= 0 && col < p.cols && row < p.rows)) continue;
+    const x0 = p.origin.gx + col * p.size, y0 = p.origin.gy + row * p.size;
+    addRect(tiles, { x0, y0, x1: x0 + p.size - 1, y1: y0 + p.size - 1 });
+    if (!(p.start as readonly string[]).includes(id)) bought++;
   }
-  return [...out];
+  return { tiles, bought };
+}
+
+/**
+ * Neue Landstücke für altes Land: Start-Land, dann angrenzende Stücke mit der größten Überdeckung,
+ * bis (1) die Fläche nie kleiner ist und (2) mindestens so viele Stücke gekauft sind wie vorher.
+ * Deterministisch (Überdeckung, dann ID).
+ */
+export function plotsForOldLand(old: OldLand): string[] {
+  const map = terrainMap();
+  const owned = new Set<string>(CONTENT.map.plots.start);
+  const inTal = [...old.tiles].filter((k) => { const [x, y] = k.split(',').map(Number) as [number, number]; return plotIdAt(x, y) !== null; });
+  const overlap = new Map<string, number>();
+  for (const k of inTal) {
+    const [x, y] = k.split(',').map(Number) as [number, number];
+    const id = plotIdAt(x, y)!;
+    overlap.set(id, (overlap.get(id) ?? 0) + 1);
+  }
+  const area = () => owned.size * CONTENT.map.plots.size ** 2;
+  const bought = () => [...owned].filter((id) => !map.plotById(id)?.isStart).length;
+  const cx = inTal.length ? inTal.reduce((s, k) => s + Number(k.split(',')[0]), 0) / inTal.length : 0;
+  const cy = inTal.length ? inTal.reduce((s, k) => s + Number(k.split(',')[1]), 0) / inTal.length : 0;
+  while (area() < inTal.length || bought() < old.bought) {
+    const cands = map.plots.filter((p) => !owned.has(p.id) && map.neighbors(p.id).some((n) => owned.has(n.id)));
+    if (cands.length === 0) break;
+    const dist = (p: Plot) => Math.hypot((p.x0 + p.x1) / 2 - cx, (p.y0 + p.y1) / 2 - cy);
+    cands.sort((a, b) => (overlap.get(b.id) ?? 0) - (overlap.get(a.id) ?? 0) || dist(a) - dist(b) || a.id.localeCompare(b.id));
+    owned.add(cands[0]!.id);
+  }
+  return [...owned];
 }
 
 const dist = (a: { gx: number; gy: number }, gx: number, gy: number) => Math.abs(a.gx - gx) + Math.abs(a.gy - gy);
 
-/** Nächstes freies Feld auf eigenem Land (deterministisch: Abstand, dann gy, dann gx). */
+/** Nächster freier Platz auf eigenem Land (deterministisch: Abstand, dann gy, dann gx). */
 function nearestFree(o: MapObject, objects: MapObject[], ownedPlots: string[]): { gx: number; gy: number } | null {
   const fp = footprintOf(o);
   const occ = buildOccupancy(objects);
@@ -81,7 +133,7 @@ function nearestFree(o: MapObject, objects: MapObject[], ownedPlots: string[]): 
   return best ? { gx: best.gx, gy: best.gy } : null;
 }
 
-/** Nächstes kaufbares (angrenzendes) Landstück zu einem Punkt – wird bei Platznot geschenkt. */
+/** Nächstes angrenzende Landstück zu einem Punkt – wird bei Platznot geschenkt. */
 function nearestAdjacentPlot(o: { gx: number; gy: number }, ownedPlots: string[]): Plot | null {
   const owned = new Set(ownedPlots);
   let best: { p: Plot; d: number } | null = null;
@@ -93,19 +145,51 @@ function nearestAdjacentPlot(o: { gx: number; gy: number }, ownedPlots: string[]
   return best?.p ?? null;
 }
 
-/**
- * Bringt einen Stand (Objekte noch auf alten Koordinaten, ohne Hindernisse) auf v9.
- * `oldZones`: Grundstück-IDs bis v8. Schreibt Hinweise in `warnings`.
- */
-export function upgradeToV9(s: GameState, oldZones: readonly string[], nowMs: number, warnings: string[]): GameState {
-  s.inventory = renameItemsV9(s.inventory);
-  const owned = plotsForOldZones(oldZones);
+/** Ein Tier als eigenes Kartenobjekt (bis v9). */
+export interface LegacyAnimalObject {
+  id: string; kind: 'animal'; type: string; gx: number; gy: number;
+  nick: string; state: PenAnimal['state']; readyAt: number; lastPet: number;
+}
 
-  // Feste Stationen an den Hofplatz (fehlende, z. B. der neue Hofladen, kommen dazu)
+/** Tiere bis v9 → Gehege je Art (höchstens capacity Tiere je Gehege), Gehege steht in der Mitte seiner Tiere. */
+function animalsToPens(s: GameState, animals: LegacyAnimalObject[], warnings: string[]): PenObject[] {
+  const byType = new Map<string, LegacyAnimalObject[]>();
+  for (const a of animals) byType.set(a.type, [...(byType.get(a.type) ?? []), a]);
+  const pens: PenObject[] = [];
+  for (const [type, list] of [...byType].sort(([a], [b]) => a.localeCompare(b))) {
+    const penType = penTypeFor(type);
+    if (!penType) { warnings.push(`Tier ${type} hat kein Gehege – nicht übernommen`); continue; }
+    const cap = CONTENT.pens[penType]!.capacity;
+    for (let i = 0; i < list.length; i += cap) {
+      const group = list.slice(i, i + cap);
+      pens.push({
+        id: `pen_${s.nextId++}`, kind: 'pen', type: penType,
+        gx: Math.round(group.reduce((n, a) => n + a.gx, 0) / group.length),
+        gy: Math.round(group.reduce((n, a) => n + a.gy, 0) / group.length),
+        animals: group.map((a) => ({ id: a.id, nick: a.nick, state: a.state, readyAt: a.readyAt, lastPet: a.lastPet }))
+      });
+      warnings.push(`${group.length} × ${type} ins Gehege ${penType} gezogen`);
+    }
+  }
+  return pens;
+}
+
+/**
+ * Bringt einen alten Stand (Objekte auf alten Plätzen, alte Größen) auf v10:
+ * neues Land, feste Stationen an den Hofplatz, Tiere in Gehege, alles andere bleibt am Platz
+ * oder zieht auf den nächsten freien Platz (große Objekte zuerst). Schreibt Hinweise in `warnings`.
+ */
+export function upgradeLayout(s: GameState, old: OldLand, nowMs: number, warnings: string[]): GameState {
+  const owned = plotsForOldLand(old);
+  const all = s.objects as (MapObject | LegacyAnimalObject)[];
+
+  // Feste Stationen an den Hofplatz (fehlende kommen dazu)
   const fixedObjs: MapObject[] = [];
   const rest: MapObject[] = [];
-  for (const o of s.objects) {
+  const animals: LegacyAnimalObject[] = [];
+  for (const o of all) {
     if (o.kind === 'obstacle') continue;
+    if (o.kind === 'animal') { animals.push(o); continue; }
     if (o.kind === 'prop' && CONTENT.map.fixed.includes(o.type) && !fixedObjs.some((f) => f.type === o.type)) fixedObjs.push(o);
     else rest.push(o);
   }
@@ -115,8 +199,9 @@ export function upgradeToV9(s: GameState, oldZones: readonly string[], nowMs: nu
     if (have) { have.gx = home.gx; have.gy = home.gy; }
     else fixedObjs.push({ id: home.id, kind: 'prop', type, gx: home.gx, gy: home.gy });
   }
+  rest.push(...animalsToPens(s, animals, warnings));
 
-  // Alles, was am alten Platz gültig steht, bleibt; der Rest zieht auf das nächste freie eigene Feld
+  // Was am alten Platz gültig steht, bleibt; der Rest zieht um – große Objekte zuerst, damit sie Platz finden
   const placed: MapObject[] = [...fixedObjs];
   const pending: MapObject[] = [];
   for (const o of rest) {
@@ -124,6 +209,8 @@ export function upgradeToV9(s: GameState, oldZones: readonly string[], nowMs: nu
     if (canPlace({ objects: placed, ownedPlots: owned }, o.gx, o.gy, fp.w, fp.h).ok) placed.push(o);
     else pending.push(o);
   }
+  const areaOf = (o: MapObject) => { const fp = footprintOf(o); return fp.w * fp.h; };
+  pending.sort((a, b) => areaOf(b) - areaOf(a));
   for (const o of pending) {
     let spot = nearestFree(o, placed, owned);
     while (!spot) {
@@ -151,15 +238,19 @@ export function upgradeToV9(s: GameState, oldZones: readonly string[], nowMs: nu
   const ownedSet = new Set(owned);
   const obstacles = mapObstacles().filter((o) => !ownedSet.has(plotIdAt(o.gx, o.gy) ?? ''));
 
-  // Startpaket-Werkzeuge auch für bestehende Höfe
-  for (const [id, q] of Object.entries(CONTENT.start.inventory)) {
-    if (CONTENT.items[id]?.category === 'tool') s.inventory[id] = (s.inventory[id] ?? 0) + q;
-  }
-
   s.objects = [...placed, ...obstacles];
   s.ownedPlots = owned;
   s.nextDriftAt = nowMs + CONTENT.drifts.everySeconds * 1000;
   delete (s as Partial<GameState> & { unlockedZones?: unknown }).unlockedZones;
   s.schemaVersion = SCHEMA_VERSION;
   return s;
+}
+
+/** v8 und älter: Waren umbenennen, Startpaket-Werkzeuge auch für bestehende Höfe (Entscheidung 15), dann neues Land. */
+export function upgradeFromV8(s: GameState, oldZones: readonly string[], nowMs: number, warnings: string[]): GameState {
+  s.inventory = renameItemsV9(s.inventory);
+  for (const [id, q] of Object.entries(CONTENT.start.inventory)) {
+    if (CONTENT.items[id]?.category === 'tool') s.inventory[id] = (s.inventory[id] ?? 0) + q;
+  }
+  return upgradeLayout(s, oldLandV8(oldZones), nowMs, warnings);
 }

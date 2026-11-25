@@ -5,7 +5,7 @@
 // ============================================================================
 import { CONTENT } from './content';
 import { validateLayout } from './map';
-import { ITEM_RENAMES_V9, ZONES_V8, upgradeToV9 } from './migrate';
+import { ITEM_RENAMES_V9, ZONES_V8, oldLandV9, upgradeFromV8, upgradeLayout, type LegacyAnimalObject } from './migrate';
 import { SCHEMA_VERSION, createNewGame, emptyStats, levelForXp } from './state';
 import type { GameState, MapObject, StatKey } from './types';
 
@@ -13,12 +13,14 @@ export const SAVE_KEY = 'winterhof_save_v8';
 export const BACKUP_KEY = 'winterhof_save_v8_backup';
 /** Unveränderte Kopie des letzten v8-Stands vor der Umstellung auf v9 (wird nie überschrieben). */
 export const BEFORE_V9_KEY = 'winterhof_save_v8_before_v9';
+/** Unveränderte Kopie des letzten v9-Stands vor der Umstellung auf v10 (Baustein 5b, wird nie überschrieben). */
+export const BEFORE_V10_KEY = 'winterhof_save_v9_before_v10';
 export const LEGACY_KEYS = ['winterhof_save_v6_grid', 'winterhof_save_v6', 'winterhof_save_v5', 'winterhof_save_v2'];
 
 export interface LoadReport {
   state: GameState;
-  /** current = aktuelles Format; v8 / legacy = migriert; new = neues Spiel */
-  source: 'new' | 'current' | 'v8' | 'legacy';
+  /** current = aktuelles Format; v9 / v8 / legacy = migriert; new = neues Spiel */
+  source: 'new' | 'current' | 'v9' | 'v8' | 'legacy';
   warnings: string[];
 }
 
@@ -26,7 +28,7 @@ export function serialize(s: GameState): string {
   return JSON.stringify(s);
 }
 
-/** Lädt Rohdaten (v9, v8 oder Altformat). Wirft nur bei völlig unlesbaren Daten. */
+/** Lädt Rohdaten (v10, v9, v8 oder Altformat). Wirft nur bei völlig unlesbaren Daten. */
 export function deserialize(raw: string, nowMs: number): LoadReport {
   const data = JSON.parse(raw) as Record<string, unknown>;
   if (!data || typeof data !== 'object') throw new Error('Spielstand ist kein Objekt');
@@ -34,10 +36,17 @@ export function deserialize(raw: string, nowMs: number): LoadReport {
     const warnings = checkState(data as unknown as GameState);
     return { state: repair(data as unknown as GameState, nowMs), source: 'current', warnings };
   }
+  if (data.schemaVersion === 9) {
+    const owned = Array.isArray(data.ownedPlots) ? (data.ownedPlots as unknown[]).filter((z): z is string => typeof z === 'string') : [];
+    const warnings: string[] = [];
+    const s = upgradeLayout(repair(data as unknown as GameState, nowMs), oldLandV9(owned), nowMs, warnings);
+    warnings.push(...checkState(s));
+    return { state: s, source: 'v9', warnings };
+  }
   if (data.schemaVersion === 8) {
     const oldZones = Array.isArray(data.unlockedZones) ? (data.unlockedZones as unknown[]).filter((z): z is string => typeof z === 'string') : [];
     const warnings: string[] = [];
-    const s = upgradeToV9(repair({ ...(data as unknown as GameState), ownedPlots: [] }, nowMs), oldZones, nowMs, warnings);
+    const s = upgradeFromV8(repair({ ...(data as unknown as GameState), ownedPlots: [] }, nowMs), oldZones, nowMs, warnings);
     warnings.push(...checkState(s));
     return { state: s, source: 'v8', warnings };
   }
@@ -58,7 +67,11 @@ export function checkState(s: GameState): string[] {
   }
   for (const o of s.objects ?? []) {
     if (o.kind === 'station' && !CONTENT.stations[o.type]) w.push(`Unbekanntes Gebäude: ${o.type}`);
-    if (o.kind === 'animal' && !CONTENT.animals[o.type]) w.push(`Unbekanntes Tier: ${o.type}`);
+    if (o.kind === 'pen') {
+      const def = CONTENT.pens[o.type];
+      if (!def) w.push(`Unbekanntes Gehege: ${o.type}`);
+      else if (o.animals.length > def.capacity) w.push(`Gehege ${o.id}: ${o.animals.length} Tiere, Platz für ${def.capacity}`);
+    }
   }
   w.push(...validateLayout(s));
   return w;
@@ -156,7 +169,8 @@ export function migrateLegacy(d: Legacy, nowMs: number): LoadReport {
   for (const a of (d.animals ?? []) as Legacy[]) {
     if (!CONTENT.animals[a.type]) { warnings.push(`Tier ${a.type} gibt es nicht mehr`); continue; }
     const st = a.state === 'ready' || a.state === 'producing' ? a.state : 'hungry';
-    objects.push({ id: String(a.id), kind: 'animal', type: a.type, gx: a.gx, gy: a.gy, nick: String(a.nick ?? ''), state: st, readyAt: Number(a.readyAt) || nowMs, lastPet: Number(a.lastPet) || 0 });
+    const animal: LegacyAnimalObject = { id: String(a.id), kind: 'animal', type: a.type, gx: a.gx, gy: a.gy, nick: String(a.nick ?? ''), state: st, readyAt: Number(a.readyAt) || nowMs, lastPet: Number(a.lastPet) || 0 };
+    (objects as unknown[]).push(animal); // wird in upgradeLayout zum Gehege
   }
   for (const dc of (d.decorations ?? []) as Legacy[]) {
     if (!CONTENT.decorations[dc.type]) { warnings.push(`Deko ${dc.type} gibt es nicht mehr`); continue; }
@@ -180,7 +194,7 @@ export function migrateLegacy(d: Legacy, nowMs: number): LoadReport {
   s.claimedGifts = Array.isArray(d.claimedGifts) ? d.claimedGifts.filter((x: unknown) => typeof x === 'string') : [];
   s.settings = { ...s.settings, ...(typeof d.settings === 'object' ? d.settings : {}) };
   s.clockMaxMs = nowMs;
-  upgradeToV9(s, oldZones, nowMs, warnings);
+  upgradeFromV8(s, oldZones, nowMs, warnings);
   warnings.push(...validateLayout(s));
   return { state: s, source: 'legacy', warnings };
 }
@@ -198,6 +212,7 @@ export function loadFromStore(store: KeyValueStore, nowMs: number): LoadReport {
     try {
       const r = deserialize(raw, nowMs);
       if (r.source === 'v8' && store.getItem(BEFORE_V9_KEY) === null) store.setItem(BEFORE_V9_KEY, raw);
+      if (r.source === 'v9' && store.getItem(BEFORE_V10_KEY) === null) store.setItem(BEFORE_V10_KEY, raw);
       return r;
     }
     catch (e) {

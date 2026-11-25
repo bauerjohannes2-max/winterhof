@@ -13,16 +13,24 @@ describe('Karte als Daten (Alpental)', () => {
     expect(validateMap()).toEqual([]);
   });
 
-  it('Tal 30×30 aus 6×6 Landstücken à 5×5, Start 10×10 an der alten Stelle', () => {
+  it('Tal 30×30 aus 5×5 Landstücken à 6×6 (Entsch. 44), Start 2×2 Stücke = 12×12 (Entsch. 48)', () => {
     const m = terrainMap();
-    expect(m.plots.length).toBe(36);
+    expect(m.plots.length).toBe(25);
+    expect(m.plots.every((p) => p.x1 - p.x0 === 5 && p.y1 - p.y0 === 5)).toBe(true);
     const start = m.plots.filter((p) => p.isStart);
-    expect(start.map((p) => p.id).sort()).toEqual(['3,3', '3,4', '4,3', '4,4']);
-    expect([Math.min(...start.map((p) => p.x0)), Math.max(...start.map((p) => p.x1))]).toEqual([2, 11]);
-    expect([Math.min(...start.map((p) => p.y0)), Math.max(...start.map((p) => p.y1))]).toEqual([2, 11]);
+    expect(start.map((p) => p.id).sort()).toEqual(['2,2', '2,3', '3,2', '3,3']);
+    expect([Math.min(...start.map((p) => p.x0)), Math.max(...start.map((p) => p.x1))]).toEqual([-1, 10]);
+    expect([Math.min(...start.map((p) => p.y0)), Math.max(...start.map((p) => p.y1))]).toEqual([-1, 10]);
     expect(plotIdAt(-13, -13)).toBe('0,0');
-    expect(plotIdAt(16, 16)).toBe('5,5');
+    expect(plotIdAt(16, 16)).toBe('4,4');
     expect(plotIdAt(17, 0)).toBeNull();
+  });
+
+  it('ein Landstück fasst 9 Felder (2×2) wie Hay Day', () => {
+    const fp = footprintOf({ type: 'field' });
+    const size = CONTENT.map.plots.size;
+    expect([fp.w, fp.h]).toEqual([2, 2]);
+    expect((size / fp.w) * (size / fp.h)).toBe(9);
   });
 
   it('Landschaft: Berge hinten, Wald, See rechts, Kulisse ist nie bebaubar', () => {
@@ -40,7 +48,8 @@ describe('Karte als Daten (Alpental)', () => {
     const road = m.tiles.filter((t) => t.surface === 'road');
     const plaza = m.tiles.filter((t) => t.surface === 'plaza');
     expect(road.some((t) => t.gy === m.maxGy)).toBe(true);                     // beginnt am Kartenrand
-    expect(plaza.every((t) => t.zone === '3,4' || t.zone === '4,4')).toBe(true); // Hofplatz im Start-Hof
+    expect(plaza.every((t) => CONTENT.map.plots.start.includes(t.zone))).toBe(true); // Hofplatz im Start-Hof
+    expect(Math.max(...plaza.map((t) => t.gy))).toBe(Math.max(...m.plots.filter((p) => p.isStart).map((p) => p.y1))); // vorn am Start-Land
     expect(road.length + plaza.length).toBeLessThan(40);
     // ein zusammenhängendes Netz
     const all = [...road, ...plaza];
@@ -61,7 +70,7 @@ describe('Karte als Daten (Alpental)', () => {
 
   it('Ufer-Landstücke grenzen an den See und kommen ab Stufe 13', () => {
     const m = terrainMap();
-    for (const id of ['5,0', '5,1', '5,2']) expect(m.plotById(id)!.minLevel).toBe(13);
+    for (const id of ['4,0', '4,1', '4,2']) expect(m.plotById(id)!.minLevel).toBe(13);
     // nur Uferwiese (Schnee) zwischen Tal und Eis, kein Wald
     const nearIce = (gx: number, gy: number) => {
       for (let d = 1; d <= 5; d++) {
@@ -72,7 +81,7 @@ describe('Karte als Daten (Alpental)', () => {
       return false;
     };
     expect(Array.from({ length: 15 }, (_, i) => -13 + i).some((gy) => nearIce(16, gy))).toBe(true);
-    expect(m.plotById('5,3')!.minLevel).toBe(CONTENT.land.fromLevel);
+    expect(m.plotById('4,3')!.minLevel).toBe(CONTENT.land.fromLevel);
   });
 
   it('See heißt Sternsee (nur besondere Orte tragen Namen), Schild liegt auf dem Eis', () => {
@@ -100,7 +109,7 @@ describe('Karte als Daten (Alpental)', () => {
     const obs = CONTENT.map.obstacles;
     const kind = (type: string) => type.split('_')[0]!;
     const cellsOf = (o: (typeof obs)[number]) => {
-      const fp = footprintOf({ kind: 'obstacle', type: o.type });
+      const fp = footprintOf({ type: o.type });
       const out: [number, number][] = [];
       for (let dy = 0; dy < fp.h; dy++) for (let dx = 0; dx < fp.w; dx++) out.push([o.gx + dx, o.gy + dy]);
       return out;
@@ -120,12 +129,13 @@ describe('Karte als Daten (Alpental)', () => {
     expect(mean('rock')).toBeLessThan(mean('pine'));
     const ice = obs.filter((o) => kind(o.type) === 'ice');
     expect(ice.length).toBeGreaterThan(0);
-    expect(ice.every((o) => ['5,0', '5,1', '5,2'].includes(plotIdAt(o.gx, o.gy)!))).toBe(true);
-    // jedes kaufbare Landstück lohnt sich und ist nicht überladen
+    expect(ice.every((o) => ['4,0', '4,1', '4,2'].includes(plotIdAt(o.gx, o.gy)!))).toBe(true);
+    // jedes kaufbare Landstück lohnt sich und ist nicht überladen: Dichte wie bisher 5–9 je 25 Kacheln
+    const area = CONTENT.map.plots.size ** 2;
     for (const p of terrainMap().plots.filter((x) => !x.isStart)) {
       const n = obs.filter((o) => plotIdAt(o.gx, o.gy) === p.id).length;
-      expect(n, p.id).toBeGreaterThanOrEqual(5);
-      expect(n, p.id).toBeLessThanOrEqual(9);
+      expect(n, p.id).toBeGreaterThanOrEqual(Math.round((5 * area) / 25));
+      expect(n, p.id).toBeLessThanOrEqual(Math.round((9 * area) / 25));
     }
   });
 
@@ -136,9 +146,9 @@ describe('Karte als Daten (Alpental)', () => {
   it('Platzieren: Hofplatz, Wald und fremdes Land sind verboten', () => {
     const s = createNewGame(T0);
     expect(canPlace(s, 7, 10, 1, 1)).toEqual({ ok: false, reason: 'terrain' }); // Hofplatz
-    expect(canPlace(s, 0, 4, 1, 1)).toEqual({ ok: false, reason: 'locked' });
+    expect(canPlace(s, -2, 4, 1, 1)).toEqual({ ok: false, reason: 'locked' });
     expect(canPlace(s, m().minGx, m().minGy, 1, 1)).toEqual({ ok: false, reason: 'bounds' });
-    expect(canPlace(s, 9, 6, 1, 1)).toEqual({ ok: true });
+    expect(canPlace(s, 9, 1, 1, 1)).toEqual({ ok: true });
   });
 
   describe('Fehler in den Daten werden erkannt', () => {
@@ -157,11 +167,11 @@ describe('Karte als Daten (Alpental)', () => {
       const c = clone();
       const row = 2 - c.map.origin.gy, col = 2 - c.map.origin.gx;
       c.map.terrain[row] = c.map.terrain[row]!.slice(0, col) + 'F' + c.map.terrain[row]!.slice(col + 1);
-      expect(validateMap(c).join()).toMatch(/Landstück 3,3: forest auf 2,2/);
+      expect(validateMap(c).join()).toMatch(/Landstück 2,2: forest auf 2,2/);
     });
     it('Hindernis über zwei Landstücke, auf dem Weg oder überlappend', () => {
       const c = clone();
-      c.map.obstacles = [{ type: 'rock_large', gx: 1, gy: 1 }, { type: 'rock_small', gx: 7, gy: 12 }, { type: 'rock_small', gx: -13, gy: -13 }, { type: 'rock_small', gx: -13, gy: -13 }];
+      c.map.obstacles = [{ type: 'rock_large', gx: 4, gy: 4 }, { type: 'rock_small', gx: 7, gy: 12 }, { type: 'rock_small', gx: -13, gy: -13 }, { type: 'rock_small', gx: -13, gy: -13 }];
       const e = validateMap(c).join('\n');
       expect(e).toMatch(/nicht in genau einem Landstück/);
       expect(e).toMatch(/kein freier Schnee/);
@@ -176,7 +186,7 @@ describe('Karte als Daten (Alpental)', () => {
     });
     it('Start-Land muss zusammenhängen', () => {
       const c = clone();
-      c.map.plots.start = ['0,0', '5,5'];
+      c.map.plots.start = ['0,0', '4,4'];
       expect(validateMap(c).join()).toMatch(/hängt nicht zusammen/);
     });
   });

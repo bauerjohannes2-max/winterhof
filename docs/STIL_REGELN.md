@@ -14,29 +14,30 @@ Geprüft wird automatisch mit `python scripts/pruefe_assets.py`. Es wird nur ver
 - Installierte App (Android): Querformat ist fest eingestellt. Im Browser, vor allem in iOS Safari, kann eine Webseite das Drehen technisch nicht sperren. Dort zeigt sich das Spiel auch bei hochkant gehaltenem Handy im Querformat, man hält das Handy einfach quer, wie bei einem Video.
 
 ## 3. Maßstab: Das Raster ist das Maß
-- Alles wird in **Kacheln** gemessen (1 Kachel = Kachelbreite = 116 Weltpunkte), nie in Pixeln.
-- Jedes Objekt hat in der Größentabelle (`src/content/winterhof.json` → `art.sprites`) eine **Grundfläche** (1×1, 2×2 …), eine **Höhe in Kacheln** und einen **Bodenpunkt** (`anchorY`).
-- **Die Breite ergibt sich immer aus dem Bild. Nie verzerren.** Der Code setzt nur die Höhe.
-- Zielhöhen je Gruppe:
+- Alles wird in **Kacheln** gemessen (1 Kachel = Kachelbreite = 128 Weltpunkte, wie `render/scene/iso.ts`; Entscheidung 42), nie in Pixeln.
+- Jedes Objekt hat im **Größenkatalog** (`src/content/winterhof.json` → `sizes`, Regeln `docs/GROESSEN_KATALOG.md`) eine **Grundfläche** (1×1, 2×2, 3×3 …) und eine **exakte Höhe in Kacheln**; jedes Bild (`art.sprites`) verweist darauf und hat einen **Bodenpunkt** (`anchorY`).
+- **Die Breite ergibt sich immer aus dem Bild. Nie verzerren.** Der Code setzt nur die Höhe. Gebäude, Wahrzeichen, Felder und Gehege füllen ihre Grundfläche (Bildbreite 85–115 % der Rautenbreite), sonst braucht es ein neues Bild.
+- Maßstab D „Hay-Day-Maß“ (Entscheidungen 43–47), Beispiele (alle Werte in der JSON):
 
-| Gruppe | Höhe in Kacheln |
-|---|---|
-| Gebäude 2×2 | 1,5–2,4 (Haupthaus am größten) |
-| Wahrzeichen 2×2 (Baum) | 1,6–2,8 |
-| Hof-Objekt 1×1 | 0,45–1,0 |
-| Deko 1×1 | 0,45–1,2 |
-| Person | 0,5–0,65 |
-| Tier | 0,25–0,75 |
-| Feldfrucht | 0,4–0,8 |
-| Bodenplatte | füllt die Kachel in der Breite |
+| Gruppe | Grundfläche | Höhe in Kacheln |
+|---|---|---|
+| Person | – | 0,8 (das Maß) |
+| Chalet (Haupthaus) | 3×3 | 2,3 |
+| Werkstätten, Hofladen | 2×2 | 1,4–1,9 |
+| Weihnachtsbaum (Wahrzeichen) | 2×2 | 2,8 |
+| Wunschtafel, Schlitten | 2×1 | 1,3 / 1,0 |
+| Feld | 2×2 | 1,35 (Pflanze 0,5 über dem Acker) |
+| Gehege (6 Tiere) | 3×3 / 4×4 | 1,9 / 2,4 |
+| Tiere | – | Huhn 0,36 … Rentier 0,85 |
+| Laterne | 1×1 | 1,4 |
+| Wegplatte | 1×1 | flach |
 
 ## 4. Verhältnisse zueinander
-- **Figuren bewusst etwas zu groß** (Cartoon-Maßstab), damit man sie erkennt und antippen kann: Ein Haus ist etwa 3 Personen hoch, nicht 6.
-- Reihenfolge der Tiere: Huhn < Schaf < Rentier.
-- Huhn höchstens 0,7 × Person, Schaf höchstens 0,9 × Person.
-- Person höchstens 0,36 × Gebäude.
-- Laterne ist größer als eine Person.
-- Backstube und andere Werkstätten sind kleiner als das Chalet (Haupthaus).
+- **Maß ist die Person (0,8 Kachel):** Ein Haus ist etwa 2,4 Personen hoch wie bei Hay Day (VORBILD_ANALYSE §12), nicht 6.
+- Reihenfolge der Tiere: Huhn < Eule < Schaf < Esel < Rentier; alle kleiner als eine Person, das Rentier fast so groß.
+- Laterne ist größer als eine Person (1,75 Personen).
+- Werkstätten sind kleiner als das Chalet, der Weihnachtsbaum ist höher als das Chalet.
+- Gebäude bleiben an ihrer Grundfläche, Figuren und Tiere werden nicht über Gebäude gestellt.
 - Alle Personen sind gleich groß, Abwechslung kommt über Kleidung, nicht über Größe.
 
 ## 5. Kamera, Licht, Boden
@@ -64,7 +65,7 @@ Gleich bleibt nur die **Handschrift** (Kamera, Licht, Linienstärke, Farbwelt, M
 
 ## 7. Ablauf für neue Bilder (Gemini)
 1. Claude schreibt den Auftrag mit Grundfläche, Zielhöhe, Blickwinkel, Licht und Stil-Referenz (Aufstellungsbild). **Jeder Auftrag enthält zusätzlich:** Star-Merkmal, Akzentfarbe, 1–2 Geschichts-Details, Silhouetten-Idee und den Satz an Gemini: „Sei mutig und verspielt in Form und Idee: übertreibe das Star-Merkmal, mach die Silhouette einzigartig. Liefere 3 Varianten von zurückhaltend bis wild.“ Hannes wählt per Bild.
-2. Gemini liefert das Bild nach `assets/sprites/`.
-3. Claude trägt es in die Größentabelle ein und startet `pruefe_assets.py`.
+2. Gemini liefert das Bild nach `art_src/spiel{m}/objekte{tps}/`.
+3. Claude trägt es in `art.sprites` ein (Verweis auf den Katalog-Eintrag) und startet `pruefe_assets.py`.
 4. Das Aufstellungsbild geht an Hannes. Er entscheidet, wie es aussieht.
 5. Erst dann wird eingebaut und veröffentlicht.

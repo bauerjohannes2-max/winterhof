@@ -11,12 +11,12 @@ Anlass: Das Kartenbild aus Baustein 2 hat gezeigt, dass das bisherige Konzept ni
 | Tannen | **Ausgraben statt fällen:** Die Tanne landet als Deko im Lager und kann woanders eingepflanzt werden. | eigene Idee; Clash hat dafür die „Hindernis-Schaufel“ |
 | Namen | **Land hat keine Namen.** Nur besondere Orte bekommen einen (z. B. der See). | Hay Day |
 | Umgebung | **Alpental:** Berge hinten, Tannenwald an den Seiten, Zufahrt von vorn unten, zugefrorener See an einer Seite. | Hay Day (Hof in Landschaft) |
-| Startgröße | **Klein** (10 × 10 Felder). | Hay Day |
+| Startgröße | **Klein**: 2 × 2 Landstücke = 12 × 12 Felder (Entscheidung 48, vorher 10 × 10). | Hay Day |
 
 ## Entscheidungen Runde 2–4 (Entscheidung 15, je Empfehlung gewählt)
 | Frage | Entscheidung |
 |---|---|
-| Landstücke | **5 × 5 Felder**, Tal insgesamt **30 × 30** = 36 Stücke, Start = 4 davon. Kaufbar ist nur ein Stück, das an eigenes Land grenzt (Hay Day). |
+| Landstücke | **6 × 6 Felder** (9 Felder à 2 × 2 je Stück, Entscheidung 44; vorher 5 × 5), Tal insgesamt **30 × 30** = 25 Stücke, Start = 4 davon. Kaufbar ist nur ein Stück, das an eigenes Land grenzt (Hay Day). |
 | Freischalten | **Hindernisse schon auf dem Start-Hof** (erstes Räumen in der Einführung). **Landkauf ab Stufe 3.** |
 | Nachwachsen | **Nur Schneewehen kommen nach** (gelegentlich nach Schneefall, wenige, mit Abstand zu allem). Felsen, Eis, Tannen nie. (Clash: Pflanzen alle 8 h, Steine nie; Hay Day: nichts.) |
 | Werkzeuge | **Zufallsfund + Sofortkauf:** Fund beim Ernten, Abholen, Räumen. Fehlt eins, kauft man es beim Antippen des Hindernisses mit Münzen, es wird sofort benutzt, Preis nach Stufe (Hay Day seit 2026). Kein Horten. |
@@ -35,7 +35,7 @@ Raster wie bisher: Bildschirm-x = (gx − gy), Bildschirm-y = (gx + gy). „Hint
 
 | Bereich | Lage |
 |---|---|
-| Tal (bebaubar) | gx −13 … 16, gy −13 … 16, 6 × 6 Landstücke à 5 × 5 |
+| Tal (bebaubar) | gx −13 … 16, gy −13 … 16, 5 × 5 Landstücke à 6 × 6; Start gx/gy −1 … 10, Hofplatz gx 6–9 / gy 9–10 vorn am Start-Land |
 | Start | Landstücke Spalte 3–4, Reihe 3–4 = gx 2 … 11, gy 2 … 11 (wie bisher, kein Objekt muss wandern) |
 | Berge | hinten: beide oberen Kartenränder (gx < −13 bzw. gy < −13), **14 Reihen tief** (Karte 60 × 49, gx −27 … 32, gy −27 … 21). Baumgrenze unregelmäßig: Waldzungen ziehen hinauf, Felsrippen herunter, zu den Seitenecken mehr Wald (Hannes 24.11.: „schmaler Streifen“ reicht nicht) |
 | Tannenwald | vorn links und vorn rechts, rings um den See |
@@ -52,10 +52,11 @@ Raster wie bisher: Bildschirm-x = (gx − gy), Bildschirm-y = (gx + gy). „Hint
 - **Feste Stationen** lassen sich nicht verschieben.
 - **Wegplatten** sind Deko-Objekte (Art `path`), Preis fest oder steigend je Kauf.
 
-## Migration (Spielstand v8 → v9, ohne Fortschrittsverlust)
-1. Land-Material umrechnen: Schneeschaufel → Holzhammer, Flurkarte → Grundbrief, Grenzpflock bleibt.
-2. Jedes alte Grundstück wird zu allen neuen Landstücken, die es berührt (eigene Fläche wird nie kleiner).
+## Migration (Spielstand bis v9 → v10, ohne Fortschrittsverlust, ein gemeinsamer Weg in `core/migrate.ts`)
+1. Land-Material umrechnen (nur bis v8): Schneeschaufel → Holzhammer, Flurkarte → Grundbrief, Grenzpflock bleibt.
+2. Neues Land: Start-Land, dann angrenzende Stücke mit der größten Überdeckung des alten Lands, bis die eigene Fläche nie kleiner ist **und** mindestens so viele Stücke gekauft sind wie vorher (Baustein 5b). Vorher gilt eine Kopie: v8 unter `winterhof_save_v8_before_v9`, v9 unter `winterhof_save_v9_before_v10`.
+2a. Felder (jetzt 2 × 2) behalten Saat und Wachstum; Tiere ziehen je Art in Gehege (höchstens 6 je Gehege, sonst ein weiteres), Zustand und Name bleiben (Entscheidung 44).
 3. Feste Stationen an ihren Platz; der neue Hofladen kommt dazu.
 4. Hindernisse nur auf Landstücken, die der Spieler noch nicht besitzt.
-5. Jedes Objekt, das nicht mehr passt (alte Straße, Hofplatz, außerhalb des Tals): auf das nächste freie eigene Feld. Gibt es keins, bekommt der Spieler das nächste angrenzende Landstück geschenkt. Nichts geht verloren.
+5. Jedes Objekt, das nicht mehr passt (alte Straße, Hofplatz, außerhalb des Tals, neue Größe): auf den nächsten freien eigenen Platz, große Objekte zuerst. Gibt es keins, bekommt der Spieler das nächste angrenzende Landstück geschenkt. Nichts geht verloren.
 6. Startpaket-Werkzeuge auch für bestehende Spielstände.

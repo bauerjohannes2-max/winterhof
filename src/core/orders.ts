@@ -11,7 +11,7 @@ import type { GameState, ItemId, OrderLine, OrderReward, OrderTier } from './typ
 /** Kann der Hof diese Ware jetzt herstellen? (Feldfrucht freigeschaltet, Tier vorhanden, Gebäude + alle Zutaten herstellbar) */
 export function makeableItems(s: GameState): Set<ItemId> {
   const stations = new Set(s.objects.filter((o) => o.kind === 'station').map((o) => o.type));
-  const animals = new Set(s.objects.filter((o) => o.kind === 'animal').map((o) => o.type));
+  const animals = new Set(s.objects.flatMap((o) => (o.kind === 'pen' && o.animals.length > 0 ? [CONTENT.pens[o.type]?.animal] : [])));
   const memo = new Map<ItemId, boolean>();
   const can = (id: ItemId, depth = 0): boolean => {
     const known = memo.get(id);
