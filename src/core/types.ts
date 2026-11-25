@@ -86,6 +86,8 @@ export interface DecoDef {
   costStep?: number;
   /** 'path' = Wegplatte des Spielers */
   group?: 'path';
+  /** Belag einer Wegplatte (ContentPack.paths.surfaces), Pflicht bei group 'path' */
+  surface?: string;
   xp: number;
   unlockLevel: number;
 }

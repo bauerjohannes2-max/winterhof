@@ -2384,6 +2384,11 @@
       "readySlots": 6
     }
   },
+  "paths": {
+    "note": "Baustein 6 (Entsch. 53/54): Wegflächen. surfaces = alle Beläge (Reihenfolge = Kanal im Boden-Shader, höchstens 7), road = Belag der festen Zufahrt und des Hofplatzes (map.surface R/P); Wegplatten nennen ihren Belag in decorations.*.surface.",
+    "surfaces": ["erde", "schnee", "kies", "holz", "kopfstein", "naturstein", "sternenpflaster"],
+    "road": "erde"
+  },
   "decorations": {
     "pine": {
       "id": "pine",
@@ -2525,6 +2530,7 @@
       "name": "Schneepfad",
       "theme": "Weg",
       "group": "path",
+      "surface": "schnee",
       "cost": 5,
       "costStep": 0,
       "xp": 0,
@@ -2537,6 +2543,7 @@
       "name": "Kiesweg",
       "theme": "Weg",
       "group": "path",
+      "surface": "kies",
       "cost": 8,
       "costStep": 0,
       "xp": 0,
@@ -2549,6 +2556,7 @@
       "name": "Holzbohlen",
       "theme": "Weg",
       "group": "path",
+      "surface": "holz",
       "cost": 10,
       "costStep": 0,
       "xp": 0,
@@ -2561,6 +2569,7 @@
       "name": "Kopfsteinpflaster",
       "theme": "Weg",
       "group": "path",
+      "surface": "kopfstein",
       "cost": 25,
       "costStep": 3,
       "xp": 0,
@@ -2573,6 +2582,7 @@
       "name": "Natursteinplatten",
       "theme": "Weg",
       "group": "path",
+      "surface": "naturstein",
       "cost": 40,
       "costStep": 5,
       "xp": 0,
@@ -2585,6 +2595,7 @@
       "name": "Sternenpflaster",
       "theme": "Weg",
       "group": "path",
+      "surface": "sternenpflaster",
       "cost": 60,
       "costStep": 8,
       "xp": 0,

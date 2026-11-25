@@ -14,6 +14,8 @@ export interface ContentPack {
   /** Gehege je Tierart (Schlüssel = Gehege-Typ) */
   pens: Record<string, PenDef>;
   stations: Record<string, StationDef>;
+  /** Wegflächen (Baustein 6): alle Beläge in fester Reihenfolge, Belag der Zufahrt/des Hofplatzes */
+  paths: { surfaces: string[]; road: string };
   decorations: Record<string, DecoDef>;
   land: LandRules;
   obstacles: Record<string, ObstacleDef>;
@@ -149,10 +151,16 @@ export function validateContent(c: ContentPack = CONTENT): string[] {
       if (a?.w !== b?.w || a?.h !== b?.h) errs.push(`Hindernis ${id}: Deko ${o.yieldsDeco} hat andere Grundfläche`);
     }
   }
+  // Wegflächen (Baustein 6): Beläge eindeutig, höchstens 7 (Abstand + 7 Gewichte in zwei RGBA-Texturen des Boden-Shaders), Zufahrt hat einen Belag
+  if (c.paths.surfaces.length === 0 || c.paths.surfaces.length > 7) errs.push('paths.surfaces: 1 bis 7 Beläge');
+  if (new Set(c.paths.surfaces).size !== c.paths.surfaces.length) errs.push('paths.surfaces: Belag doppelt');
+  if (!c.paths.surfaces.includes(c.paths.road)) errs.push(`paths.road: Belag ${c.paths.road} unbekannt`);
   if (!c.obstacles[c.drifts.type]) errs.push(`drifts.type ${c.drifts.type} ist kein Hindernis`);
   for (const t of c.map.fixed) if (!c.start.objects.some((o) => o.kind === 'prop' && o.type === t)) errs.push(`Feste Station ${t} fehlt im Start-Hof`);
   for (const d of Object.values(c.decorations)) {
     if (d.group === 'path' && (c.sizes[d.id]?.w !== 1 || c.sizes[d.id]?.h !== 1)) errs.push(`Wegplatte ${d.id} muss 1×1 sein`);
+    if (d.group === 'path' && !c.paths.surfaces.includes(d.surface ?? '')) errs.push(`Wegplatte ${d.id}: Belag ${d.surface ?? '(fehlt)'} unbekannt`);
+    if (d.group !== 'path' && d.surface !== undefined) errs.push(`Deko ${d.id}: Belag nur bei Wegplatten`);
     if ((d.costStep ?? 0) < 0) errs.push(`Deko ${d.id}: costStep negativ`);
   }
   for (let i = 1; i < c.levels.length; i++) {

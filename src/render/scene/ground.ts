@@ -13,9 +13,16 @@
 // GRAFIK_TECHNIK §3: endlose Kulisse + Schärfe bis 2 Bildpunkte je Weltpunkt passen nicht in gebackene Kacheln).
 // Teure Kantenrechnung nur nahe am Wiesenrand; tief in Wiese oder Schnee nur Textur bzw. Schneeton.
 // ============================================================================
-import { Geometry, GlProgram, Mesh, Shader, type Texture } from 'pixi.js';
-import type { MeadowShape } from '../../core';
+import { BufferImageSource, Geometry, GlProgram, Mesh, Shader, Texture } from 'pixi.js';
+
 import { TILE_H, TILE_W, type Rect } from './iso';
+import { PATH_RANGE, type MeadowShape, type PathField } from '../../core';
+
+/**
+ * Beläge in der Reihenfolge der Shader-Kanäle (Baustein 6). Muss CONTENT.paths.surfaces entsprechen (Test).
+ * Aussehen hier nur Platzhalter aus Farbe + einfachem Muster; echte Belag-Bilder kommen in der Grafik-Runde (Entsch. 39).
+ */
+export const SHADER_SURFACES = ['erde', 'schnee', 'kies', 'holz', 'kopfstein', 'naturstein', 'sternenpflaster'] as const;
 
 /** Weltbreite einer Gras-Textur-Wiederholung (Karten-Skizzen rechnen intern mit 116er-Bildmaß, umgerechnet auf die 128er-Kachel) */
 export const GRASS_REPEAT = 352;
@@ -57,6 +64,9 @@ uniform float uWaveCount;
 uniform vec4 uBox;
 uniform vec2 uCenter;
 uniform float uOffset;
+uniform sampler2D uPathA;   // R: Abstand zur Wegkante, G B A: Belag 0–2
+uniform sampler2D uPathB;   // R G B A: Belag 3–6
+uniform vec4 uPathBox;      // gx0, gy0, Breite, Höhe (Kacheln)
 
 const float HW = ${TILE_W / 2}.0;
 const float HH = ${TILE_H / 2}.0;
@@ -65,6 +75,7 @@ const vec3 SNOW_TOP = vec3(243.0, 242.0, 234.0) / 255.0;  // passend zum Schnee 
 const vec3 SNOW_SHADE = vec3(190.0, 206.0, 218.0) / 255.0;
 const vec3 SNOW_SIDE = vec3(136.0, 160.0, 192.0) / 255.0;
 const vec3 SHADOW = vec3(0.42, 0.36, 0.16);               // Schlagschatten aufs Gras (warm abgedunkelt)
+const float PATH_RANGE = ${PATH_RANGE.toFixed(3)};
 
 // Hash ohne Sinus (Dave Hoskins), auf Handys stabil
 float hash12(vec2 p) {
@@ -122,13 +133,69 @@ float meadow(vec2 g) {
   return reach - length(d);
 }
 
+// Wegfeld (Baustein 6): Abstand zur Wegkante in Kacheln (+ innen). textureLod: Aufrufe liegen in Verzweigungen.
+vec2 pathUv(vec2 g) { return (g - uPathBox.xy) / uPathBox.zw; }
+float pathSd(vec2 g) { return (textureLod(uPathA, pathUv(g), 0.0).r * 2.0 - 1.0) * PATH_RANGE; }
+
 // Rand leicht unruhig: ±0,25 Kachel in weichen Wellen, ±0,07 fein (Value-Rauschen braucht größere Zellen als das Gauß-Rauschen der Karten-Bilder, sonst Knicke)
 // Feine Zacken werden weit draußen ausgeblendet (sonst sägt die Kante: kleiner als ein Bildpunkt).
 float uPx = 1.0;
-float edgeField(vec2 w) {
+float meadowField(vec2 w) {
   vec2 f = flat2(w);
   float fine = smoothstep(4.0, 1.5, uPx);
   return meadow(toGrid(w)) + (noise(f / 90.0) - 0.5) * 0.5 + (noise(f / 30.0 + 5.0) - 0.5) * 0.14 * fine;
+}
+// Schnee liegt nicht auf Wegen: wo die Zufahrt durch den Schnee führt, ist er geräumt (Kante mit Volumen wie am Wiesenrand)
+float edgeField(vec2 w) {
+  return max(meadowField(w), pathSd(toGrid(w)));
+}
+
+// Zellen-Rauschen für Pflaster (Abstand zur Fuge, Zellwert)
+vec2 cells(vec2 p) {
+  vec2 i = floor(p), fr = fract(p);
+  float d1 = 8.0, d2 = 8.0; float id = 0.0;
+  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+    vec2 o = vec2(float(x), float(y));
+    vec2 q = o + 0.15 + 0.7 * hash22(i + o) - fr;
+    float d = dot(q, q);
+    if (d < d1) { d2 = d1; d1 = d; id = hash12(i + o + 7.0); } else if (d < d2) { d2 = d; }
+  }
+  return vec2(sqrt(d2) - sqrt(d1), id);
+}
+vec3 paving(vec2 g, float scale, vec3 base, float joint) {
+  vec2 c = cells(g / scale);
+  vec3 col = base * (0.9 + 0.2 * c.y);
+  return mix(col * 0.62, col, smoothstep(0.0, joint, c.x));
+}
+
+// Belag-Farbe (Platzhalter bis zur Grafik-Runde): Gewichte e0–e6 in der Reihenfolge SHADER_SURFACES
+vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px) {
+  float grain = (noise(f / 2.5) - 0.5) * smoothstep(3.0, 1.0, px);
+  vec3 col = vec3(0.0);
+  // Erst nur Erdweg (Entsch. 55): alle Beläge zeigen vorerst Erde, eigene Bilder je Belag in der Grafik-Runde
+  float all = e012.x + e012.y + e012.z + e3456.x + e3456.y + e3456.z + e3456.w;
+  e012 = vec3(all, 0.0, 0.0); e3456 = vec4(0.0);
+  // Erde (Kufenspuren brauchen die Fahrtrichtung und kommen mit dem gemalten Erd-Bild in der Grafik-Runde)
+  if (e012.x > 0.003) col += vec3(150.0, 104.0, 64.0) / 255.0 * (1.0 + 0.08 * grain + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
+  if (e012.y > 0.003) col += vec3(226.0, 230.0, 236.0) / 255.0 * (1.0 + 0.05 * grain) * e012.y;   // Schneepfad
+  if (e012.z > 0.003) {                                       // Kies: helle und dunkle Körner
+    float k = hash12(floor(f / 2.2));
+    col += vec3(176.0, 168.0, 152.0) / 255.0 * (0.86 + 0.28 * k) * e012.z;
+  }
+  if (e3456.x > 0.003) {                                      // Holzbohlen quer
+    float seam = smoothstep(0.03, 0.0, abs(fract(g.x * 3.0) - 0.5) - 0.47);
+    vec3 c = vec3(168.0, 122.0, 74.0) / 255.0 * (1.0 + 0.1 * grain) * (0.92 + 0.16 * hash12(vec2(floor(g.x * 3.0), 3.0)));
+    col += c * (1.0 - 0.35 * seam) * e3456.x;
+  }
+  if (e3456.y > 0.003) col += paving(g, 0.22, vec3(146.0, 146.0, 154.0) / 255.0, 0.12) * e3456.y;  // Kopfstein
+  if (e3456.z > 0.003) col += paving(g, 0.48, vec3(182.0, 176.0, 166.0) / 255.0, 0.06) * e3456.z;  // Natursteinplatten
+  if (e3456.w > 0.003) {                                      // Sternenpflaster: Kopfstein dunkel, goldene Einlagen
+    vec2 c = cells(g / 0.22);
+    vec3 s = mix(vec3(118.0, 112.0, 140.0) / 255.0 * 0.62, vec3(118.0, 112.0, 140.0) / 255.0, smoothstep(0.0, 0.12, c.x));
+    s = mix(s, vec3(0.96, 0.78, 0.32), step(0.9, c.y) * smoothstep(0.1, 0.3, c.x));
+    col += s * e3456.w;
+  }
+  return col;
 }
 
 // Schneedecke 0…1 an einem Weltpunkt; soft = Weichheit in Kacheln. Keine losen Schollen auf der Wiese
@@ -191,6 +258,29 @@ void main() {
     float rim = clamp(-(gx * 0.8 + gy) * 3.0, -1.0, 1.0);
     col = mix(col, snowTop(f, rim, px), clamp(top, 0.0, 1.0));
   }
+  // Wegfläche (Baustein 6, Kante A): Saum innen, Gras ragt in Halmen über die Kante. Schnee am Weg kommt später (Entsch. 55)
+  vec2 g = toGrid(w);
+  float sd = pathSd(g);
+  if (sd > -0.3) {
+    vec2 uv = pathUv(g);
+    vec4 wa = textureLod(uPathA, uv, 0.0), wb = textureLod(uPathB, uv, 0.0);
+    float aaS = max(fwidth(sd), 1e-4) * 0.75;
+    float onMeadow = smoothstep(0.2, 0.7, meadowField(w));
+    // Halme: schmale Spitzen in Bildschirm-Spalten (Halme stehen senkrecht), in kleinen Büscheln wie Hay Day:
+    // nur ein Teil der Kante trägt Büschel (Gruppe ~4 Spalten), darin 1–3 Halme mit zufälliger Länge
+    float colW = 2.6;
+    float cx = floor(w.x / colW);
+    float row = floor((w.y + cx * 7.0) / 48.0);
+    float tuft = hash12(vec2(floor(cx / 4.0), row + 31.0));
+    float hb = hash12(vec2(cx, row));
+    float len = (tuft > 0.55 && hb > 0.4) ? (0.05 + 0.1 * hb * hb) : 0.0;
+    float taper = 1.0 - abs(fract(w.x / colW) - 0.5) * 2.0;
+    float blade = len * taper * onMeadow * smoothstep(4.0, 1.5, px);
+    float kante = sd - blade;
+    vec3 pc = pathLook(g, f, wa.gba, wb, px);
+    pc *= 1.0 - 0.22 * pow(clamp(1.0 - kante / 0.14, 0.0, 1.0), 1.5);
+    col = mix(col, pc, clamp(kante / aaS + 0.5, 0.0, 1.0));
+  }
   finalColor = vec4(col, 1.0);
 }`;
 
@@ -200,27 +290,58 @@ export class Ground {
   private readonly geometry: Geometry;
   private last = '';
 
-  constructor(shape: MeadowShape, grass: Texture) {
+  private pathA: Texture;
+  private pathB: Texture;
+  private readonly pathBox = new Float32Array(4);
+  private readonly shader: Shader;
+
+  constructor(shape: MeadowShape, grass: Texture, paths: PathField) {
     grass.source.addressMode = 'repeat';
     grass.source.autoGenerateMipmaps = true;
     grass.source.scaleMode = 'linear';
     grass.source.updateMipmaps();
     const u = meadowUniforms(shape);
     this.geometry = new Geometry({ attributes: { aPosition: this.positions }, indexBuffer: [0, 1, 2, 0, 2, 3] });
+    this.pathA = pathTexture(paths.a, paths.width, paths.height);
+    this.pathB = pathTexture(paths.b, paths.width, paths.height);
+    this.pathBox.set([paths.box.gx0, paths.box.gy0, paths.box.w, paths.box.h]);
     const shader = new Shader({
       glProgram: GlProgram.from({ vertex: VERTEX, fragment: FRAGMENT, name: 'grundboden', preferredFragmentPrecision: 'highp' }),
       resources: {
         uGrass: grass.source,
+        uPathA: this.pathA.source,
+        uPathB: this.pathB.source,
         boden: {
           uWaves: { value: u.waves, type: 'vec3<f32>', size: MAX_WAVES },
           uWaveCount: { value: u.count, type: 'f32' },
           uBox: { value: u.box, type: 'vec4<f32>' },
           uCenter: { value: u.center, type: 'vec2<f32>' },
-          uOffset: { value: u.offset, type: 'f32' }
+          uOffset: { value: u.offset, type: 'f32' },
+          uPathBox: { value: this.pathBox, type: 'vec4<f32>' }
         }
       }
     });
+    this.shader = shader;
     this.view = new Mesh({ geometry: this.geometry, shader, label: 'grundboden' });
+  }
+
+  /** Neues Wegfeld (nach Bauen/Verschieben von Wegplatten). Gleiche Maße: nur hochladen. */
+  setPaths(paths: PathField): void {
+    this.pathBox.set([paths.box.gx0, paths.box.gy0, paths.box.w, paths.box.h]);
+    const same = this.pathA.source.width === paths.width && this.pathA.source.height === paths.height;
+    if (same) {
+      (this.pathA.source as BufferImageSource).resource = paths.a;
+      (this.pathB.source as BufferImageSource).resource = paths.b;
+      this.pathA.source.update();
+      this.pathB.source.update();
+      return;
+    }
+    this.pathA.destroy(true);
+    this.pathB.destroy(true);
+    this.pathA = pathTexture(paths.a, paths.width, paths.height);
+    this.pathB = pathTexture(paths.b, paths.width, paths.height);
+    this.shader.resources['uPathA'] = this.pathA.source;
+    this.shader.resources['uPathB'] = this.pathB.source;
   }
 
   /** Viereck über den sichtbaren Bereich legen (Welt), mit Rand; nur bei Änderung neu hochladen. */
@@ -234,4 +355,12 @@ export class Ground {
     this.positions.set([x0, y0, x1, y0, x1, y1, x0, y1]);
     this.geometry.getBuffer('aPosition').update();
   }
+}
+
+function pathTexture(data: Uint8Array, width: number, height: number): Texture {
+  const source = new BufferImageSource({
+    resource: data, width, height, format: 'rgba8unorm',
+    scaleMode: 'linear', addressMode: 'clamp-to-edge', alphaMode: 'no-premultiply-alpha', autoGenerateMipmaps: false
+  });
+  return new Texture({ source });
 }

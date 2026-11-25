@@ -5,12 +5,13 @@
 // Liest den Kern nur über ../core, ändert den Spielstand nur über Befehle.
 // ============================================================================
 import { Application, Assets, type Container, type Texture } from 'pixi.js';
-import { CONTENT, meadow, terrainMap } from '../core';
+import { buildPathField, CONTENT, createNewGame, meadow, pathTiles, terrainMap, type MapObject } from '../core';
 import { Camera, maxZoomForWidth } from './camera/camera';
 import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
 import { GridOverlay } from './scene/grid';
 import { Ground } from './scene/ground';
+
 import { loadStartAssets } from './boot/assets';
 import { chooseQuality, renderResolution, SLOW_FPS, type Quality } from './boot/quality';
 import { createWorld, layerOrder } from './scene/layers';
@@ -106,7 +107,11 @@ async function start(): Promise<void> {
   camera.setView(sv.cx, sv.cy, sv.zoom);
   // Grundboden (Baustein 5): ganzes Tal Wiese, außen Schnee (Entscheidung 40)
   const params = new URLSearchParams(location.search);
-  const ground = new Ground(meadow(), Assets.get<Texture>('wiese'));
+  // Wege (Baustein 6): Zufahrt + Hofplatz + Wegplatten als eine Fläche im Grundboden (Entscheidungen 53/54).
+  // Bis die Spielwelt an den Spielstand angebunden ist (Objekte, Baustein 8), zeigt sie den Start-Hof.
+  const pathBox = { gx0: map.minGx, gy0: map.minGy, w: map.maxGx - map.minGx + 1, h: map.maxGy - map.minGy + 1 };
+  const pathsFor = (objects: readonly MapObject[]) => buildPathField(pathTiles(objects), CONTENT.paths.surfaces, pathBox);
+  const ground = new Ground(meadow(), Assets.get<Texture>('wiese'), pathsFor(createNewGame(Date.now()).objects));
   world.layer.grund.addChild(ground.view);
   const coverView = (): void => {
     const a = camera.screenToWorld(0, 0), e = camera.screenToWorld(app.screen.width, app.screen.height);
@@ -122,6 +127,12 @@ async function start(): Promise<void> {
   // Nur im Entwicklungsmodus: Kamera je Bild mitschreiben, damit Abläufe Bild für Bild geprüft werden können (QUALITAETS_LEITFADEN §3)
   const trace: { t: number; cx: number; cy: number; z: number }[] | null = import.meta.env.DEV ? [] : null;
   if (trace) (window as unknown as { __kameraSpur: typeof trace }).__kameraSpur = trace;
+  // Nur im Entwicklungsmodus: Wegplatten für Prüfbilder und Browser-Tests setzen ([gx, gy, Deko-Typ])
+  if (import.meta.env.DEV) {
+    (window as unknown as { __wege: (l: [number, number, string][]) => void }).__wege = (list) => {
+      ground.setPaths(pathsFor(list.map(([gx, gy, type], i): MapObject => ({ id: `weg_${i}`, kind: 'deco', type, gx, gy }))));
+    };
+  }
   app.ticker.add((t) => {
     const dt = t.deltaMS / 1000;
     camera.update(dt);
