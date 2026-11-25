@@ -111,7 +111,7 @@ async function start(): Promise<void> {
   // Bis die Spielwelt an den Spielstand angebunden ist (Objekte, Baustein 8), zeigt sie den Start-Hof.
   const pathBox = { gx0: map.minGx, gy0: map.minGy, w: map.maxGx - map.minGx + 1, h: map.maxGy - map.minGy + 1 };
   const pathsFor = (objects: readonly MapObject[]) => buildPathField(pathTiles(objects), CONTENT.paths.surfaces, pathBox);
-  const ground = new Ground(meadow(), Assets.get<Texture>('wiese'), Assets.get<Texture>('saum'), pathsFor(createNewGame(Date.now()).objects));
+  const ground = new Ground(meadow(), Assets.get<Texture>('wiese'), Assets.get<Texture>('bueschel'), pathsFor(createNewGame(Date.now()).objects));
   world.layer.grund.addChild(ground.view);
   const coverView = (): void => {
     const a = camera.screenToWorld(0, 0), e = camera.screenToWorld(app.screen.width, app.screen.height);

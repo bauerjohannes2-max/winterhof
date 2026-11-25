@@ -26,8 +26,6 @@ export const SHADER_SURFACES = ['erde', 'schnee', 'kies', 'holz', 'kopfstein', '
 
 /** Weltbreite einer Gras-Textur-Wiederholung (Karten-Skizzen rechnen intern mit 116er-Bildmaß, umgerechnet auf die 128er-Kachel) */
 export const GRASS_REPEAT = 352;
-/** Weltbreite einer Wiederholung der Saum-Maske (feine Halme am Wegrand) */
-export const SAUM_REPEAT = 48;
 /** Höchstzahl Wellen der Wiesenform im Shader */
 export const MAX_WAVES = 12;
 
@@ -69,7 +67,7 @@ uniform float uOffset;
 uniform sampler2D uPathA;   // R: Abstand zur Wegkante, G B A: Belag 0–2
 uniform sampler2D uPathB;   // R G B A: Belag 3–6
 uniform vec4 uPathBox;      // gx0, gy0, Breite, Höhe (Kacheln)
-uniform sampler2D uSaum;    // Halm-Höhenmaske für den Wegrand (R)
+uniform sampler2D uTuft;    // Grasbüschel für den Wegrand: 4 Varianten nebeneinander, R Helligkeit, A Deckkraft
 
 const float HW = ${TILE_W / 2}.0;
 const float HH = ${TILE_H / 2}.0;
@@ -264,31 +262,20 @@ void main() {
   // Wegfläche (Baustein 6, Kante A): Saum innen, Gras ragt in Halmen über die Kante. Schnee am Weg kommt später (Entsch. 55)
   vec2 g = toGrid(w);
   float sd = pathSd(g);
-  // Wegrand (Runde 3, Hannes 26.11.: „nicht spitz hochziehen, ganz feines Gras wie Hay Day“). Technik wie Profi-Spiele:
-  // Höhen-/Alpha-Masken-Übergang. Eine gemalte Halm-Maske (scripts/boden_saum.py, Wert 1 am Halmfuß bis 0 an der
-  // Spitze) frisst die Kante an: Gras deckt einen Weg-Bildpunkt, wenn Abstand zur Kante < Reichweite × Maske.
-  // Ergebnis: feine, weiche, unregelmäßige Halme statt geometrischer Zacken. Lange Halme nur an Kanten, unter denen
-  // Wiese liegt (Halme wachsen nach oben), an allen anderen Kanten nur ein feiner Flaum.
-  vec2 su = f / ${SAUM_REPEAT}.0;
-  vec2 sdx = dFdx(su), sdy = dFdy(su);
-  float H = textureGrad(uSaum, su, sdx, sdy).r;
-  float sdB = pathSd(toGrid(w + vec2(0.0, 3.0)));
-  float lower = smoothstep(0.0, 0.035, sd - sdB);
+  // Wegrand (Runde 4, Hannes 26.11.: „feine Grasbüschel wie Hay Day, nicht zerfranst“). Hay Day nah: eine Reihe kleiner
+  // runder Büschel (Fächer aus 8–12 Halmen, oben links heller) sitzt auf einer glatten Kante, dahinter ein hellgrünes Band.
+  // Technik wie Profi-Spiele (Rand-Decals): gemalte Büschel (scripts/boden_bueschel.py) an zufälligen Punkten eines
+  // Weltrasters, aber nur dort, wo der Punkt auf der Kante liegt. Hinten (oben) zuerst, vorne darüber.
   float onM = smoothstep(0.2, 0.7, meadowField(w));
-  float reach = mix(0.022, 0.15, lower) * onM * smoothstep(5.0, 2.0, px);
-  float kante = sd - reach * H;
-  float aaK = max(fwidth(kante), 1e-4) * 0.8;
-  // Saumband in der Wiese: etwas heller und frischer (gemessen Wiese 139/189/14, Saum 155/205/45), Halmstruktur aus der Maske
   vec3 saum = col * vec3(1.06, 1.07, 1.0) + vec3(0.0, 0.0, 0.07);
   float band = smoothstep(-0.24, -0.06, sd + 0.06 * (noise(f / 9.0) - 0.5)) * onM;
-  vec3 fell = saum * (0.95 + 0.1 * H);
-  if (sd <= 0.0) col = mix(col, fell, band);
-  if (kante > -0.1) {
+  if (sd <= 0.0) col = mix(col, saum, band);
+  float aaS = max(fwidth(sd), 1e-4) * 0.8;
+  if (sd > -0.1) {
     vec2 uv = pathUv(g);
     vec4 wa = textureLod(uPathA, uv, 0.0), wb = textureLod(uPathB, uv, 0.0);
     vec3 pc = pathLook(g, f, wa.gba, wb, px);
-    // Rillen längs des Wegs wie Hay Day: dünne Bänder gleichen Abstands zur Kante (folgen jeder Kurve),
-    // in Stücke gebrochen; dunkle Rille mit heller Lippe daneben
+    // Rillen längs des Wegs wie Hay Day: dünne Bänder gleichen Abstands zur Kante, in Stücke gebrochen
     float fine = smoothstep(3.0, 1.2, px);
     float r1 = noise(vec2(sd * 15.0, dot(g, vec2(0.5, 0.5)) * 1.3));
     float brk = smoothstep(0.35, 0.65, noise(g * 1.6 + 4.0));
@@ -297,11 +284,30 @@ void main() {
     pc *= 1.0 - 0.1 * groove * fine;
     pc = mix(pc, pc * vec3(1.08, 1.1, 1.12), lip * 0.6 * fine);
     pc *= 0.97 + 0.06 * noise(vec2(sd * 4.0, dot(g, vec2(0.5, 0.5)) * 0.5));
-    pc *= 1.0 - 0.12 * lower * smoothstep(0.1, 0.0, kante);          // weicher Schatten unter den Halmen
-    // Halme über dem Weg: Saumfarbe, zur Spitze heller
-    vec3 tip = saum * (1.0 + 0.08 * (1.0 - H));
-    vec3 gc = sd > 0.0 ? tip : col;
-    col = mix(gc, pc, clamp(kante / aaK + 0.5, 0.0, 1.0));
+    pc *= 1.0 - 0.1 * smoothstep(0.08, 0.0, sd) * onM;                 // weicher Schatten an der Kante
+    col = mix(col, pc, clamp(sd / aaS + 0.5, 0.0, 1.0));
+  }
+  // Büschel: Raster 3,6 Weltpunkte, Büschel 11 breit × 9 hoch (±20 %), Fuß auf der Kante (|Abstand| < 0,05 Kachel)
+  float tuftFade = onM * smoothstep(3.5, 1.6, px);
+  if (abs(sd) < 0.2 && tuftFade > 0.01) {
+    const float C = 3.6;
+    vec2 c0 = floor((w - vec2(6.6, 0.0)) / C);
+    vec2 c1 = floor((w + vec2(6.6, 10.8)) / C);
+    for (float cy = c0.y; cy <= c1.y; cy += 1.0) {
+      for (float cx = c0.x; cx <= c1.x; cx += 1.0) {
+        vec2 h2 = hash22(vec2(cx, cy) + 71.0);
+        vec2 an = (vec2(cx, cy) + h2) * C;
+        float sA = pathSd(toGrid(an));
+        if (abs(sA + 0.015) > 0.04) continue;
+        float sc = 0.8 + 0.4 * hash12(vec2(cx, cy) + 5.0);
+        vec2 lo = (w - an) / (vec2(11.0, 9.0) * sc);
+        if (abs(lo.x) > 0.5 || lo.y > 0.0 || lo.y < -1.0) continue;
+        float vari = floor(hash12(vec2(cy, cx) + 13.0) * 4.0);
+        vec4 t = textureLod(uTuft, vec2((vari + lo.x + 0.5) / 4.0, 1.0 + lo.y), 0.0);
+        vec3 tc = saum * (0.82 + 0.36 * t.r);
+        col = mix(col, tc, t.a * tuftFade);
+      }
+    }
   }
   finalColor = vec4(col, 1.0);
 }`;
@@ -317,11 +323,8 @@ export class Ground {
   private readonly pathBox = new Float32Array(4);
   private readonly shader: Shader;
 
-  constructor(shape: MeadowShape, grass: Texture, saum: Texture, paths: PathField) {
-    saum.source.addressMode = 'repeat';
-    saum.source.autoGenerateMipmaps = true;
-    saum.source.scaleMode = 'linear';
-    saum.source.updateMipmaps();
+  constructor(shape: MeadowShape, grass: Texture, tuft: Texture, paths: PathField) {
+    tuft.source.scaleMode = 'linear';
     grass.source.addressMode = 'repeat';
     grass.source.autoGenerateMipmaps = true;
     grass.source.scaleMode = 'linear';
@@ -337,7 +340,7 @@ export class Ground {
         uGrass: grass.source,
         uPathA: this.pathA.source,
         uPathB: this.pathB.source,
-        uSaum: saum.source,
+        uTuft: tuft.source,
         boden: {
           uWaves: { value: u.waves, type: 'vec3<f32>', size: MAX_WAVES },
           uWaveCount: { value: u.count, type: 'f32' },
