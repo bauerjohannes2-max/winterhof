@@ -70,6 +70,9 @@ function loadingScreenPlugin() {
 
 export default defineConfig({
   base: './',
+  // Stand-Kennung je Bau: hängt am Manifest-Abruf, damit Handys nach einem Update nie die alte Bildliste aus dem
+  // Zwischenspeicher nehmen (Bilddateien selbst tragen schon eine Prüfsumme im Namen)
+  define: { __WINTERHOF_BUILD__: JSON.stringify(Date.now().toString(36)) },
   publicDir: false,
   plugins: [copyStaticFilesPlugin(), loadingScreenPlugin()],
   build: {
