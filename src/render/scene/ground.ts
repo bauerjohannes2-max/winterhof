@@ -176,7 +176,7 @@ vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px) {
   float all = e012.x + e012.y + e012.z + e3456.x + e3456.y + e3456.z + e3456.w;
   e012 = vec3(all, 0.0, 0.0); e3456 = vec4(0.0);
   // Erde (Kufenspuren brauchen die Fahrtrichtung und kommen mit dem gemalten Erd-Bild in der Grafik-Runde)
-  if (e012.x > 0.003) col += vec3(150.0, 104.0, 64.0) / 255.0 * (1.0 + 0.08 * grain + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
+  if (e012.x > 0.003) col += vec3(196.0, 112.0, 52.0) / 255.0 * (1.0 + 0.08 * grain + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
   if (e012.y > 0.003) col += vec3(226.0, 230.0, 236.0) / 255.0 * (1.0 + 0.05 * grain) * e012.y;   // Schneepfad
   if (e012.z > 0.003) {                                       // Kies: helle und dunkle Körner
     float k = hash12(floor(f / 2.2));
@@ -261,25 +261,51 @@ void main() {
   // Wegfläche (Baustein 6, Kante A): Saum innen, Gras ragt in Halmen über die Kante. Schnee am Weg kommt später (Entsch. 55)
   vec2 g = toGrid(w);
   float sd = pathSd(g);
+  // Grassaum (Hay Day nah, Hannes-Screenshot 25.11.): Band ~0,3 Kachel am Weg heller und frischer grün
+  // (gemessen Wiese 139/189/14, Saum 155/205/45), darin weiche schräge Halmstriche
+  vec3 saum = col * vec3(1.07, 1.07, 1.0) + vec3(0.0, 0.0, 0.08);
+  float onM = 0.0;
+  if (sd > -0.5) {
+    onM = smoothstep(0.2, 0.7, meadowField(w));
+    float streak = noise(vec2((w.x - w.y * 0.5) / 2.2, w.y / 14.0));
+    float band = smoothstep(-0.26, -0.1, sd + 0.07 * (noise(f / 9.0) - 0.5)) * (0.7 + 0.45 * streak);
+    if (sd <= 0.0) col = mix(col, saum, clamp(band, 0.0, 1.0) * onM);
+  }
   if (sd > -0.3) {
     vec2 uv = pathUv(g);
     vec4 wa = textureLod(uPathA, uv, 0.0), wb = textureLod(uPathB, uv, 0.0);
     float aaS = max(fwidth(sd), 1e-4) * 0.75;
     float onMeadow = smoothstep(0.2, 0.7, meadowField(w));
-    // Halme: schmale Spitzen in Bildschirm-Spalten (Halme stehen senkrecht), in kleinen Büscheln wie Hay Day:
-    // nur ein Teil der Kante trägt Büschel (Gruppe ~4 Spalten), darin 1–3 Halme mit zufälliger Länge
-    float colW = 2.6;
-    float cx = floor(w.x / colW);
-    float row = floor((w.y + cx * 7.0) / 48.0);
-    float tuft = hash12(vec2(floor(cx / 4.0), row + 31.0));
-    float hb = hash12(vec2(cx, row));
-    float len = (tuft > 0.55 && hb > 0.4) ? (0.05 + 0.1 * hb * hb) : 0.0;
-    float taper = 1.0 - abs(fract(w.x / colW) - 0.5) * 2.0;
-    float blade = len * taper * onMeadow * smoothstep(4.0, 1.5, px);
-    float kante = sd - blade;
+    // Grassaum (Runde 2, Hannes „zackig“): dichte feine Halmspitzen in Bildschirm-Spalten. Ein Halm wächst von der
+    // Wiese UNTER dem Punkt nach oben: Weg nur, wo der Punkt selbst und der Punkt eine Halmlänge tiefer Weg sind.
+    // So entstehen an steilen Kanten keine senkrechten Streifen (Punkt darunter liegt dort ebenfalls auf dem Weg).
+    // Halme leicht schräg nach rechts (wie Hay Day), Spalten im geneigten Raster
+    // zwei versetzte Spaltenraster mit verschiedener Breite: unregelmäßige, weiche Spitzen statt Sägezahn
+    float sx = w.x - w.y * 0.25;
+    float fade = onMeadow * smoothstep(4.0, 1.5, px);
+    float bladeW = 0.0;
+    for (int k = 0; k < 2; k++) {
+      float cw = k == 0 ? 2.9 : 1.9;
+      float xs = sx + float(k) * 1.3;
+      float cx = floor(xs / cw);
+      float hb = hash12(vec2(cx, 3.0 + float(k) * 11.0));
+      float wave = noise(vec2(xs / 12.0, 1.0 + float(k)));
+      float lenW = (hb < 0.25 ? 0.0 : (2.5 + 9.0 * hb * hb)) * (0.5 + 0.9 * wave) * (k == 0 ? 1.0 : 0.65);
+      float off = (hash12(vec2(cx, 9.0 + float(k))) - 0.5) * 0.4;
+      float taper = clamp(1.0 - abs(fract(xs / cw) - 0.5 - off) * 2.2, 0.0, 1.0);
+      bladeW = max(bladeW, lenW * pow(taper, 1.6));
+    }
+    bladeW *= fade;
+    float sdBelow = pathSd(toGrid(w + vec2(-bladeW * 0.25, bladeW)));
+    float kante = min(sd, sdBelow) - 0.035 * (noise(vec2(sx / 3.0, 7.0)) - 0.4);   // auch die obere Kante leicht unruhig
     vec3 pc = pathLook(g, f, wa.gba, wb, px);
-    pc *= 1.0 - 0.22 * pow(clamp(1.0 - kante / 0.14, 0.0, 1.0), 1.5);
-    col = mix(col, pc, clamp(kante / aaS + 0.5, 0.0, 1.0));
+    // Spuren längs des Wegs: Bänder gleichen Abstands zur Kante (laufen von selbst mit jeder Kurve)
+    float rut = noise(vec2(sd * 7.0, dot(g, vec2(0.35, 0.35))));
+    pc *= 0.96 + 0.07 * rut;
+    pc *= 1.0 - 0.1 * pow(clamp(1.0 - kante / 0.12, 0.0, 1.0), 1.6);     // leichter Schatten am Saum
+    // Halmspitzen über dem Weg in Saumfarbe, weich auslaufend
+    vec3 gc = sd > 0.0 ? mix(saum, saum * vec3(1.04, 1.04, 1.0), 0.5) : col;
+    col = mix(gc, pc, clamp(kante / (aaS * 2.2) + 0.5, 0.0, 1.0));
   }
   finalColor = vec4(col, 1.0);
 }`;
