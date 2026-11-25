@@ -8,6 +8,13 @@ Gilt für jede Sitzung, jeden Helfer und jede Zeile Code, jedes Bild und jeden T
 - **Das gilt auch gegen Hannes' eigene Bitte.** Will Hannes etwas schneller oder einfacher, als es richtig ist, widerspricht Claude klar: Was kostet die Abkürzung, was ist der beste Weg? Claude schlägt immer den besten Weg vor. Nur wenn Hannes danach ausdrücklich trotzdem anders entscheidet, wird das als bewusste Ausnahme mit Grund in `LEITUNG_CLAUDE.md` eingetragen.
 - „Besser als die Vorbilder“ heißt für uns: gleiche Sorgfalt bei Bedienung, Grafik und Spielgefühl, dazu eigene Stärken: gemütliche Weihnachtswelt, tierfreundlich, fair ohne Druck.
 
+## 1a. Grundlage vor Austauschbarem (Hannes 25.11., Entscheidung 39)
+Vor jeder Arbeit fragen: **Kann man das später ohne Umbau tauschen?**
+- **Ja (austauschbar):** Rand-Kulisse, Deko, Tiere, Lichtungen, Animationen, Einzelbilder. → Jetzt nur Konzept/Lageplan per Skizze festhalten, Platzhalter einbauen, Feinschliff in der Grafik-Runde am Schluss. Nicht darin stecken bleiben.
+- **Nein (Grundlage):** Boden des Spielfelds, Spielfeldform und -grenze, Kachelmaß, Größen/Maßstab, Datenmodell, Logik-Kern. → Jetzt gründlich und in voller Qualität, wie §1 verlangt.
+- Das ist keine Abkürzung im Sinne von §1: Austauschbares wird nicht schlechter, nur später gemacht. Grundlagen bekommen nie Pflaster.
+- Bei jeder Runde sagen, ob es Grundlage oder austauschbar ist; austauschbare Runden höchstens eine Skizzen-Wahl, dann weiter.
+
 ## 2. Vor jedem Schritt: kritisch prüfen
 Bevor ein Baustein oder eine wichtige Entscheidung beginnt, beantwortet Claude schriftlich (kurz, im Baustein-Commit oder in der Doku):
 1. **Ist das wirklich der beste Weg, oder nur der naheliegende?** Mindestens eine Alternative nennen und begründen, warum sie schlechter ist.
@@ -17,6 +24,9 @@ Bevor ein Baustein oder eine wichtige Entscheidung beginnt, beantwortet Claude s
 5. **Stimmt das Konzept, nicht nur die Technik?** Würde Hay Day/Clash es überhaupt so machen? (Lehre aus Baustein 2: technisch sauber, aber die Straße quer durch die Karte war konzeptionell falsch.)
 6. **Hannes fragen:** Jede Konzept- und Gestaltungsfrage als interaktive Auswahlfrage mit Empfehlung, gern mehrere Runden. Lieber eine Frage zu viel als eine Annahme.
 7. **Was kann schiefgehen?** Auf welchen Handys, bei welchem Spielstand, offline, nach einem Update?
+
+6. **Plausibilität (Hannes 24.11.):** Passt das Ergebnis zum Rest (Größen, Licht, Maßstab, Technik-Grundlage)? Widersprüche zwischen Doku, Code und Bildern sofort melden und beheben, nicht übergehen.
+7. **Überblick (Hannes 24.11.):** Bei jeder Abnahme kurz sagen, was als Nächstes ansteht (2–3 Bausteine).
 
 ## 3. Nach jedem Schritt: ehrlich prüfen
 - Alle Prüfungen grün (`npm run check`). **Nie einen Test abschwächen oder ein Vergleichsbild erneuern, nur damit es grün wird.** Vergleichsbilder werden nur nach Hannes' Abnahme erneuert.

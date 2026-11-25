@@ -4,6 +4,8 @@
 
 **Viel nachfragen (Hannes 24.11.):** Bei jeder Konzept- oder Gestaltungsfrage Hannes interaktiv fragen (Auswahlfragen mit Empfehlung, gern mehrere Runden), statt selbst festzulegen. Je mehr Rückfragen, desto näher am Spiel, das Hannes sich vorstellt. Vor jedem Baustein zuerst fragen: Ist das Konzept dahinter richtig, nicht nur die Technik?
 
+**Grundlage vor Austauschbarem (Hannes 25.11., Entscheidung 39):** Was sich später ohne Umbau tauschen lässt (Kulisse, Deko, Tiere, Animationen), nur per Skizze festhalten und mit Platzhalter weiter; Grundlagen (Boden, Spielfeldform, Kachelmaß, Größen, Datenmodell) jetzt gründlich. Ziel: vorankommen, nicht in der Karte stecken bleiben.
+
 Vor jeder Arbeit lesen:
 1. `docs/QUALITAETS_LEITFADEN.md` – verbindlich, wie geprüft und gearbeitet wird
 2. `docs/LEITUNG_CLAUDE.md` – Rollen, Entscheidungen, wer gerade arbeitet

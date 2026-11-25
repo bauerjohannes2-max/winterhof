@@ -4,6 +4,7 @@
 // Statisch: wird einmal gelesen, nie pro Frame neu berechnet. Kein DOM, keine Grafik.
 // ============================================================================
 import { CONTENT, footprintOf, type ContentPack } from './content';
+import { validateMeadow } from './meadow';
 
 export type TerrainKind = 'snow' | 'forest' | 'mountain' | 'ice';
 export type SurfaceKind = 'none' | 'road' | 'plaza';
@@ -96,6 +97,7 @@ export function validateMap(c: ContentPack = CONTENT): string[] {
       for (const ch of row) if (!(ch in legend)) { errs.push(`${name} Reihe ${i}: Zeichen "${ch}" fehlt in der Legende`); break; }
     });
   }
+  errs.push(...validateMeadow(c));
   if (errs.length) return errs;
 
   const minGx = m.origin.gx, minGy = m.origin.gy;

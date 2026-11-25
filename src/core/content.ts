@@ -48,6 +48,8 @@ export interface ContentPack {
       /** Mindeststufe für einzelne Stücke (sonst land.fromLevel) */
       levels: Record<string, number>;
     };
+    /** Spielfeld-Wiese: weiche Form um das Tal (core/meadow.ts) */
+    meadow: { reachMin: number; reachMax: number; waves: { k: number; a: number; p: number }[] };
     /** Prop-Typen am Hofplatz, die sich nicht verschieben lassen */
     fixed: string[];
     terrain: string[];

@@ -1,48 +1,38 @@
 // ============================================================================
-// Grundboden (Baustein 5, Entscheidung 25): Hof-Schnee auf eigenem Land, Wildnis überall sonst – auch endlos
-// über die Kartendaten hinaus. Hofrand = Farbstufe mit Schattenstreifen nach unten rechts (Licht oben links),
-// keine Linie, kein weißer Rand, Kante leicht unregelmäßig.
+// Grundboden (Baustein 5, Entscheidungen 26, 29–31, 40): das ganze Tal ist Hay-Day-Wiese, Boden überall gleich
+// (eigenes Land zeigen nur Hindernisse). Die Wiese endet weich in großen Buchten (Form: core/meadow.ts),
+// dahinter liegt Schnee als dicke Schicht mit Volumen: Seitenkante, Schlagschatten aufs Gras nach unten rechts
+// (Licht oben links), Oberseite mit Lichtkante, Verwehungen und Körnung. Vorlage: abgenommene Karten-Bilder R7–R9
+// (scripts/karte_rand.py, Wiese GRAS_B, Schnee boden_gras.snow_render).
 //
-// Gegen sichtbare Wiederholung (Hannes 24.11.: „natürlich und zufällig, kein Muster“): Hex-Tiling nach
-// Mikkelsen (2022, „Practical Real-Time Hex-Tiling“, JCGT 11/3): die Textur wird je Sechseck zufällig verschoben
-// und an den Rändern weich gemischt, ohne Drehung (gemaltes Licht bleibt oben links). Mip-Stufe aus den
-// durchgehenden Koordinaten (textureGrad), sonst Nähte an den Sechseck-Grenzen.
-// Variante B (zum Vergleich): zusätzlich große, weiche Dichte-Flecken in der Wildnis und leichte Helligkeitswolken.
+// Gegen sichtbare Wiederholung: Hex-Tiling nach Mikkelsen (2022, „Practical Real-Time Hex-Tiling“, JCGT 11/3),
+// ohne Drehung (gemaltes Licht bleibt oben links); Mip-Stufe aus den durchgehenden Koordinaten (textureGrad).
+// Große helle/dunkle Wiesenflecken wie Hay Day liegen in Weltkoordinaten darüber.
 //
-// Ein Zeichenaufruf: ein Viereck über dem sichtbaren Bereich, alles im Shader. Abweichung von „gebacken“
-// (GRAFIK_TECHNIK §3) mit Grund: endlose Wildnis + Schärfe bis 2 Bildpunkte je Weltpunkt passen nicht in
-// gebackene Kacheln (Speicher weit über 96 MB); der Shader kostet 1 Aufruf und 3–6 Texturzugriffe je Bildpunkt.
+// Ein Zeichenaufruf: ein Viereck über dem sichtbaren Bereich, alles im Shader (Abweichung von „gebacken“,
+// GRAFIK_TECHNIK §3: endlose Kulisse + Schärfe bis 2 Bildpunkte je Weltpunkt passen nicht in gebackene Kacheln).
+// Teure Kantenrechnung nur nahe am Wiesenrand; tief in Wiese oder Schnee nur Textur bzw. Schneeton.
 // ============================================================================
 import { Geometry, GlProgram, Mesh, Shader, type Texture } from 'pixi.js';
-import type { TerrainMap } from '../../core';
+import type { MeadowShape } from '../../core';
 import { TILE_H, TILE_W, type Rect } from './iso';
 
-export type GroundVariant = 'a' | 'b';
+/** Weltbreite einer Gras-Textur-Wiederholung (wie die Karten-Bilder: 320 bei 116er-Kachel → 128er-Kachel) */
+export const GRASS_REPEAT = 352;
+/** Höchstzahl Wellen der Wiesenform im Shader */
+export const MAX_WAVES = 12;
 
-/** Weltbreite, die eine Textur-Wiederholung abdeckt (Schärfe ≥ 1,6 Bildpunkte je Weltpunkt bei @2x, STIL_REGELN §6) */
-export const SNOW_REPEAT = 320;
-export const WILD_REPEAT = 640;
-/** Platz für die Ownership-Tabelle: 8 × 8 Landstücke (Tal 6 × 6 + Ring außen = immer Wildnis) */
-export const PLOT_TABLE = 8;
-
-/** Eigene Landstücke als Tabelle (Index (row + 1) · 8 + col + 1), außen herum ein Ring „nicht eigen“. */
-export function ownedTable(map: TerrainMap, owned: readonly string[]): Float32Array {
-  const t = new Float32Array(PLOT_TABLE * PLOT_TABLE);
-  for (const id of owned) {
-    const p = map.plotById(id);
-    if (!p) throw new Error(`Unbekanntes Landstück ${id}`);
-    if (p.col + 1 >= PLOT_TABLE - 1 || p.row + 1 >= PLOT_TABLE - 1) throw new Error(`Landstück ${id} passt nicht in die Tabelle`);
-    t[(p.row + 1) * PLOT_TABLE + p.col + 1] = 1;
-  }
-  return t;
-}
-
-/** Raster-Ursprung und Kantenlänge der Landstücke (alle gleich groß, prüft die Karte) */
-export function plotLayout(map: TerrainMap): { gx0: number; gy0: number; size: number } {
-  const first = map.plots[0];
-  if (!first) throw new Error('Karte ohne Landstücke');
-  const size = first.x1 - first.x0 + 1;
-  return { gx0: Math.min(...map.plots.map((p) => p.x0)), gy0: Math.min(...map.plots.map((p) => p.y0)), size };
+/** Wiesenform als Shader-Werte (Wellen k, a, p; Tal-Quadrat lo/hi; Mitte; Grundreichweite). */
+export function meadowUniforms(m: MeadowShape): { waves: Float32Array; count: number; box: Float32Array; center: Float32Array; offset: number } {
+  if (m.waves.length > MAX_WAVES) throw new Error(`Wiese hat ${m.waves.length} Wellen, Shader kann ${MAX_WAVES}`);
+  const waves = new Float32Array(MAX_WAVES * 3);
+  m.waves.forEach((w, i) => waves.set([w.k, w.a, w.p], i * 3));
+  return {
+    waves, count: m.waves.length,
+    box: new Float32Array([m.lo.gx, m.lo.gy, m.hi.gx, m.hi.gy]),
+    center: new Float32Array([m.cx, m.cy]),
+    offset: m.offset
+  };
 }
 
 const VERTEX = /* glsl */ `#version 300 es
@@ -58,17 +48,23 @@ void main() {
 }`;
 
 const FRAGMENT = /* glsl */ `#version 300 es
+precision highp float;
 in vec2 vWorld;
 out vec4 finalColor;
-uniform sampler2D uSnow;
-uniform sampler2D uWild;
-uniform vec4 uOwned[16];
-uniform vec2 uPlotOrigin;
-uniform float uPlotSize;
-uniform float uVariant;
+uniform sampler2D uGrass;
+uniform vec3 uWaves[${MAX_WAVES}];
+uniform float uWaveCount;
+uniform vec4 uBox;
+uniform vec2 uCenter;
+uniform float uOffset;
 
 const float HW = ${TILE_W / 2}.0;
 const float HH = ${TILE_H / 2}.0;
+const float THICK = 4.8;                                  // Schneedicke in Weltpunkten (Seitenkante)
+const vec3 SNOW_TOP = vec3(243.0, 242.0, 234.0) / 255.0;  // passend zum Schnee der Baumbilder (karte_rand SCHNEE)
+const vec3 SNOW_SHADE = vec3(190.0, 206.0, 218.0) / 255.0;
+const vec3 SNOW_SIDE = vec3(136.0, 160.0, 192.0) / 255.0;
+const vec3 SHADOW = vec3(0.42, 0.36, 0.16);               // Schlagschatten aufs Gras (warm abgedunkelt)
 
 // Hash ohne Sinus (Dave Hoskins), auf Handys stabil
 float hash12(vec2 p) {
@@ -87,7 +83,6 @@ float noise(vec2 p) {
   return mix(mix(hash12(i), hash12(i + vec2(1.0, 0.0)), u.x),
              mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), u.x), u.y);
 }
-float fbm(vec2 p) { return 0.65 * noise(p) + 0.35 * noise(p * 2.03 + 17.0); }
 
 // Hex-Tiling (Mikkelsen 2022): Dreiecksraster, drei Ecken mit eigener Zufallsverschiebung
 vec3 hexSample(sampler2D tex, vec2 uv) {
@@ -103,7 +98,6 @@ vec3 hexSample(sampler2D tex, vec2 uv) {
   vec3 c1 = textureGrad(tex, uv + hash22(v1), dx, dy).rgb;
   vec3 c2 = textureGrad(tex, uv + hash22(v2), dx, dy).rgb;
   vec3 c3 = textureGrad(tex, uv + hash22(v3), dx, dy).rgb;
-  // Gewichte schärfen (weniger Geister-Überblendung), hellere Stelle gewinnt leicht (Mikkelsen: Luminanz)
   vec3 lum = vec3(dot(c1, vec3(0.3, 0.59, 0.11)), dot(c2, vec3(0.3, 0.59, 0.11)), dot(c3, vec3(0.3, 0.59, 0.11)));
   w *= mix(vec3(1.0), lum, 0.6);
   w = pow(max(w, 0.0), vec3(5.0));
@@ -111,58 +105,92 @@ vec3 hexSample(sampler2D tex, vec2 uv) {
   return c1 * w.x + c2 * w.y + c3 * w.z;
 }
 
-float owned(vec2 cell) {
-  if (cell.x < 0.0 || cell.y < 0.0 || cell.x > 7.0 || cell.y > 7.0) return 0.0;
-  int i = int(cell.y) * 8 + int(cell.x);
-  return uOwned[i / 4][i - (i / 4) * 4];
+vec2 toGrid(vec2 w) { return vec2((w.y / HH + w.x / HW) * 0.5, (w.y / HH - w.x / HW) * 0.5); }
+// Boden liegt flach: Rauschen in „aufgeklappten“ Weltkoordinaten (Bild 2 : 1 gestaucht)
+vec2 flat2(vec2 w) { return vec2(w.x, w.y * 2.0); }
+
+// Wiesenform (gleich core/meadow.ts): > 0 Wiese, < 0 Schnee, ungefähr Kacheln bis zum Rand
+float meadow(vec2 g) {
+  float t = atan(g.y - uCenter.y, g.x - uCenter.x);
+  float reach = uOffset;
+  for (int i = 0; i < ${MAX_WAVES}; i++) {
+    if (float(i) >= uWaveCount) break;
+    vec3 wv = uWaves[i];
+    reach += wv.y * cos(wv.x * t + wv.z);
+  }
+  vec2 d = max(max(uBox.xy - g, g - uBox.zw), 0.0);
+  return reach - length(d);
 }
 
-// Abstand zur Grenze des eigenen Landes in Kacheln: > 0 im Hof, < 0 in der Wildnis
-float landDistance(vec2 g) {
-  vec2 p = (g - uPlotOrigin) / uPlotSize + 1.0;   // +1: Ring außen
-  vec2 c = floor(p);
-  float inside = owned(c);
-  float d = 2.0;
-  for (int y = -1; y <= 1; y++) {
-    for (int x = -1; x <= 1; x++) {
-      vec2 n = c + vec2(float(x), float(y));
-      if (owned(n) != inside) {
-        vec2 q = max(abs(p - (n + 0.5)) - 0.5, 0.0);
-        d = min(d, length(q));
-      }
-    }
-  }
-  return (inside > 0.5 ? d : -d) * uPlotSize;
+// Rand leicht unruhig: ±0,25 Kachel in weichen Wellen, ±0,07 fein (Value-Rauschen braucht größere Zellen als das Gauß-Rauschen der Karten-Bilder, sonst Knicke)
+// Feine Zacken werden weit draußen ausgeblendet (sonst sägt die Kante: kleiner als ein Bildpunkt).
+float uPx = 1.0;
+float edgeField(vec2 w) {
+  vec2 f = flat2(w);
+  float fine = smoothstep(4.0, 1.5, uPx);
+  return meadow(toGrid(w)) + (noise(f / 90.0) - 0.5) * 0.5 + (noise(f / 30.0 + 5.0) - 0.5) * 0.14 * fine;
+}
+
+// Schneedecke 0…1 an einem Weltpunkt; soft = Weichheit in Kacheln. Keine losen Schollen auf der Wiese
+// (Hay Day: Wiese endet sauber; Kulisse davor kommt mit der Rand-Gestaltung, Entscheidung 39).
+float snowAt(vec2 w, float soft) {
+  return 1.0 - smoothstep(-soft, soft, edgeField(w));
+}
+
+// Oberseite des Schnees: Lichtkante (rim), lange schräge Verwehungen, feine Körnung (weit draußen ausgeblendet)
+vec3 snowTop(vec2 f, float rim, float px) {
+  vec2 q = mat2(0.921, -0.389, 0.389, 0.921) * f * vec2(1.0 / 1.5, 1.5);
+  float hA = noise(q / 760.0), hB = noise((q + vec2(3.0, 0.0)) / 760.0), hC = noise((q + vec2(0.0, 3.0)) / 760.0);
+  float rA = pow(1.0 - abs(hA * 2.0 - 1.0), 2.0), rB = pow(1.0 - abs(hB * 2.0 - 1.0), 2.0), rC = pow(1.0 - abs(hC * 2.0 - 1.0), 2.0);
+  float dr = clamp(-((rB - rA) * 0.8 + (rC - rA)) * 50.0 / 3.0, -1.0, 1.0) * 0.5;
+  float grain = (noise(f / 3.0) - 0.5) * smoothstep(3.0, 1.0, px);
+  float tone = clamp(0.72 + rim * 0.5 + dr * 0.6 + grain * 0.16, 0.0, 1.0);
+  return mix(SNOW_SHADE, SNOW_TOP, tone);
 }
 
 void main() {
   vec2 w = vWorld;
-  vec2 g = vec2((w.y / HH + w.x / HW) * 0.5, (w.y / HH - w.x / HW) * 0.5);
-  // Boden liegt flach: Textur im Bild 2 : 1 gestaucht (Schrägansicht)
-  vec2 flatPos = vec2(w.x, w.y * 2.0);
-  vec3 snow = hexSample(uSnow, flatPos / ${SNOW_REPEAT}.0) * vec3(0.95, 0.955, 0.95);   // Hof: ruhig, leicht wärmer als die Wildnis, kein Papierweiß
-  vec3 wild = hexSample(uWild, flatPos / ${WILD_REPEAT}.0) * vec3(1.02, 1.04, 1.06);   // Wildnis etwas kühler, nur wenig dunkler als der Hof
+  vec2 f = flat2(w);
+  // Bildpunkt-Größe in Weltpunkten: für Kantenglättung und um feine Körnung weit draußen auszublenden
+  float px = max(fwidth(w.x), 1e-3);
+  uPx = px;
 
-  float macro = fbm(g / 7.0);
-  if (uVariant > 0.5) {
-    // B: Wildnis mal dichter, mal lichter (große weiche Flecken), Helligkeit wolkig ±3 %
-    float dense = smoothstep(0.3, 0.72, fbm(g / 5.0 + 41.0));
-    wild = mix(mix(snow, wild, 0.55), wild, dense);
-    float light = 1.0 + (macro - 0.5) * 0.06;
-    snow *= light;
-    wild *= light;
+  // Wiese: Textur + große Licht-Flecken wie Hay Day
+  vec3 grass = hexSample(uGrass, f / ${GRASS_REPEAT}.0);
+  float patches = noise(f / 700.0) * 0.7 + noise(f / 240.0 + 9.0) * 0.3;
+  // Hay Day: Licht wandert über die Wiese, aber keine dunklen Flecken (wirkten wie Schatten/Schmutz, Hannes 25.11.)
+  float lit = patches - 0.5;
+  grass *= 1.0 + lit * 0.1;
+  grass = mix(grass, grass * vec3(1.07, 1.05, 0.86), clamp(lit * 2.0, 0.0, 1.0) * 0.6);   // helle Flecken etwas sonniger
+  // Trockenflecken wie Hay Day: selten, etwa kachelgroß, in Weltkoordinaten (Textur würde sie als Muster wiederholen)
+  float dryN = noise(f / 230.0 + 17.0) * 0.75 + noise(f / 70.0 + 3.0) * 0.25;
+  float dry = smoothstep(0.62, 0.84, dryN);
+  float bladeLift = clamp((dot(grass, vec3(0.3, 0.59, 0.11)) - 0.55) * 6.0, 0.0, 1.0);   // helle Halme werden zuerst gelb
+  grass = mix(grass, grass * vec3(1.18, 1.06, 0.55) + vec3(0.06, 0.04, 0.0), dry * (0.3 + 0.7 * bladeLift));
+
+  float fe = edgeField(w);
+  float aaT = max(fwidth(fe), 1e-4) * 0.75;                     // ein Bildpunkt in Kacheln
+  float perPx = fwidth(fe) / px;                                // Kacheln je Weltpunkt (für Weltmaße am Rand)
+  vec3 col = grass;
+
+  if (fe < -1.0) {
+    // Tief im Schnee: nur Oberseite (keine Kante in der Nähe)
+    col = snowTop(f, 0.0, px);
+  } else if (fe < 1.2) {
+    // Nah am Rand: Schicht mit Volumen. top = Oberseite (um THICK nach oben versetzt), side = sichtbare Kante
+    float m = snowAt(w, aaT);
+    float top = snowAt(w + vec2(0.0, THICK), aaT);
+    float sh = snowAt(w + vec2(-1.2 * THICK, -0.1 * THICK), max(aaT, 1.4 * THICK * perPx));
+    col *= 1.0 - clamp(sh, 0.0, 1.0) * SHADOW;
+    col = mix(col, SNOW_SIDE, clamp(m - top, 0.0, 1.0));
+    // Lichtkante der Oberseite: Gefälle der weichen Kante gegen das Licht von oben links
+    float s = max(aaT, 2.4 * perPx);
+    float e = 1.5;
+    float gx = snowAt(w + vec2(e, THICK), s) - snowAt(w + vec2(-e, THICK), s);
+    float gy = snowAt(w + vec2(0.0, THICK + e), s) - snowAt(w + vec2(0.0, THICK - e), s);
+    float rim = clamp(-(gx * 0.8 + gy) * 3.0, -1.0, 1.0);
+    col = mix(col, snowTop(f, rim, px), clamp(top, 0.0, 1.0));
   }
-
-  // Hofrand: Kante leicht unregelmäßig (±0,1 Kachel), weiche Farbstufe, Schatten nach unten rechts
-  float wobble = (fbm(g * 1.3 + 7.0) - 0.5) * 0.2;
-  float d = landDistance(g) + wobble;
-  float aa = max(0.05, fwidth(d));
-  float hof = smoothstep(-aa, aa, d);
-  vec2 shadowDir = vec2(0.285, 0.095);                           // Bild nach unten rechts = Raster (3, 1)
-  float ds = landDistance(g - shadowDir) + wobble;
-  float shadow = smoothstep(-0.35, 0.05, ds) * (1.0 - hof);
-  vec3 col = mix(wild, snow, hof);
-  col = mix(col, col * vec3(0.66, 0.74, 0.86), 0.5 * shadow);
   finalColor = vec4(col, 1.0);
 }`;
 
@@ -170,38 +198,29 @@ export class Ground {
   readonly view: Mesh<Geometry, Shader>;
   private readonly positions = new Float32Array(8);
   private readonly geometry: Geometry;
-  private readonly uniforms: { uniforms: { uOwned: Float32Array; uVariant: number } };
   private last = '';
 
-  constructor(map: TerrainMap, owned: readonly string[], snow: Texture, wild: Texture, variant: GroundVariant) {
-    for (const tex of [snow, wild]) {
-      tex.source.addressMode = 'repeat';
-      tex.source.autoGenerateMipmaps = true;
-      tex.source.scaleMode = 'linear';
-      tex.source.updateMipmaps();
-    }
-    const layout = plotLayout(map);
+  constructor(shape: MeadowShape, grass: Texture) {
+    grass.source.addressMode = 'repeat';
+    grass.source.autoGenerateMipmaps = true;
+    grass.source.scaleMode = 'linear';
+    grass.source.updateMipmaps();
+    const u = meadowUniforms(shape);
     this.geometry = new Geometry({ attributes: { aPosition: this.positions }, indexBuffer: [0, 1, 2, 0, 2, 3] });
     const shader = new Shader({
       glProgram: GlProgram.from({ vertex: VERTEX, fragment: FRAGMENT, name: 'grundboden', preferredFragmentPrecision: 'highp' }),
       resources: {
-        uSnow: snow.source,
-        uWild: wild.source,
+        uGrass: grass.source,
         boden: {
-          uOwned: { value: ownedTable(map, owned), type: 'vec4<f32>', size: 16 },
-          uPlotOrigin: { value: new Float32Array([layout.gx0, layout.gy0]), type: 'vec2<f32>' },
-          uPlotSize: { value: layout.size, type: 'f32' },
-          uVariant: { value: variant === 'b' ? 1 : 0, type: 'f32' }
+          uWaves: { value: u.waves, type: 'vec3<f32>', size: MAX_WAVES },
+          uWaveCount: { value: u.count, type: 'f32' },
+          uBox: { value: u.box, type: 'vec4<f32>' },
+          uCenter: { value: u.center, type: 'vec2<f32>' },
+          uOffset: { value: u.offset, type: 'f32' }
         }
       }
     });
-    this.uniforms = shader.resources['boden'] as typeof this.uniforms;
     this.view = new Mesh({ geometry: this.geometry, shader, label: 'grundboden' });
-  }
-
-  /** Eigenes Land geändert (Landstück gekauft): nur die Tabelle neu */
-  setOwned(map: TerrainMap, owned: readonly string[]): void {
-    this.uniforms.uniforms.uOwned.set(ownedTable(map, owned));
   }
 
   /** Viereck über den sichtbaren Bereich legen (Welt), mit Rand; nur bei Änderung neu hochladen. */

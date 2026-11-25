@@ -4,6 +4,8 @@ export type { ContentPack } from './content';
 export { canPlace, validateLayout, buildOccupancy, isPlotOwned } from './map';
 export { terrainMap, buildTerrainMap, validateMap, plotIdAt, plotId, ZONE_BORDER } from './terrain';
 export type { Tile, TerrainMap, TerrainKind, SurfaceKind, Plot } from './terrain';
+export { meadow, buildMeadow, validateMeadow } from './meadow';
+export type { MeadowShape } from './meadow';
 export { plotsBought, nextPlotPrice, plotStatus, toolPrice, obstacleDef, clearCost, decoPrice } from './land';
 export type { PlotStatus } from './land';
 export { upgradeToV9, plotsForOldZones, ZONES_V8, ITEM_RENAMES_V9 } from './migrate';

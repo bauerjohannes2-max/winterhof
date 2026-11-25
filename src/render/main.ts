@@ -5,7 +5,7 @@
 // Liest den Kern nur über ../core, ändert den Spielstand nur über Befehle.
 // ============================================================================
 import { Application, Assets, type Container, type Texture } from 'pixi.js';
-import { CONTENT, terrainMap } from '../core';
+import { CONTENT, meadow, terrainMap } from '../core';
 import { Camera, maxZoomForWidth } from './camera/camera';
 import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
@@ -104,10 +104,9 @@ async function start(): Promise<void> {
   camera.resize(app.screen.width, app.screen.height);
   const sv = startView(map, app.screen.width, app.screen.height);
   camera.setView(sv.cx, sv.cy, sv.zoom);
-  // Grundboden (Baustein 5): eigenes Land = Start-Landstücke, bis die Darstellung den Spielstand liest (Baustein 6 ff.)
+  // Grundboden (Baustein 5): ganzes Tal Wiese, außen Schnee (Entscheidung 40)
   const params = new URLSearchParams(location.search);
-  const ground = new Ground(map, CONTENT.map.plots.start, Assets.get<Texture>('schnee_hof'), Assets.get<Texture>('wildnis'),
-    params.get('boden') === 'b' ? 'b' : 'a');
+  const ground = new Ground(meadow(), Assets.get<Texture>('wiese'));
   world.layer.grund.addChild(ground.view);
   const coverView = (): void => {
     const a = camera.screenToWorld(0, 0), e = camera.screenToWorld(app.screen.width, app.screen.height);
@@ -120,7 +119,6 @@ async function start(): Promise<void> {
     toggleGrid: () => { grid.setShown(!grid.shown); root.dataset['raster'] = grid.shown ? '1' : '0'; }
   });
   root.dataset['raster'] = grid.shown ? '1' : '0';
-  root.dataset['boden'] = params.get('boden') === 'b' ? 'b' : 'a';
   // Nur im Entwicklungsmodus: Kamera je Bild mitschreiben, damit Abläufe Bild für Bild geprüft werden können (QUALITAETS_LEITFADEN §3)
   const trace: { t: number; cx: number; cy: number; z: number }[] | null = import.meta.env.DEV ? [] : null;
   if (trace) (window as unknown as { __kameraSpur: typeof trace }).__kameraSpur = trace;

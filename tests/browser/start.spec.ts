@@ -21,7 +21,7 @@ test('startet sauber, Ebenen in fester Reihenfolge, Start unter 3 s', async ({ p
   await expect(page.locator('#laden')).toHaveCount(0);                 // Ladebild ist weg
   await expect(page.locator('#hochkant')).toBeHidden();
   await expect(root).toHaveAttribute('data-kamera', 'idle');
-  await expect(page).toHaveScreenshot('b04-start.png');   // Start-Ansicht mit Hilfsraster (Baustein 4)
+  await expect(page).toHaveScreenshot('b05-start.png');   // Start-Ansicht mit Hilfsraster auf der Wiese (Baustein 5)
   expect(fehler).toEqual([]);
 });
 

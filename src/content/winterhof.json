@@ -39,6 +39,53 @@
         "5,2": 13
       }
     },
+    "meadow": {
+      "note": "Spielfeld-Wiese (Entscheidung 29–31, 40): ganzes Tal Gras, Rand weich in großen Buchten. Wiese reicht reachMin…reachMax Kacheln über das Tal hinaus; Form = Summe der Wellen a·cos(k·θ + p) um die Talmitte, auf reachMin…reachMax normiert. Außerhalb Schnee (Kulisse, nicht bebaubar). Gleiche Form wie scripts/karte_rand.py.",
+      "reachMin": 0.6,
+      "reachMax": 5.2,
+      "waves": [
+        {
+          "k": 2,
+          "a": 0.40918,
+          "p": 2.87148
+        },
+        {
+          "k": 3,
+          "a": 0.27665,
+          "p": 6.132
+        },
+        {
+          "k": 4,
+          "a": 0.16056,
+          "p": 4.9101
+        },
+        {
+          "k": 5,
+          "a": 0.10521,
+          "p": 5.30169
+        },
+        {
+          "k": 6,
+          "a": 0.11545,
+          "p": 3.48789
+        },
+        {
+          "k": 7,
+          "a": 0.07744,
+          "p": 5.91638
+        },
+        {
+          "k": 8,
+          "a": 0.09011,
+          "p": 0.11514
+        },
+        {
+          "k": 9,
+          "a": 0.06584,
+          "p": 5.58691
+        }
+      ]
+    },
     "fixed": [
       "sleigh",
       "wishlistBoard",
