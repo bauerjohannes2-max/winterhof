@@ -26,6 +26,8 @@ export const SHADER_SURFACES = ['erde', 'schnee', 'kies', 'holz', 'kopfstein', '
 
 /** Weltbreite einer Gras-Textur-Wiederholung (Karten-Skizzen rechnen intern mit 116er-Bildmaß, umgerechnet auf die 128er-Kachel) */
 export const GRASS_REPEAT = 352;
+/** Weltbreite einer Wiederholung der Saum-Maske (feine Halme am Wegrand) */
+export const SAUM_REPEAT = 48;
 /** Höchstzahl Wellen der Wiesenform im Shader */
 export const MAX_WAVES = 12;
 
@@ -67,6 +69,7 @@ uniform float uOffset;
 uniform sampler2D uPathA;   // R: Abstand zur Wegkante, G B A: Belag 0–2
 uniform sampler2D uPathB;   // R G B A: Belag 3–6
 uniform vec4 uPathBox;      // gx0, gy0, Breite, Höhe (Kacheln)
+uniform sampler2D uSaum;    // Halm-Höhenmaske für den Wegrand (R)
 
 const float HW = ${TILE_W / 2}.0;
 const float HH = ${TILE_H / 2}.0;
@@ -176,7 +179,7 @@ vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px) {
   float all = e012.x + e012.y + e012.z + e3456.x + e3456.y + e3456.z + e3456.w;
   e012 = vec3(all, 0.0, 0.0); e3456 = vec4(0.0);
   // Erde (Kufenspuren brauchen die Fahrtrichtung und kommen mit dem gemalten Erd-Bild in der Grafik-Runde)
-  if (e012.x > 0.003) col += vec3(196.0, 112.0, 52.0) / 255.0 * (1.0 + 0.08 * grain + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
+  if (e012.x > 0.003) col += vec3(200.0, 111.0, 50.0) / 255.0 * (1.0 + 0.08 * grain + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
   if (e012.y > 0.003) col += vec3(226.0, 230.0, 236.0) / 255.0 * (1.0 + 0.05 * grain) * e012.y;   // Schneepfad
   if (e012.z > 0.003) {                                       // Kies: helle und dunkle Körner
     float k = hash12(floor(f / 2.2));
@@ -261,51 +264,44 @@ void main() {
   // Wegfläche (Baustein 6, Kante A): Saum innen, Gras ragt in Halmen über die Kante. Schnee am Weg kommt später (Entsch. 55)
   vec2 g = toGrid(w);
   float sd = pathSd(g);
-  // Grassaum (Hay Day nah, Hannes-Screenshot 25.11.): Band ~0,3 Kachel am Weg heller und frischer grün
-  // (gemessen Wiese 139/189/14, Saum 155/205/45), darin weiche schräge Halmstriche
-  vec3 saum = col * vec3(1.07, 1.07, 1.0) + vec3(0.0, 0.0, 0.08);
-  float onM = 0.0;
-  if (sd > -0.5) {
-    onM = smoothstep(0.2, 0.7, meadowField(w));
-    float streak = noise(vec2((w.x - w.y * 0.5) / 2.2, w.y / 14.0));
-    float band = smoothstep(-0.26, -0.1, sd + 0.07 * (noise(f / 9.0) - 0.5)) * (0.7 + 0.45 * streak);
-    if (sd <= 0.0) col = mix(col, saum, clamp(band, 0.0, 1.0) * onM);
-  }
-  if (sd > -0.3) {
+  // Wegrand (Runde 3, Hannes 26.11.: „nicht spitz hochziehen, ganz feines Gras wie Hay Day“). Technik wie Profi-Spiele:
+  // Höhen-/Alpha-Masken-Übergang. Eine gemalte Halm-Maske (scripts/boden_saum.py, Wert 1 am Halmfuß bis 0 an der
+  // Spitze) frisst die Kante an: Gras deckt einen Weg-Bildpunkt, wenn Abstand zur Kante < Reichweite × Maske.
+  // Ergebnis: feine, weiche, unregelmäßige Halme statt geometrischer Zacken. Lange Halme nur an Kanten, unter denen
+  // Wiese liegt (Halme wachsen nach oben), an allen anderen Kanten nur ein feiner Flaum.
+  vec2 su = f / ${SAUM_REPEAT}.0;
+  vec2 sdx = dFdx(su), sdy = dFdy(su);
+  float H = textureGrad(uSaum, su, sdx, sdy).r;
+  float sdB = pathSd(toGrid(w + vec2(0.0, 3.0)));
+  float lower = smoothstep(0.0, 0.035, sd - sdB);
+  float onM = smoothstep(0.2, 0.7, meadowField(w));
+  float reach = mix(0.022, 0.15, lower) * onM * smoothstep(5.0, 2.0, px);
+  float kante = sd - reach * H;
+  float aaK = max(fwidth(kante), 1e-4) * 0.8;
+  // Saumband in der Wiese: etwas heller und frischer (gemessen Wiese 139/189/14, Saum 155/205/45), Halmstruktur aus der Maske
+  vec3 saum = col * vec3(1.06, 1.07, 1.0) + vec3(0.0, 0.0, 0.07);
+  float band = smoothstep(-0.24, -0.06, sd + 0.06 * (noise(f / 9.0) - 0.5)) * onM;
+  vec3 fell = saum * (0.95 + 0.1 * H);
+  if (sd <= 0.0) col = mix(col, fell, band);
+  if (kante > -0.1) {
     vec2 uv = pathUv(g);
     vec4 wa = textureLod(uPathA, uv, 0.0), wb = textureLod(uPathB, uv, 0.0);
-    float aaS = max(fwidth(sd), 1e-4) * 0.75;
-    float onMeadow = smoothstep(0.2, 0.7, meadowField(w));
-    // Grassaum (Runde 2, Hannes „zackig“): dichte feine Halmspitzen in Bildschirm-Spalten. Ein Halm wächst von der
-    // Wiese UNTER dem Punkt nach oben: Weg nur, wo der Punkt selbst und der Punkt eine Halmlänge tiefer Weg sind.
-    // So entstehen an steilen Kanten keine senkrechten Streifen (Punkt darunter liegt dort ebenfalls auf dem Weg).
-    // Halme leicht schräg nach rechts (wie Hay Day), Spalten im geneigten Raster
-    // zwei versetzte Spaltenraster mit verschiedener Breite: unregelmäßige, weiche Spitzen statt Sägezahn
-    float sx = w.x - w.y * 0.25;
-    float fade = onMeadow * smoothstep(4.0, 1.5, px);
-    float bladeW = 0.0;
-    for (int k = 0; k < 2; k++) {
-      float cw = k == 0 ? 2.9 : 1.9;
-      float xs = sx + float(k) * 1.3;
-      float cx = floor(xs / cw);
-      float hb = hash12(vec2(cx, 3.0 + float(k) * 11.0));
-      float wave = noise(vec2(xs / 12.0, 1.0 + float(k)));
-      float lenW = (hb < 0.25 ? 0.0 : (2.5 + 9.0 * hb * hb)) * (0.5 + 0.9 * wave) * (k == 0 ? 1.0 : 0.65);
-      float off = (hash12(vec2(cx, 9.0 + float(k))) - 0.5) * 0.4;
-      float taper = clamp(1.0 - abs(fract(xs / cw) - 0.5 - off) * 2.2, 0.0, 1.0);
-      bladeW = max(bladeW, lenW * pow(taper, 1.6));
-    }
-    bladeW *= fade;
-    float sdBelow = pathSd(toGrid(w + vec2(-bladeW * 0.25, bladeW)));
-    float kante = min(sd, sdBelow) - 0.035 * (noise(vec2(sx / 3.0, 7.0)) - 0.4);   // auch die obere Kante leicht unruhig
     vec3 pc = pathLook(g, f, wa.gba, wb, px);
-    // Spuren längs des Wegs: Bänder gleichen Abstands zur Kante (laufen von selbst mit jeder Kurve)
-    float rut = noise(vec2(sd * 7.0, dot(g, vec2(0.35, 0.35))));
-    pc *= 0.96 + 0.07 * rut;
-    pc *= 1.0 - 0.1 * pow(clamp(1.0 - kante / 0.12, 0.0, 1.0), 1.6);     // leichter Schatten am Saum
-    // Halmspitzen über dem Weg in Saumfarbe, weich auslaufend
-    vec3 gc = sd > 0.0 ? mix(saum, saum * vec3(1.04, 1.04, 1.0), 0.5) : col;
-    col = mix(gc, pc, clamp(kante / (aaS * 2.2) + 0.5, 0.0, 1.0));
+    // Rillen längs des Wegs wie Hay Day: dünne Bänder gleichen Abstands zur Kante (folgen jeder Kurve),
+    // in Stücke gebrochen; dunkle Rille mit heller Lippe daneben
+    float fine = smoothstep(3.0, 1.2, px);
+    float r1 = noise(vec2(sd * 15.0, dot(g, vec2(0.5, 0.5)) * 1.3));
+    float brk = smoothstep(0.35, 0.65, noise(g * 1.6 + 4.0));
+    float groove = smoothstep(0.7, 0.8, r1) * brk;
+    float lip = smoothstep(0.5, 0.62, r1) * (1.0 - smoothstep(0.62, 0.7, r1)) * brk;
+    pc *= 1.0 - 0.1 * groove * fine;
+    pc = mix(pc, pc * vec3(1.08, 1.1, 1.12), lip * 0.6 * fine);
+    pc *= 0.97 + 0.06 * noise(vec2(sd * 4.0, dot(g, vec2(0.5, 0.5)) * 0.5));
+    pc *= 1.0 - 0.12 * lower * smoothstep(0.1, 0.0, kante);          // weicher Schatten unter den Halmen
+    // Halme über dem Weg: Saumfarbe, zur Spitze heller
+    vec3 tip = saum * (1.0 + 0.08 * (1.0 - H));
+    vec3 gc = sd > 0.0 ? tip : col;
+    col = mix(gc, pc, clamp(kante / aaK + 0.5, 0.0, 1.0));
   }
   finalColor = vec4(col, 1.0);
 }`;
@@ -321,7 +317,11 @@ export class Ground {
   private readonly pathBox = new Float32Array(4);
   private readonly shader: Shader;
 
-  constructor(shape: MeadowShape, grass: Texture, paths: PathField) {
+  constructor(shape: MeadowShape, grass: Texture, saum: Texture, paths: PathField) {
+    saum.source.addressMode = 'repeat';
+    saum.source.autoGenerateMipmaps = true;
+    saum.source.scaleMode = 'linear';
+    saum.source.updateMipmaps();
     grass.source.addressMode = 'repeat';
     grass.source.autoGenerateMipmaps = true;
     grass.source.scaleMode = 'linear';
@@ -337,6 +337,7 @@ export class Ground {
         uGrass: grass.source,
         uPathA: this.pathA.source,
         uPathB: this.pathB.source,
+        uSaum: saum.source,
         boden: {
           uWaves: { value: u.waves, type: 'vec3<f32>', size: MAX_WAVES },
           uWaveCount: { value: u.count, type: 'f32' },

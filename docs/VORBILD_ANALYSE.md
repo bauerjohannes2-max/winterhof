@@ -98,3 +98,8 @@ Quellen angesehen: Hay-Day-Wiki (Farm-Karte, Gebäude-Einzelbilder), Clash-Wiki 
 - **Gruppen klein:** 1–3 Teile beieinander, nie gleichmäßig gestreut, nie in Reihen.
 - **Umgesetzt als Lageplan:** `scripts/deko_skizze.py` Variante A (Entscheidung 51).
 
+
+## 14. Wegrand und Erdweg (26.11., Hannes-Screenshot Hay Day nah; Bild nur privat)
+- **Hay Day:** Weg orange-braun (gemessen 200/110/48), lange dünne Rillen längs des Wegs (dunkle Rille, helle Lippe). Rand = Band aus feinem, hellerem Gras (155/205/45), Halme weich und dicht, nie lange Spitzen.
+- **Technik (Recherche Polycount/Unreal-Foren, Torchlight-Grasrand):** Übergang per Höhen-/Alpha-Maske statt geometrischer Zacken: gemalte Halm-Maske (`scripts/boden_saum.py`, Fuß 1 → Spitze 0) frisst die Kante an. Lange Halme nur an Kanten mit Wiese darunter, sonst feiner Flaum. Rillen = Bänder gleichen Abstands zur Kante (folgen jeder Kurve), in Stücke gebrochen.
+- **Gelernt:** Geometrische Halme in Bildschirm-Spalten wirken immer wie Sägezahn („zackig, spitz hoch“, Hannes 26.11.). Wiese: viele kleine Einzelhalme mit Deckkraft-Verlauf (Fuß unsichtbar) statt Fächer.
