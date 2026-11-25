@@ -90,3 +90,11 @@ Quellen angesehen: Hay-Day-Wiki (Farm-Karte, Gebäude-Einzelbilder), Clash-Wiki 
 - Zufahrt: etwa 2,5 Bauern breit (≈ 2 Kacheln). Hühnerstall auf Stelzen 1,2 Bauern hoch, Huhn 0,42 Bauer.
 
 - Folgerung: Person 0,8 Kachel (Variante B) trifft Haus/Person; für Hay-Day-Maß zusätzlich Feld 2 × 2, Zufahrt 2 Kacheln, Tiere kleiner (Variante D auf der Klickseite).
+
+## 13. Boden-Deko-Verteilung (25.11., Hannes' Hay-Day-Screenshots, Hof-Übersicht + Scheune nah; Bilder nur privat)
+- **Hofmitte fast leer:** zwischen Gebäuden, Feldern und Weg nur einzelne Pilze, Halme, Steinchen. Gebäude und Felder bleiben die Hauptsache.
+- **Dichter am Rand des Bebauten:** unter Bäumen, an Steingruppen und Teichen Pilze, Laub, Büschel, bemooste Steine – Kleinkram sammelt sich an Hindernissen.
+- **Gebäudeecken:** ein Steinchen oder Büschel direkt am Sockel verankert das Gebäude (gehört bei Hay Day teils ins Gebäudebild).
+- **Gruppen klein:** 1–3 Teile beieinander, nie gleichmäßig gestreut, nie in Reihen.
+- **Umgesetzt als Lageplan:** `scripts/deko_skizze.py` Variante A (Entscheidung 51).
+
