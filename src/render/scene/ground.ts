@@ -265,10 +265,9 @@ void main() {
     float rim = clamp(-(gx * 0.8 + gy) * 3.0, -1.0, 1.0);
     col = mix(col, snowTop(f, rim, px), clamp(top, 0.0, 1.0));
   }
-  // Wegfläche (Baustein 6, Look 2b, Entsch. 56; Zielbild docs/qa/neustart/b06_ziel_2b.jpg): gemalter Erdweg, leicht
-  // vertieft. Licht oben links: oben/links fällt die Grasböschung als dunkler Streifen ab und wirft Schatten auf die Erde,
-  // unten/rechts ragt das Gras in kurzen weichen Halmen über die Erde und die Erde steigt hell zur Kante an.
-  // Breite Fließ-Streifen längs des Wegs (Bänder gleichen Abstands zur Kante), dunkle Kante innen. Keine Büschel (56).
+  // Wegfläche (Baustein 6, Look 2b, Entsch. 56/57; Zielbild docs/qa/neustart/b06_ziel_2b.jpg): gemalter Erdweg, weich
+  // eingebettet: Erde läuft glatt ins Gras aus, weicher Schatten oben links (Licht oben links), schwach dunkle Kante innen.
+  // Breite Fließ-Streifen längs des Wegs (Bänder gleichen Abstands zur Kante). Keine Halme, keine Büschel (56/57).
   vec2 g = toGrid(w);
   float sd = pathSdW(w);
   if (sd > -0.12) {
@@ -280,7 +279,7 @@ void main() {
     vec3 pc = pathLook(g, f, wa.gba, wb, px);
     // Fließ-Streifen: Abstand zur Kante, weich verbogen, längs in Stücke gebrochen; hell und dunkel versetzt
     float along = dot(g, vec2(0.5, 0.5));
-    float v = sd * 4.0 + (noise(g * 0.9) - 0.5) * 1.4;
+    float v = (sd < 0.5 ? sd * 6.0 : 3.0 + (sd - 0.5) * 4.0) + (noise(g * 0.9) - 0.5) * 1.4;   // schmale Wege (1 Kachel) bekommen genauso Rillen wie die Zufahrt
     float lightB = smoothstep(0.5, 0.72, noise(vec2(v, along * 0.6)));
     float darkB = smoothstep(0.55, 0.78, noise(vec2(v + 7.3, along * 0.5 + 3.0)));
     pc = mix(pc, vec3(238.0, 152.0, 62.0) / 255.0, lightB * 0.55);
@@ -294,13 +293,10 @@ void main() {
     float strokeD = smoothstep(0.11, 0.02, abs(n2 - 0.5)) * brk * fine * (1.0 - strokeL);
     pc = mix(pc, vec3(240.0, 162.0, 78.0) / 255.0, strokeL * 0.62);
     pc = mix(pc, vec3(150.0, 82.0, 38.0) / 255.0, strokeD * 0.45);
-    // dunkle Kante innen (rotbraun)
-    pc = mix(pc, pc * vec3(0.74, 0.62, 0.56), smoothstep(0.18, 0.0, sd) * onM);
-    // Vertiefung: Schatten der Böschung oben links, Lichtkante unten rechts
-    float sh = smoothstep(0.02, -0.06, pathSdW(w + vec2(-14.0, -10.0))) * onM;
-    float hl = smoothstep(0.02, -0.06, pathSdW(w + vec2(12.0, 8.0))) * onM * (1.0 - sh);
-    pc *= 1.0 - 0.28 * sh;
-    pc *= 1.0 + 0.08 * hl;
+    // Rand weich eingebettet (Runde 7): dunkle Kante innen breit und schwach, weicher Schatten oben links, keine Böschung
+    pc = mix(pc, pc * vec3(0.8, 0.7, 0.64), smoothstep(0.2, 0.0, sd) * onM * 0.7);
+    float sh = smoothstep(0.06, -0.14, pathSdW(w + vec2(-12.0, -8.0))) * onM;
+    pc *= 1.0 - 0.2 * sh;
     // Steinchen wie 2b: vereinzelt im Weg (nicht an der Kante), Raster 36 Weltpunkte, je Zelle höchstens einer
     if (sd > 0.05) {
       const float C = 40.0, S = 26.0;
@@ -320,23 +316,9 @@ void main() {
         }
       }
     }
-    col = mix(col, pc, inPath);
-    if (onM > 0.01) {
-      // Halme senkrecht im Bild, in Grüppchen wie 2b: Spalten 2,6 Weltpunkte, Höhe 3–9 Weltpunkte, Lücken dazwischen
-      float cw = 2.6;
-      float ci = floor(w.x / cw);
-      float tri = pow(1.0 - abs(fract(w.x / cw) - 0.5) * 2.0, 0.8);
-      float clump = smoothstep(0.3, 0.7, noise(vec2(w.x / 18.0, 2.0)));
-      float hgt = mix(3.0, 9.0, hash12(vec2(ci, 3.0))) * mix(0.35, 1.0, clump);
-      // Böschung oben: Gras knapp darüber → dunkler Streifen mit gezackter Unterkante
-      float face = smoothstep(0.004, -0.004, pathSdW(w - vec2(0.0, 3.5 + hgt * 0.4 * tri)));
-      // Halme unten: Gras knapp darunter → Halm ragt über die Erde
-      float blade = smoothstep(0.004, -0.004, pathSdW(w + vec2(0.0, hgt * tri))) * fine;
-      vec3 faceC = grass * vec3(0.62, 0.7, 0.5);
-      col = mix(col, faceC, face * inPath * onM);
-      vec3 bladeC = grass * mix(vec3(0.92, 0.96, 0.9), vec3(1.12, 1.1, 1.0), hash12(vec2(ci, 9.0)));
-      col = mix(col, bladeC, blade * inPath * onM);
-    }
+    // Rand (Runde 7, Entsch. 57): ganz glatter, weicher Übergang Erde → Gras über ~0,1 Kachel, keine Halme, keine Böschung
+    float earthA = mix(inPath, smoothstep(-0.02, 0.09, sd), onM);
+    col = mix(col, pc, earthA);
   }
   finalColor = vec4(col, 1.0);
 }`;
