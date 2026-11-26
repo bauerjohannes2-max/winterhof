@@ -12,7 +12,7 @@ Erfolg = ein Erdweg mit Grasrand, der neben einem Hay-Day-Hof genauso **handgema
 - Erde warm orange-braun (etwa RGB 200/110/48), große weiche Hell-Dunkel-Flecken, lange flache Fahrrillen längs des Wegs (dunkle Rille, helle Lippe), einzelne kleine Steinchen.
 - Rand: kräftige, **gut sichtbare** Grasbüschel (deutlich größer als heute, etwa ein Viertel Kachel breit), runde Fächer aus 8–12 breiten, weichen Halmen, oben links heller. Büschel stehen dicht an dicht, überlappen sich, ragen leicht auf die Erde. Dahinter ein heller Grasstreifen.
 
-## Lieferung (nach `art_src/spiel{m}/boden/gemini/`, PNG)
+## Lieferung (nach `art_src/probe_raw/gemini_weg/` (Rohmaterial, wird nicht ins Spiel gepackt), PNG)
 Jede Datei in **3 Varianten** `_a` (zurückhaltend), `_b`, `_c` (mutig). Sei mutig in Pinselstrich und Form, aber ruhig genug für einen Boden.
 
 | Nr | Datei | Inhalt | Format |
@@ -34,6 +34,13 @@ Lieferung `zielbild2_a..c.png` (1600 × 900, gleiche Wegform wie Runde 1, Pinsel
 - **a – ruhig:** Wiese glatt gemalt mit weichen großen Hell-Dunkel-Wolken, kaum Halme. Wegrand **schmal**: Gras ragt nur in kleinen weichen Zacken über die Erde. **Vereinzelt** 1 Büschel im C-Stil je ~3 Kacheln Wegrand, 3–5 Büschel locker auf der Wiese.
 - **b – gemalte Wiese (Empfehlung):** wie a, aber die Wiese selbst trägt den C-Pinselstrich: viele weiche flache Halmstriche, wenig Kontrast, keine Büschel-Hügel. Wegrand schmal, Büschel vereinzelt.
 - **c – Büschelwiese:** Wiese überall dicht mit C-Büscheln (zum Vergleich, wie unruhig das wirkt).
+
+## Runde 3 – Bausteine für 2b (Hannes 26.11.: „2b super“, erst ohne Büschel, Entsch. 56)
+Zielbild: `docs/qa/neustart/b06_ziel_2b.jpg`. Breite Fließ-Streifen längs des Wegs, dunkle Kante innen, Vertiefung und schmaler Grasrand macht der Shader; Gemini liefert nur, was sich nicht gut rechnen lässt:
+| Nr | Datei | Inhalt | Format |
+|---|---|---|---|
+| 6 | `erde_2b_a..c` | Nahtlos kachelbare Erd-Textur im Pinselstil von 2b, **ohne Richtung** (keine Rillen, keine Streifen, keine Steine, keine Schatten), mittlerer Ton etwa RGB 200/111/50, weiche Pinselflecken, wenig Kontrast. Draufsicht, kein Licht. | 1024 × 1024, nahtlos (links/rechts, oben/unten) |
+| 7 | `steine_2b_a..c` | Blatt mit **8 einzelnen Steinchen** wie in 2b (flach, rundlich, grau-beige, Licht oben links, kleiner Schatten unten rechts), je 128 × 128 Feld, Stein mittig, freigestellt. | 1024 × 128, Alpha |
 
 ## Regeln
 - STIL_REGELN.md gilt (§5 Kamera/Licht, §6 Bildqualität, §6a Mut).

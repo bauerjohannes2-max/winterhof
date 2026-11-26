@@ -26,6 +26,8 @@ export const SHADER_SURFACES = ['erde', 'schnee', 'kies', 'holz', 'kopfstein', '
 
 /** Weltbreite einer Gras-Textur-Wiederholung (Karten-Skizzen rechnen intern mit 116er-Bildmaß, umgerechnet auf die 128er-Kachel) */
 export const GRASS_REPEAT = 352;
+/** Weltbreite einer Erd-Textur-Wiederholung (1024er Bild als @2x → 512 Weltpunkte; etwas dichter für feineren Pinselstrich) */
+export const EARTH_REPEAT = 384;
 /** Höchstzahl Wellen der Wiesenform im Shader */
 export const MAX_WAVES = 12;
 
@@ -67,7 +69,8 @@ uniform float uOffset;
 uniform sampler2D uPathA;   // R: Abstand zur Wegkante, G B A: Belag 0–2
 uniform sampler2D uPathB;   // R G B A: Belag 3–6
 uniform vec4 uPathBox;      // gx0, gy0, Breite, Höhe (Kacheln)
-uniform sampler2D uTuft;    // Grasbüschel für den Wegrand: 4 Varianten nebeneinander, R Helligkeit, A Deckkraft
+uniform sampler2D uEarth;   // gemalte Erd-Textur (Gemini, Look 2b), nahtlos
+uniform sampler2D uStones;  // 8 gemalte Steinchen nebeneinander (Gemini, Look 2b), Alpha
 
 const float HW = ${TILE_W / 2}.0;
 const float HH = ${TILE_H / 2}.0;
@@ -137,6 +140,8 @@ float meadow(vec2 g) {
 // Wegfeld (Baustein 6): Abstand zur Wegkante in Kacheln (+ innen). textureLod: Aufrufe liegen in Verzweigungen.
 vec2 pathUv(vec2 g) { return (g - uPathBox.xy) / uPathBox.zw; }
 float pathSd(vec2 g) { return (textureLod(uPathA, pathUv(g), 0.0).r * 2.0 - 1.0) * PATH_RANGE; }
+// Wegkante gemalt statt geometrisch: in Weltpunkten leicht gewellt (±0,04 Kachel, Wellen ~0,3 Kachel)
+float pathSdW(vec2 w) { return pathSd(toGrid(w)) + (noise(flat2(w) / 34.0) - 0.5) * 0.08; }
 
 // Rand leicht unruhig: ±0,25 Kachel in weichen Wellen, ±0,07 fein (Value-Rauschen braucht größere Zellen als das Gauß-Rauschen der Karten-Bilder, sonst Knicke)
 // Feine Zacken werden weit draußen ausgeblendet (sonst sägt die Kante: kleiner als ein Bildpunkt).
@@ -177,7 +182,8 @@ vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px) {
   float all = e012.x + e012.y + e012.z + e3456.x + e3456.y + e3456.z + e3456.w;
   e012 = vec3(all, 0.0, 0.0); e3456 = vec4(0.0);
   // Erde (Kufenspuren brauchen die Fahrtrichtung und kommen mit dem gemalten Erd-Bild in der Grafik-Runde)
-  if (e012.x > 0.003) col += vec3(200.0, 111.0, 50.0) / 255.0 * (1.0 + 0.08 * grain + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
+  // Erde: gemalte Textur (Gemini, Look 2b), Hex-Tiling gegen Wiederholung, große weiche Hell-Dunkel-Wolken darüber
+  if (e012.x > 0.003) col += hexSample(uEarth, f / ${EARTH_REPEAT}.0) * (1.0 + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
   if (e012.y > 0.003) col += vec3(226.0, 230.0, 236.0) / 255.0 * (1.0 + 0.05 * grain) * e012.y;   // Schneepfad
   if (e012.z > 0.003) {                                       // Kies: helle und dunkle Körner
     float k = hash12(floor(f / 2.2));
@@ -259,62 +265,77 @@ void main() {
     float rim = clamp(-(gx * 0.8 + gy) * 3.0, -1.0, 1.0);
     col = mix(col, snowTop(f, rim, px), clamp(top, 0.0, 1.0));
   }
-  // Wegfläche (Baustein 6, Kante A): Saum innen, Gras ragt in Halmen über die Kante. Schnee am Weg kommt später (Entsch. 55)
+  // Wegfläche (Baustein 6, Look 2b, Entsch. 56; Zielbild docs/qa/neustart/b06_ziel_2b.jpg): gemalter Erdweg, leicht
+  // vertieft. Licht oben links: oben/links fällt die Grasböschung als dunkler Streifen ab und wirft Schatten auf die Erde,
+  // unten/rechts ragt das Gras in kurzen weichen Halmen über die Erde und die Erde steigt hell zur Kante an.
+  // Breite Fließ-Streifen längs des Wegs (Bänder gleichen Abstands zur Kante), dunkle Kante innen. Keine Büschel (56).
   vec2 g = toGrid(w);
-  float sd = pathSd(g);
-  // Wegrand (Runde 4, Hannes 26.11.: „feine Grasbüschel wie Hay Day, nicht zerfranst“). Hay Day nah: eine Reihe kleiner
-  // runder Büschel (Fächer aus 8–12 Halmen, oben links heller) sitzt auf einer glatten Kante, dahinter ein hellgrünes Band.
-  // Technik wie Profi-Spiele (Rand-Decals): gemalte Büschel (scripts/boden_bueschel.py) an zufälligen Punkten eines
-  // Weltrasters, aber nur dort, wo der Punkt auf der Kante liegt. Hinten (oben) zuerst, vorne darüber.
-  float onM = smoothstep(0.2, 0.7, meadowField(w));
-  vec3 saum = col * vec3(1.06, 1.07, 1.0) + vec3(0.0, 0.0, 0.07);
-  float band = smoothstep(-0.24, -0.06, sd + 0.06 * (noise(f / 9.0) - 0.5)) * onM;
-  if (sd <= 0.0) col = mix(col, saum, band);
-  float aaS = max(fwidth(sd), 1e-4) * 0.8;
-  if (sd > -0.1) {
+  float sd = pathSdW(w);
+  if (sd > -0.12) {
+    float onM = smoothstep(0.2, 0.7, meadowField(w));
+    float aaS = max(fwidth(sd), 1e-4) * 0.8;
+    float inPath = clamp(sd / aaS + 0.5, 0.0, 1.0);
     vec2 uv = pathUv(g);
     vec4 wa = textureLod(uPathA, uv, 0.0), wb = textureLod(uPathB, uv, 0.0);
     vec3 pc = pathLook(g, f, wa.gba, wb, px);
-    // Rillen längs des Wegs wie Hay Day: dünne Bänder gleichen Abstands zur Kante, in Stücke gebrochen
+    // Fließ-Streifen: Abstand zur Kante, weich verbogen, längs in Stücke gebrochen; hell und dunkel versetzt
+    float along = dot(g, vec2(0.5, 0.5));
+    float v = sd * 4.0 + (noise(g * 0.9) - 0.5) * 1.4;
+    float lightB = smoothstep(0.5, 0.72, noise(vec2(v, along * 0.6)));
+    float darkB = smoothstep(0.55, 0.78, noise(vec2(v + 7.3, along * 0.5 + 3.0)));
+    pc = mix(pc, vec3(238.0, 152.0, 62.0) / 255.0, lightB * 0.55);
+    pc = mix(pc, vec3(148.0, 74.0, 30.0) / 255.0, darkB * 0.7 * (1.0 - lightB));
+    // Pinselstriche wie 2b: helle Linie mit dunklem Schatten knapp daneben, längs des Wegs, in Stücke gebrochen
     float fine = smoothstep(3.0, 1.2, px);
-    float r1 = noise(vec2(sd * 15.0, dot(g, vec2(0.5, 0.5)) * 1.3));
-    // Nur wo die Abstandslinien fast gerade laufen: in engen Kurven, um Grasinseln und an der Wegmitte (Grat des
-    // Abstandsfelds) bilden Rillen sonst kleine Bögen und Knicke. Krümmung = Laplace / Gefälle, beides aus 4 Nachbarn.
-    const float E = 0.22;
-    float sx1 = pathSd(g + vec2(E, 0.0)), sx0 = pathSd(g - vec2(E, 0.0));
-    float sy1 = pathSd(g + vec2(0.0, E)), sy0 = pathSd(g - vec2(0.0, E));
-    float grad = length(vec2(sx1 - sx0, sy1 - sy0)) / (2.0 * E);
-    float curv = abs(sx1 + sx0 + sy1 + sy0 - 4.0 * sd) / (E * E) / max(grad, 0.05);
-    float straight = smoothstep(1.0, 0.4, curv) * smoothstep(0.6, 0.9, grad);
-    float brk = smoothstep(0.35, 0.65, noise(g * 1.6 + 4.0)) * straight;
-    float groove = smoothstep(0.7, 0.8, r1) * brk;
-    float lip = smoothstep(0.5, 0.62, r1) * (1.0 - smoothstep(0.62, 0.7, r1)) * brk;
-    pc *= 1.0 - 0.1 * groove * fine;
-    pc = mix(pc, pc * vec3(1.08, 1.1, 1.12), lip * 0.6 * fine);
-    pc *= 0.97 + 0.06 * noise(vec2(sd * 4.0, dot(g, vec2(0.5, 0.5)) * 0.5));
-    pc *= 1.0 - 0.1 * smoothstep(0.08, 0.0, sd) * onM;                 // weicher Schatten an der Kante
-    col = mix(col, pc, clamp(sd / aaS + 0.5, 0.0, 1.0));
-  }
-  // Büschel: Raster 3,6 Weltpunkte, Büschel 11 breit × 9 hoch (±20 %), Fuß auf der Kante (|Abstand| < 0,05 Kachel)
-  float tuftFade = onM * smoothstep(3.5, 1.6, px);
-  if (abs(sd) < 0.2 && tuftFade > 0.01) {
-    const float C = 3.6;
-    vec2 c0 = floor((w - vec2(6.6, 0.0)) / C);
-    vec2 c1 = floor((w + vec2(6.6, 10.8)) / C);
-    for (float cy = c0.y; cy <= c1.y; cy += 1.0) {
-      for (float cx = c0.x; cx <= c1.x; cx += 1.0) {
-        vec2 h2 = hash22(vec2(cx, cy) + 71.0);
-        vec2 an = (vec2(cx, cy) + h2) * C;
-        float sA = pathSd(toGrid(an));
-        if (abs(sA + 0.015) > 0.04) continue;
-        float sc = 0.8 + 0.4 * hash12(vec2(cx, cy) + 5.0);
-        vec2 lo = (w - an) / (vec2(11.0, 9.0) * sc);
-        if (abs(lo.x) > 0.5 || lo.y > 0.0 || lo.y < -1.0) continue;
-        float vari = floor(hash12(vec2(cy, cx) + 13.0) * 4.0);
-        vec4 t = textureLod(uTuft, vec2((vari + lo.x + 0.5) / 4.0, 1.0 + lo.y), 0.0);
-        vec3 tc = saum * (0.82 + 0.36 * t.r);
-        col = mix(col, tc, t.a * tuftFade);
+    float n1 = noise(vec2(v * 1.7 + 2.0, along * 0.8));
+    float n2 = noise(vec2(v * 1.7 + 2.0 - 0.35, along * 0.8));
+    float brk = smoothstep(0.32, 0.55, noise(vec2(v * 0.8, along * 1.3) + 11.0));
+    float strokeL = smoothstep(0.11, 0.02, abs(n1 - 0.5)) * brk * fine;
+    float strokeD = smoothstep(0.11, 0.02, abs(n2 - 0.5)) * brk * fine * (1.0 - strokeL);
+    pc = mix(pc, vec3(240.0, 162.0, 78.0) / 255.0, strokeL * 0.62);
+    pc = mix(pc, vec3(150.0, 82.0, 38.0) / 255.0, strokeD * 0.45);
+    // dunkle Kante innen (rotbraun)
+    pc = mix(pc, pc * vec3(0.74, 0.62, 0.56), smoothstep(0.18, 0.0, sd) * onM);
+    // Vertiefung: Schatten der Böschung oben links, Lichtkante unten rechts
+    float sh = smoothstep(0.02, -0.06, pathSdW(w + vec2(-14.0, -10.0))) * onM;
+    float hl = smoothstep(0.02, -0.06, pathSdW(w + vec2(12.0, 8.0))) * onM * (1.0 - sh);
+    pc *= 1.0 - 0.28 * sh;
+    pc *= 1.0 + 0.08 * hl;
+    // Steinchen wie 2b: vereinzelt im Weg (nicht an der Kante), Raster 36 Weltpunkte, je Zelle höchstens einer
+    if (sd > 0.05) {
+      const float C = 40.0, S = 26.0;
+      vec2 c0 = floor((w - S * 0.5) / C), c1 = floor((w + S * 0.5) / C);
+      for (float cy = c0.y; cy <= c1.y; cy += 1.0) {
+        for (float cx = c0.x; cx <= c1.x; cx += 1.0) {
+          vec2 id = vec2(cx, cy);
+          if (hash12(id + 31.0) > 0.28) continue;
+          vec2 an = (id + 0.2 + 0.6 * hash22(id + 47.0)) * C;
+          if (pathSd(toGrid(an)) < 0.22) continue;
+          float sc = 0.7 + 0.5 * hash12(id + 5.0);
+          vec2 lo = (w - an) / (S * sc) + 0.5;
+          if (any(lessThan(lo, vec2(0.0))) || any(greaterThan(lo, vec2(1.0)))) continue;
+          float k = floor(hash12(id + 13.0) * 8.0);
+          vec4 st = textureLod(uStones, vec2((k + lo.x) / 8.0, lo.y), 0.0);
+          pc = mix(pc, st.rgb / max(st.a, 1e-3), st.a);
+        }
       }
+    }
+    col = mix(col, pc, inPath);
+    if (onM > 0.01) {
+      // Halme senkrecht im Bild, in Grüppchen wie 2b: Spalten 2,6 Weltpunkte, Höhe 3–9 Weltpunkte, Lücken dazwischen
+      float cw = 2.6;
+      float ci = floor(w.x / cw);
+      float tri = pow(1.0 - abs(fract(w.x / cw) - 0.5) * 2.0, 0.8);
+      float clump = smoothstep(0.3, 0.7, noise(vec2(w.x / 18.0, 2.0)));
+      float hgt = mix(3.0, 9.0, hash12(vec2(ci, 3.0))) * mix(0.35, 1.0, clump);
+      // Böschung oben: Gras knapp darüber → dunkler Streifen mit gezackter Unterkante
+      float face = smoothstep(0.004, -0.004, pathSdW(w - vec2(0.0, 3.5 + hgt * 0.4 * tri)));
+      // Halme unten: Gras knapp darunter → Halm ragt über die Erde
+      float blade = smoothstep(0.004, -0.004, pathSdW(w + vec2(0.0, hgt * tri))) * fine;
+      vec3 faceC = grass * vec3(0.62, 0.7, 0.5);
+      col = mix(col, faceC, face * inPath * onM);
+      vec3 bladeC = grass * mix(vec3(0.92, 0.96, 0.9), vec3(1.12, 1.1, 1.0), hash12(vec2(ci, 9.0)));
+      col = mix(col, bladeC, blade * inPath * onM);
     }
   }
   finalColor = vec4(col, 1.0);
@@ -331,12 +352,14 @@ export class Ground {
   private readonly pathBox = new Float32Array(4);
   private readonly shader: Shader;
 
-  constructor(shape: MeadowShape, grass: Texture, tuft: Texture, paths: PathField) {
-    tuft.source.scaleMode = 'linear';
-    grass.source.addressMode = 'repeat';
-    grass.source.autoGenerateMipmaps = true;
-    grass.source.scaleMode = 'linear';
-    grass.source.updateMipmaps();
+  constructor(shape: MeadowShape, grass: Texture, earth: Texture, stones: Texture, paths: PathField) {
+    stones.source.scaleMode = 'linear';
+    for (const t of [grass, earth]) {
+      t.source.addressMode = 'repeat';
+      t.source.autoGenerateMipmaps = true;
+      t.source.scaleMode = 'linear';
+      t.source.updateMipmaps();
+    }
     const u = meadowUniforms(shape);
     this.geometry = new Geometry({ attributes: { aPosition: this.positions }, indexBuffer: [0, 1, 2, 0, 2, 3] });
     this.pathA = pathTexture(paths.a, paths.width, paths.height);
@@ -348,7 +371,8 @@ export class Ground {
         uGrass: grass.source,
         uPathA: this.pathA.source,
         uPathB: this.pathB.source,
-        uTuft: tuft.source,
+        uEarth: earth.source,
+        uStones: stones.source,
         boden: {
           uWaves: { value: u.waves, type: 'vec3<f32>', size: MAX_WAVES },
           uWaveCount: { value: u.count, type: 'f32' },
