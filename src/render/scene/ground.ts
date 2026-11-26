@@ -28,6 +28,8 @@ export const SHADER_SURFACES = ['erde', 'schnee', 'kies', 'holz', 'kopfstein', '
 export const GRASS_REPEAT = 352;
 /** Weltbreite einer Erd-Textur-Wiederholung (1024er Bild als @2x → 512 Weltpunkte; etwas dichter für feineren Pinselstrich) */
 export const EARTH_REPEAT = 384;
+/** Kantenlänge der Zufallstabelle fürs Rauschen (Zweierpotenz) */
+export const NOISE_SIZE = 512;
 /** Höchstzahl Wellen der Wiesenform im Shader */
 export const MAX_WAVES = 12;
 
@@ -44,7 +46,7 @@ export function meadowUniforms(m: MeadowShape): { waves: Float32Array; count: nu
   };
 }
 
-const VERTEX = /* glsl */ `#version 300 es
+export const VERTEX = /* glsl */ `#version 300 es
 in vec2 aPosition;
 out vec2 vWorld;
 uniform mat3 uProjectionMatrix;
@@ -56,7 +58,7 @@ void main() {
   vWorld = aPosition;
 }`;
 
-const FRAGMENT = /* glsl */ `#version 300 es
+export const FRAGMENT = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 vWorld;
 out vec4 finalColor;
@@ -71,6 +73,10 @@ uniform sampler2D uPathB;   // R G B A: Belag 3–6
 uniform vec4 uPathBox;      // gx0, gy0, Breite, Höhe (Kacheln)
 uniform sampler2D uEarth;   // gemalte Erd-Textur (Gemini, Look 2b), nahtlos
 uniform sampler2D uStones;  // 8 gemalte Steinchen nebeneinander (Gemini, Look 2b), Alpha
+uniform sampler2D uNoise;   // Zufallstabelle fürs Rauschen (noiseTable)
+// Schleifenlänge als Uniform statt Konstante: Der D3D-Übersetzer (ANGLE unter Windows) rollt Schleifen fester Länge samt
+// allem Eingebetteten aus (hier sechsmal die Wiesenform), das kostete Sekunden Übersetzungszeit beim Start (gemessen 26.11.). Werte setzt Ground.
+uniform int uEdgeSamples;   // immer 6: versetzte Proben der Schneekante
 
 const float HW = ${TILE_W / 2}.0;
 const float HH = ${TILE_H / 2}.0;
@@ -92,16 +98,20 @@ vec2 hash22(vec2 p) {
   p3 += dot(p3, p3.yzx + 33.33);
   return fract((p3.xx + p3.yz) * p3.zy);
 }
+// Value-Rauschen aus einer Zufallstabelle (uNoise, noiseTable): ein Abruf liefert die vier Ecken der Zelle (R G B A),
+// ungefiltert, weich gemischt im Shader (der Grafikkarten-Filter rechnet Gewichte nur auf 1/256 genau: Stufen in den
+// Schneeverwehungen). Das Rauschen steht an ~30 Stellen; als Hash-Rechnung inlined kostete es unter Windows
+// (ANGLE → D3D-Übersetzer) über 1 s Übersetzungszeit beim Start (gemessen 26.11.). Werte wie früher hash12, Wiederholung erst nach ${NOISE_SIZE} Zellen.
 float noise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash12(i), hash12(i + vec2(1.0, 0.0)), u.x),
-             mix(hash12(i + vec2(0.0, 1.0)), hash12(i + vec2(1.0, 1.0)), u.x), u.y);
+  vec4 h = textureLod(uNoise, (i + ${NOISE_SIZE / 2 + 0.5}) / ${NOISE_SIZE}.0, 0.0);   // Gitterpunkt 0 liegt in der Tabellenmitte
+  return mix(mix(h.r, h.g, u.x), mix(h.b, h.a, u.x), u.y);
 }
 
 // Hex-Tiling (Mikkelsen 2022): Dreiecksraster, drei Ecken mit eigener Zufallsverschiebung
-vec3 hexSample(sampler2D tex, vec2 uv) {
-  vec2 dx = dFdx(uv), dy = dFdy(uv);
+// dx/dy = Ableitungen von uv, außerhalb von Verzweigungen gerechnet (sonst muss der D3D-Übersetzer die Verzweigung flach ausrollen)
+vec3 hexSample(sampler2D tex, vec2 uv, vec2 dx, vec2 dy) {
   vec2 st = uv * 3.4641016;                                     // 2·√3: Sechseck ≈ halbe Textur
   vec2 sk = vec2(st.x - 0.57735027 * st.y, 1.15470054 * st.y);
   vec2 base = floor(sk);
@@ -175,7 +185,7 @@ vec3 paving(vec2 g, float scale, vec3 base, float joint) {
 }
 
 // Belag-Farbe (Platzhalter bis zur Grafik-Runde): Gewichte e0–e6 in der Reihenfolge SHADER_SURFACES
-vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px) {
+vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px, vec2 dxE, vec2 dyE) {
   float grain = (noise(f / 2.5) - 0.5) * smoothstep(3.0, 1.0, px);
   vec3 col = vec3(0.0);
   // Erst nur Erdweg (Entsch. 55): alle Beläge zeigen vorerst Erde, eigene Bilder je Belag in der Grafik-Runde
@@ -183,7 +193,7 @@ vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px) {
   e012 = vec3(all, 0.0, 0.0); e3456 = vec4(0.0);
   // Erde (Kufenspuren brauchen die Fahrtrichtung und kommen mit dem gemalten Erd-Bild in der Grafik-Runde)
   // Erde: gemalte Textur (Gemini, Look 2b), Hex-Tiling gegen Wiederholung, große weiche Hell-Dunkel-Wolken darüber
-  if (e012.x > 0.003) col += hexSample(uEarth, f / ${EARTH_REPEAT}.0) * (1.0 + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
+  if (e012.x > 0.003) col += hexSample(uEarth, f / ${EARTH_REPEAT}.0, dxE, dyE) * (1.0 + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
   if (e012.y > 0.003) col += vec3(226.0, 230.0, 236.0) / 255.0 * (1.0 + 0.05 * grain) * e012.y;   // Schneepfad
   if (e012.z > 0.003) {                                       // Kies: helle und dunkle Körner
     float k = hash12(floor(f / 2.2));
@@ -230,7 +240,8 @@ void main() {
   uPx = px;
 
   // Wiese: Textur + große Licht-Flecken wie Hay Day
-  vec3 grass = hexSample(uGrass, f / ${GRASS_REPEAT}.0);
+  vec2 uvG = f / ${GRASS_REPEAT}.0;
+  vec3 grass = hexSample(uGrass, uvG, dFdx(uvG), dFdy(uvG));
   float patches = noise(f / 700.0) * 0.7 + noise(f / 240.0 + 9.0) * 0.3;
   // Hay Day: Licht wandert über die Wiese, aber keine dunklen Flecken (wirkten wie Schatten/Schmutz, Hannes 25.11.)
   float lit = patches - 0.5;
@@ -242,41 +253,51 @@ void main() {
   float bladeLift = clamp((dot(grass, vec3(0.3, 0.59, 0.11)) - 0.55) * 6.0, 0.0, 1.0);   // helle Halme werden zuerst gelb
   grass = mix(grass, grass * vec3(1.18, 1.06, 0.55) + vec3(0.06, 0.04, 0.0), dry * (0.3 + 0.7 * bladeLift));
 
-  float fe = edgeField(w);
+  vec2 g = toGrid(w);
+  float mf = meadowField(w);
+  float fe = max(mf, pathSd(g));                                // = edgeField(w), Wiesenfeld nur einmal gerechnet
   float aaT = max(fwidth(fe), 1e-4) * 0.75;                     // ein Bildpunkt in Kacheln
   float perPx = fwidth(fe) / px;                                // Kacheln je Weltpunkt (für Weltmaße am Rand)
   vec3 col = grass;
 
+  float topA = 0.0, rim = 0.0;                                   // Anteil Schnee-Oberseite, Lichtkante
   if (fe < -1.0) {
     // Tief im Schnee: nur Oberseite (keine Kante in der Nähe)
-    col = snowTop(f, 0.0, px);
+    topA = 1.0;
   } else if (fe < 1.2) {
-    // Nah am Rand: Schicht mit Volumen. top = Oberseite (um THICK nach oben versetzt), side = sichtbare Kante
-    float m = snowAt(w, aaT);
-    float top = snowAt(w + vec2(0.0, THICK), aaT);
-    float sh = snowAt(w + vec2(-1.2 * THICK, -0.1 * THICK), max(aaT, 1.4 * THICK * perPx));
+    // Nah am Rand: Schicht mit Volumen. top = Oberseite (um THICK nach oben versetzt), side = sichtbare Kante.
+    // Die sechs versetzten Proben laufen in EINER Schleife: Der D3D-Übersetzer (ANGLE unter Windows) rollt sonst jede
+    // Probe samt Wiesenform-Schleife einzeln aus, das kostete beim Start über 2 s Übersetzungszeit (gemessen 26.11.).
+    float m = 1.0 - smoothstep(-aaT, aaT, fe);                   // Schneedecke hier (wie snowAt, ohne Versatz)
+    float s = max(aaT, 2.4 * perPx);
+    const float E = 1.5;
+    const vec2 OFF[6] = vec2[6](vec2(0.0, THICK), vec2(-1.2 * THICK, -0.1 * THICK),
+                                vec2(E, THICK), vec2(-E, THICK), vec2(0.0, THICK + E), vec2(0.0, THICK - E));
+    float soft[6] = float[6](aaT, max(aaT, 1.4 * THICK * perPx), s, s, s, s);
+    float sn[6];
+    for (int k = 0; k < uEdgeSamples; k++) sn[k] = snowAt(w + OFF[k], soft[k]);
+    float top = sn[0], sh = sn[1];
     col *= 1.0 - clamp(sh, 0.0, 1.0) * SHADOW;
     col = mix(col, SNOW_SIDE, clamp(m - top, 0.0, 1.0));
     // Lichtkante der Oberseite: Gefälle der weichen Kante gegen das Licht von oben links
-    float s = max(aaT, 2.4 * perPx);
-    float e = 1.5;
-    float gx = snowAt(w + vec2(e, THICK), s) - snowAt(w + vec2(-e, THICK), s);
-    float gy = snowAt(w + vec2(0.0, THICK + e), s) - snowAt(w + vec2(0.0, THICK - e), s);
-    float rim = clamp(-(gx * 0.8 + gy) * 3.0, -1.0, 1.0);
-    col = mix(col, snowTop(f, rim, px), clamp(top, 0.0, 1.0));
+    float gx = sn[2] - sn[3];
+    float gy = sn[4] - sn[5];
+    rim = clamp(-(gx * 0.8 + gy) * 3.0, -1.0, 1.0);
+    topA = clamp(top, 0.0, 1.0);
   }
+  if (topA > 0.0) col = mix(col, snowTop(f, rim, px), topA);   // Oberseite nur einmal im Code (Übersetzungszeit)
   // Wegfläche (Baustein 6, Look 2b, Entsch. 56/57; Zielbild docs/qa/neustart/b06_ziel_2b.jpg): gemalter Erdweg, weich
   // eingebettet: Erde läuft glatt ins Gras aus, weicher Schatten oben links (Licht oben links), schwach dunkle Kante innen.
   // Breite Fließ-Streifen längs des Wegs (Bänder gleichen Abstands zur Kante). Keine Halme, keine Büschel (56/57).
-  vec2 g = toGrid(w);
   float sd = pathSdW(w);
+  float aaS = max(fwidth(sd), 1e-4) * 0.8;                      // Ableitungen vor der Verzweigung (siehe hexSample)
+  vec2 uvE = f / ${EARTH_REPEAT}.0, dxE = dFdx(uvE), dyE = dFdy(uvE);
   if (sd > -0.12) {
-    float onM = smoothstep(0.2, 0.7, meadowField(w));
-    float aaS = max(fwidth(sd), 1e-4) * 0.8;
+    float onM = smoothstep(0.2, 0.7, mf);
     float inPath = clamp(sd / aaS + 0.5, 0.0, 1.0);
     vec2 uv = pathUv(g);
     vec4 wa = textureLod(uPathA, uv, 0.0), wb = textureLod(uPathB, uv, 0.0);
-    vec3 pc = pathLook(g, f, wa.gba, wb, px);
+    vec3 pc = pathLook(g, f, wa.gba, wb, px, dxE, dyE);
     // Fließ-Streifen: Abstand zur Kante, weich verbogen, längs in Stücke gebrochen; hell und dunkel versetzt
     float along = dot(g, vec2(0.5, 0.5));
     float v = (sd < 0.5 ? sd * 6.0 : 3.0 + (sd - 0.5) * 4.0) + (noise(g * 0.9) - 0.5) * 1.4;   // schmale Wege (1 Kachel) bekommen genauso Rillen wie die Zufahrt
@@ -297,21 +318,20 @@ void main() {
     pc = mix(pc, pc * vec3(0.8, 0.7, 0.64), smoothstep(0.2, 0.0, sd) * onM * 0.7);
     float sh = smoothstep(0.06, -0.14, pathSdW(w + vec2(-12.0, -8.0))) * onM;
     pc *= 1.0 - 0.2 * sh;
-    // Steinchen wie 2b: vereinzelt im Weg (nicht an der Kante), Raster 36 Weltpunkte, je Zelle höchstens einer
+    // Steinchen wie 2b: vereinzelt im Weg (nicht an der Kante), Raster 40 Weltpunkte, je Zelle höchstens einer.
+    // Ein Stein ist höchstens S·1,2 = 31 Weltpunkte groß, also treffen einen Bildpunkt höchstens 2 × 2 Zellen.
     if (sd > 0.05) {
       const float C = 40.0, S = 26.0;
-      vec2 c0 = floor((w - S * 0.5) / C), c1 = floor((w + S * 0.5) / C);
-      for (float cy = c0.y; cy <= c1.y; cy += 1.0) {
-        for (float cx = c0.x; cx <= c1.x; cx += 1.0) {
-          vec2 id = vec2(cx, cy);
-          if (hash12(id + 31.0) > 0.28) continue;
-          vec2 an = (id + 0.2 + 0.6 * hash22(id + 47.0)) * C;
-          if (pathSd(toGrid(an)) < 0.22) continue;
-          float sc = 0.7 + 0.5 * hash12(id + 5.0);
-          vec2 lo = (w - an) / (S * sc) + 0.5;
-          if (any(lessThan(lo, vec2(0.0))) || any(greaterThan(lo, vec2(1.0)))) continue;
-          float k = floor(hash12(id + 13.0) * 8.0);
-          vec4 st = textureLod(uStones, vec2((k + lo.x) / 8.0, lo.y), 0.0);
+      vec2 c0 = floor((w - S * 0.6) / C);
+      for (int k = 0; k < 4; k++) {
+        vec2 id = c0 + vec2(float(k & 1), float(k >> 1));
+        vec2 an = (id + 0.2 + 0.6 * hash22(id + 47.0)) * C;
+        float sc = 0.7 + 0.5 * hash12(id + 5.0);
+        vec2 lo = (w - an) / (S * sc) + 0.5;
+        bool hit = hash12(id + 31.0) <= 0.28 && all(greaterThanEqual(lo, vec2(0.0))) && all(lessThanEqual(lo, vec2(1.0)));
+        if (hit && pathSd(toGrid(an)) >= 0.22) {
+          float kind = floor(hash12(id + 13.0) * 8.0);
+          vec4 st = textureLod(uStones, vec2((kind + lo.x) / 8.0, lo.y), 0.0);
           pc = mix(pc, st.rgb / max(st.a, 1e-3), st.a);
         }
       }
@@ -355,13 +375,15 @@ export class Ground {
         uPathB: this.pathB.source,
         uEarth: earth.source,
         uStones: stones.source,
+        uNoise: noiseTexture().source,
         boden: {
           uWaves: { value: u.waves, type: 'vec3<f32>', size: MAX_WAVES },
           uWaveCount: { value: u.count, type: 'f32' },
           uBox: { value: u.box, type: 'vec4<f32>' },
           uCenter: { value: u.center, type: 'vec2<f32>' },
           uOffset: { value: u.offset, type: 'f32' },
-          uPathBox: { value: this.pathBox, type: 'vec4<f32>' }
+          uPathBox: { value: this.pathBox, type: 'vec4<f32>' },
+          uEdgeSamples: { value: 6, type: 'i32' }
         }
       }
     });
@@ -399,6 +421,41 @@ export class Ground {
     this.positions.set([x0, y0, x1, y0, x1, y1, x0, y1]);
     this.geometry.getBuffer('aPosition').update();
   }
+}
+
+/** hash12 des Shaders in 32-Bit-Gleitkomma nachgerechnet (Dave Hoskins), damit die Tabelle dieselben Werte liefert. */
+export function hash12(x: number, y: number): number {
+  const f = Math.fround, fr = (a: number): number => f(a - Math.floor(a));
+  const k = f(0.1031), c = f(33.33);
+  let a = fr(f(x * k)), b = fr(f(y * k)), d = fr(f(x * k));
+  const t = f(f(f(a * f(b + c)) + f(b * f(d + c))) + f(d * f(a + c)));
+  a = f(a + t); b = f(b + t); d = f(d + t);
+  return fr(f(f(a + b) * d));
+}
+
+/**
+ * Zufallstabelle fürs Rauschen: Werte = hash12 der Gitterpunkte −N/2 … N/2−1 (gleiches Bild wie die frühere Hash-Rechnung
+ * im Shader, also wie abgenommen), danach nahtlose Wiederholung. Jedes Texel trägt die vier Ecken seiner Zelle:
+ * R = v(x, y), G = v(x+1, y), B = v(x, y+1), A = v(x+1, y+1).
+ */
+export function noiseTable(size = NOISE_SIZE): Uint8Array {
+  const half = size / 2;
+  const v = new Uint8Array(size * size);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) v[y * size + x] = Math.round(hash12(x - half, y - half) * 255);
+  const at = (cx: number, cy: number): number => v[(cy % size) * size + (cx % size)] ?? 0;
+  const data = new Uint8Array(size * size * 4);
+  for (let cy = 0; cy < size; cy++) for (let cx = 0; cx < size; cx++) {
+    data.set([at(cx, cy), at(cx + 1, cy), at(cx, cy + 1), at(cx + 1, cy + 1)], (cy * size + cx) * 4);
+  }
+  return data;
+}
+
+function noiseTexture(): Texture {
+  const source = new BufferImageSource({
+    resource: noiseTable(), width: NOISE_SIZE, height: NOISE_SIZE, format: 'rgba8unorm',
+    scaleMode: 'nearest', addressMode: 'repeat', alphaMode: 'no-premultiply-alpha', autoGenerateMipmaps: false
+  });
+  return new Texture({ source });
 }
 
 function pathTexture(data: Uint8Array, width: number, height: number): Texture {

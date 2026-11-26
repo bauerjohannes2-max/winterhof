@@ -61,6 +61,7 @@ Vorbild: Hay Day (Bilder bringen ihren Boden mit) und Clash of Clans (jede Grund
 - ≥ 55 Bilder pro Sekunde, ≤ 60 Zeichenaufrufe pro Bild, Texturspeicher ≤ 96 MB, Start bis spielbar ≤ 3 s bei WLAN.
 - Was außerhalb des Bildschirms ist, wird nicht gezeichnet.
 - Das misst der Playwright-Test bei jeder Prüfung.
+- **Shader-Übersetzung ≤ 1 s** (gemessen unter Windows/ANGLE-D3D, dem langsamsten Übersetzer; 26.11.): Shader-Code wird beim ersten Bild übersetzt und blockiert alles. Regeln: keine Funktion mit Schleife oder Rauschen mehrfach aufrufen (D3D rollt alles aus) – mehrere Proben in EINE Schleife mit Uniform-Länge; Rauschen aus der Zufallstabelle (`noiseTable`), nicht als Hash-Rechnung; Ableitungen (dFdx, fwidth) vor Verzweigungen. Das erste Bild wird noch unter dem Ladebild gezeichnet (`app.render()` in `main.ts`), damit nach dem Laden nichts stockt. Messen: `scripts/_shaderzeit.mjs` (Hilfsskript, nicht im Repo).
 
 ## 8. Animation
 - Erst Bildfolgen aus dem Atlas (Tiere, Rauch, Feld wiegt sich), dazu einfache Bewegung per Code (Wippen, Hüpfen beim Antippen, „Quetschen“ beim Fertigwerden wie in Hay Day). Skelett-Animation (Spine) erst, wenn es nötig wird.

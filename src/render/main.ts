@@ -151,6 +151,10 @@ async function start(): Promise<void> {
   });
   watchFirstSeconds(app, q);
 
+  // Erstes Bild noch unter dem Ladebild zeichnen: Dabei übersetzt die Grafikkarte die Shader (einmalig, gemessen
+  // ~0,6 s unter Windows für den Boden). Danach läuft das Spiel ohne Hänger los, statt im ersten Bild zu stocken.
+  app.render();
+
   root.dataset['ebenen'] = layerOrder(world).join(',');
   root.dataset['aufloesung'] = String(q);
   root.dataset['inhalte'] = String(Object.keys(CONTENT.items).length);
