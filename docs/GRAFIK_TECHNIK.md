@@ -20,15 +20,15 @@ Vorbild: Hay Day (Bilder bringen ihren Boden mit) und Clash of Clans (jede Grund
 |---|---|---|---|
 | 1 | Grund | Schnee im Hof, Wildnis außen, Hofrand als Farbstufe + Schattenstreifen | gebacken |
 | 2 | Bodenzeichnung | Wege, Plätze, Acker-Erde | gebacken |
-| 3 | Standflächen | festgetretener, leicht graublauer Schnee unter jeder Grundfläche (Clash) | gebacken |
-| 4 | Kontaktschatten | weicher Schatten an jeder Unterkante, nach unten rechts | gebacken |
-| 5 | Objekte | Gebäude, Bäume, Deko, Feldfrüchte, Tiere, Figuren | einzeln, nach Tiefe sortiert |
-| 6 | Welt-Effekte | Rauch, Funkeln, Symbole über Gebäuden, Ernte-Flug | einzeln |
-| 7 | Auswahl | Platzier-Vorschau grün/rot, Markierung | einzeln |
+| 3 | Kontaktschatten | enge Kontaktlinie an der Unterkante, bei Bäumen/Laternen/Tieren kleiner Fleck nach unten rechts (Entsch. 62) | je Objekt ein vorgebackenes Schattenbild aus einem Atlas |
+| 4 | Objekte | Gebäude, Bäume, Deko, Feldfrüchte, Tiere, Figuren | einzeln, nach Tiefe sortiert |
+| 5 | Welt-Effekte | Rauch, Funkeln, Symbole über Gebäuden, Ernte-Flug | einzeln |
+| 6 | Auswahl | Platzier-Vorschau grün/rot, Markierung | einzeln |
 | – | HUD | HTML über der Spielfläche | – |
 
-- **Gebacken** heißt: Ebenen 1–4 werden einmal in Bild-Kacheln von 8 × 8 Rasterfeldern vorgerechnet und nur neu gemalt, wenn sich dort etwas ändert (Bauen, Verschieben). Das spart am Handy am meisten Leistung.
-- **Tiefe (vorn/hinten)** in Ebene 5: Sortiert wird nach der vordersten Ecke der Grundfläche (`gx + gy + w + h`), bei Gleichstand nach Bildschirmhöhe. Figuren werden nach ihrem Fußpunkt sortiert. Das prüft ein Test.
+- **Keine Standfläche** (Entsch. 62): Gebäude bringen ihren Vorplatz im Bild mit, unter Objekten liegt nur Wiese.
+- **Gebacken** heißt: Ebenen 1–2 werden einmal in Bild-Kacheln von 8 × 8 Rasterfeldern vorgerechnet und nur neu gemalt, wenn sich dort etwas ändert (Bauen, Verschieben). Das spart am Handy am meisten Leistung.
+- **Tiefe (vorn/hinten)** in Ebene 4: Sortiert wird nach der vordersten Ecke der Grundfläche (`gx + gy + w + h`), bei Gleichstand nach Bildschirmhöhe. Figuren werden nach ihrem Fußpunkt sortiert. Das prüft ein Test.
 
 ## 4. Bild-Vertrag je Objekt (Größe in `winterhof.json` → `sizes`, Bild in `art.sprites`, Baustein 5b)
 | Feld | Bedeutung |
@@ -38,10 +38,10 @@ Vorbild: Hay Day (Bilder bringen ihren Boden mit) und Clash of Clans (jede Grund
 | `sizes.<typ>.w`, `.h` | Grundfläche in Kacheln, z. B. 2 × 2 |
 | `sizes.<typ>.heightTiles` | Bildhöhe in Kacheln, die Breite ergibt sich aus dem Bild (nie verzerren) |
 | `sprites.<bild>.anchorY` | Bodenpunkt im Bild (0–1), liegt genau auf der Mitte der Grundfläche |
-| `pad` | Standfläche: `snow` (festgetreten), `none` oder `apron` (Bild bringt Vorplatz mit) |
-| `shadow` | Größe des Kontaktschattens im Verhältnis zur Grundfläche |
+| `sprites.<bild>.shadow` | Schatten: `kontakt` (Linie an der Unterkante), `fleck` (Linie + weicher Fleck, Bäume/Laternen/Tiere) oder `bild` (Bild bringt Schatten selbst mit) |
 
-- **Eingebauter Vorplatz (Hay Day):** Neue Gebäudebilder bringen ihren eigenen Boden mit (Pflaster, Trittspur, Säcke, Schneewehe). Er reicht höchstens eine Viertelkachel über die Grundfläche hinaus und läuft im Bild weich aus. Bis dahin ersetzt die Standfläche aus Ebene 3 den Vorplatz.
+- **Eingebauter Vorplatz (Hay Day):** Neue Gebäudebilder bringen ihren eigenen Boden mit (Pflaster, Trittspur, Säcke, Schneewehe). Er reicht höchstens eine Viertelkachel über die Grundfläche hinaus und läuft im Bild weich aus.
+- **Schattenbilder (Baustein 7):** `scripts/schatten_backen.mjs` rechnet vor jedem Bündeln aus der Bildform jedes Objekts ein Schattenbild (halbe Auflösung, nach `art_src/spiel{m}/schatten{tps}/`, nicht versioniert; Maße als Anteil der Kachel, wie Skizze `scripts/standflaeche_skizze.py` Runde 3). Im Spiel liegt es mit demselben Bodenpunkt unter dem Objekt, Farbe kühles Blaugrau per Tönung.
 - Nichts ragt auf Wege oder fremde Grundflächen (prüft der Kern).
 
 ## 5. Licht und Schatten

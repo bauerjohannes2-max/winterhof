@@ -9,8 +9,12 @@ Thumbs.db
 node_modules/
 # Quellbilder sind versioniert (Bild-Pipeline Baustein 3), nur Rohmaterial der Probe nicht
 art_src/probe_raw/
+# Schattenbilder werden aus den Objektbildern gebacken (scripts/schatten_backen.mjs, Entsch. 62)
+art_src/spiel{m}/schatten{tps}/
 # von AssetPack erzeugt (npm run assets)
 assets/gen/
 .assetpack/
 test-results/
 playwright-report/
+# Messhilfen nur lokal (AGENTS.md §6)
+scripts/_*.mjs

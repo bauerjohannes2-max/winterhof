@@ -13,6 +13,7 @@ const root = process.cwd();
 const run = (cmd, args, cwd = root) => execFileSync(cmd, args, { cwd, stdio: 'inherit', shell: false });
 const out = (cmd, args) => execFileSync(cmd, args, { cwd: root, encoding: 'utf8' }).trim();
 
+run(process.execPath, ['./scripts/schatten_backen.mjs']);
 run(process.execPath, ['./node_modules/@assetpack/core/bin/index.js']);
 run(process.execPath, ['./node_modules/vite/bin/vite.js', 'build']);
 
@@ -20,6 +21,8 @@ const dist = path.join(root, 'dist');
 if (!fs.existsSync(path.join(dist, 'index.html'))) throw new Error('dist/index.html fehlt');
 
 const commit = out('git', ['rev-parse', '--short', 'HEAD']);
+const authorName = out('git', ['log', '-1', '--format=%an']);
+const authorEmail = out('git', ['log', '-1', '--format=%ae']);
 const dirty = out('git', ['status', '--porcelain', '--', 'src', 'index.html']) ? '+lokal' : '';
 const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
 fs.writeFileSync(path.join(dist, '.nojekyll'), '');
@@ -31,7 +34,7 @@ try {
   run('git', ['init', '-q', '-b', 'gh-pages'], tmp);
   run('git', ['config', 'core.autocrlf', 'false'], tmp);
   run('git', ['add', '-A'], tmp);
-  run('git', ['commit', '-q', '-m', `Vorschau ${commit}${dirty} ${stamp}`], tmp);
+  run('git', ['-c', `user.name=${authorName}`, '-c', `user.email=${authorEmail}`, 'commit', '-q', '-m', `Vorschau ${commit}${dirty} ${stamp}`], tmp);
   run('git', ['push', '-q', '-f', REPO, 'gh-pages'], tmp);
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });

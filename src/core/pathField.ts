@@ -40,19 +40,32 @@ function blur(src: Float32Array, w: number, h: number, sigma: number): Float32Ar
   for (let i = -r; i <= r; i++) { k[i + r] = Math.exp(-(i * i) / (2 * sigma * sigma)); s += k[i + r]!; }
   for (let i = 0; i < k.length; i++) k[i]! /= s;
   const tmp = new Float32Array(w * h), out = new Float32Array(w * h);
+  const xMidEnd = Math.max(r, w - r);
   for (let y = 0; y < h; y++) {
     const row = y * w;
-    for (let x = 0; x < w; x++) {
+    for (let x = 0; x < Math.min(r, w); x++) {
+      let v = 0;
+      for (let i = -r; i <= r; i++) v += src[row + Math.min(w - 1, Math.max(0, x + i))]! * k[i + r]!;
+      tmp[row + x] = v;
+    }
+    for (let x = r; x < xMidEnd; x++) {
+      let v = 0;
+      for (let i = -r; i <= r; i++) v += src[row + x + i]! * k[i + r]!;
+      tmp[row + x] = v;
+    }
+    for (let x = xMidEnd; x < w; x++) {
       let v = 0;
       for (let i = -r; i <= r; i++) v += src[row + Math.min(w - 1, Math.max(0, x + i))]! * k[i + r]!;
       tmp[row + x] = v;
     }
   }
+  // Y-Pass zeilenweise (linear im Cache statt Spaltensprünge → deutlich schneller bei gleichem Ergebnis)
   for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      let v = 0;
-      for (let i = -r; i <= r; i++) v += tmp[Math.min(h - 1, Math.max(0, y + i)) * w + x]! * k[i + r]!;
-      out[y * w + x] = v;
+    const dst = y * w;
+    for (let i = -r; i <= r; i++) {
+      const sy = Math.min(h - 1, Math.max(0, y + i)) * w;
+      const ki = k[i + r]!;
+      for (let x = 0; x < w; x++) out[dst + x] = out[dst + x]! + tmp[sy + x]! * ki;
     }
   }
   return out;
@@ -105,15 +118,18 @@ export function buildPathField(tiles: ReadonlyMap<string, string>, surfaces: rea
   if (surfaces.length > MAX_SURFACES) throw new Error(`Wegfeld kann höchstens ${MAX_SURFACES} Beläge, nicht ${surfaces.length}`);
   const W = box.w * T, H = box.h * T, N = W * H;
   const mask = new Float32Array(N);
-  const per = surfaces.map(() => new Float32Array(N));
+  // Nur Beläge anlegen und glätten, die tatsächlich auf der Karte liegen (spart beim Start 6 leere Durchläufe)
+  const per: (Float32Array | null)[] = surfaces.map(() => null);
   for (const [key, surf] of tiles) {
     const [gx, gy] = key.split(',').map(Number) as [number, number];
     const si = surfaces.indexOf(surf);
     if (si < 0) throw new Error(`Wegfeld: Belag ${surf} unbekannt`);
     const x0 = (gx - box.gx0) * T, y0 = (gy - box.gy0) * T;
     if (x0 < 0 || y0 < 0 || x0 >= W || y0 >= H) continue;
+    let layer = per[si];
+    if (!layer) { layer = new Float32Array(N); per[si] = layer; }
     for (let y = y0; y < y0 + T; y++) {
-      for (let x = x0; x < x0 + T; x++) { mask[y * W + x] = 1; per[si]![y * W + x] = 1; }
+      for (let x = x0; x < x0 + T; x++) { mask[y * W + x] = 1; layer[y * W + x] = 1; }
     }
   }
 
@@ -125,7 +141,7 @@ export function buildPathField(tiles: ReadonlyMap<string, string>, surfaces: rea
   const dIn = edt(outside, W, H);    // innen: Abstand zur Wiese
 
   const a = new Uint8Array(N * 4), bb = new Uint8Array(N * 4);
-  const wts = per.map((p) => blur(p, W, H, PATH_BLEND * T * 0.5));
+  const wts = per.map((p) => (p ? blur(p, W, H, PATH_BLEND * T * 0.5) : null));
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
@@ -140,10 +156,11 @@ export function buildPathField(tiles: ReadonlyMap<string, string>, surfaces: rea
       const sd = Math.max(-PATH_RANGE, Math.min(PATH_RANGE, near * (1 - t) + far * t));
       a[i * 4] = byte(sd / PATH_RANGE * 0.5 + 0.5);
       let s = 0;
-      for (const w of wts) s += w[i]!;
+      for (const w of wts) if (w) s += w[i]!;
       const norm = s > 1e-4 ? 1 / s : 0;
       for (let k = 0; k < MAX_SURFACES; k++) {
-        const v = k < wts.length ? wts[k]![i]! * norm : 0;
+        const wk = k < wts.length ? wts[k] : null;
+        const v = wk ? wk[i]! * norm : 0;
         if (k < 3) a[i * 4 + 1 + k] = byte(v); else bb[i * 4 + k - 3] = byte(v);
       }
     }

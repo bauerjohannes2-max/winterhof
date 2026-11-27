@@ -4,16 +4,17 @@
 // Ladebild, Hochkant-Pause, Bildschärfe automatisch. Regeln: docs/GRAFIK_TECHNIK.md.
 // Liest den Kern nur über ../core, ändert den Spielstand nur über Befehle.
 // ============================================================================
-import { Application, Assets, type Container, type Texture } from 'pixi.js';
+import { Application, Assets, type Container, type Texture, type WebGLRenderer } from 'pixi.js';
 import { buildPathField, CONTENT, createNewGame, meadow, pathTiles, terrainMap, type MapObject } from '../core';
 import { Camera, maxZoomForWidth } from './camera/camera';
 import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
 import { GridOverlay } from './scene/grid';
 import { Ground } from './scene/ground';
+import { ObjectView } from './scene/objects';
 
 import { loadStartAssets } from './boot/assets';
-import { chooseQuality, renderResolution, SLOW_FPS, type Quality } from './boot/quality';
+import { ATLAS_MAX, chooseQuality, renderResolution, SLOW_FPS, type Quality } from './boot/quality';
 import { createWorld, layerOrder } from './scene/layers';
 import { openLoadingScreen } from './ui/loading';
 import { watchOrientation } from './ui/orientation';
@@ -29,14 +30,10 @@ function writeFlag(key: string): void {
   try { localStorage.setItem(key, '1'); } catch { /* privates Fenster: nächster Start misst neu */ }
 }
 
-/** Größte Textur der Grafikkarte, bevor Pixi startet (kurzer Probe-Kontext, danach freigegeben). */
-function maxTextureSize(): number {
-  const canvas = document.createElement('canvas');
-  const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
-  if (!gl) return 0;
-  const size = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE));
-  gl.getExtension('WEBGL_lose_context')?.loseContext();
-  return size;
+/** Größte Textur der Grafikkarte direkt aus Pixis WebGL-Kontext (kein zweiter Wegwerf-Kontext beim Start). */
+function maxTextureSize(app: Application): number {
+  const gl = (app.renderer as Partial<WebGLRenderer>).gl;
+  return gl ? Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) : 0;
 }
 
 /** Misst die ersten Sekunden; ist das Gerät für @2x zu langsam, startet es beim nächsten Mal leicht. */
@@ -75,10 +72,11 @@ async function start(): Promise<void> {
 
   const dpr = window.devicePixelRatio || 1;
   const nav = navigator as Navigator & { deviceMemory?: number };
-  const q = chooseQuality({
-    dpr, cores: nav.hardwareConcurrency, memoryGb: nav.deviceMemory, maxTextureSize: maxTextureSize(), slowBefore: readFlag(SLOW_KEY),
+  const deviceBase = {
+    dpr, cores: nav.hardwareConcurrency, memoryGb: nav.deviceMemory, slowBefore: readFlag(SLOW_KEY),
     maxZoom: maxZoomForWidth(Math.max(root.clientWidth, root.clientHeight))
-  });
+  };
+  const prelimQ = chooseQuality({ ...deviceBase, maxTextureSize: ATLAS_MAX * 2 });
 
   const app = new Application();
   await app.init({
@@ -86,20 +84,29 @@ async function start(): Promise<void> {
     background: SNOW,
     antialias: false,
     autoDensity: true,
-    resolution: renderResolution(q, dpr),
+    resolution: renderResolution(prelimQ, dpr),
     preference: 'webgl',
     powerPreference: 'high-performance'
   });
+  const q = chooseQuality({ ...deviceBase, maxTextureSize: maxTextureSize(app) });
+  if (q !== prelimQ) app.renderer.resize(app.screen.width, app.screen.height, renderResolution(q, dpr));
   root.appendChild(app.canvas);
   loading.progress(0.45);
 
-  await loadStartAssets(q, (p) => loading.progress(0.45 + p * 0.55));
+  // Bilder laden und Kartendaten vorbereiten laufen parallel (Netz/Worker + CPU gleichzeitig)
+  const assetsReady = loadStartAssets(q, (p) => loading.progress(0.45 + p * 0.55));
+  const map = terrainMap();
+  const pathBox = { gx0: map.minGx, gy0: map.minGy, w: map.maxGx - map.minGx + 1, h: map.maxGy - map.minGy + 1 };
+  const pathsFor = (objects: readonly MapObject[]) => buildPathField(pathTiles(objects), CONTENT.paths.surfaces, pathBox);
+  const startObjects = createNewGame(Date.now()).objects;
+  const startPaths = pathsFor(startObjects);
+  const startMeadow = meadow();
+  await assetsReady;
 
   const world = createWorld();
   app.stage.addChild(world.root);
 
   // Kamera (Baustein 4): Start immer am Hofplatz, Hilfsraster bis Baustein 12 zum Prüfen sichtbar
-  const map = terrainMap();
   // Schärfe-Grenze: nie weiter rein, als die geladenen Bilder scharf hergeben (Bildstufe q / Zeichenauflösung)
   const camera = new Camera({ ...cameraConfig(map), maxSharpZoom: q / app.renderer.resolution });
   camera.resize(app.screen.width, app.screen.height);
@@ -108,11 +115,13 @@ async function start(): Promise<void> {
   // Grundboden (Baustein 5): ganzes Tal Wiese, außen Schnee (Entscheidung 40)
   const params = new URLSearchParams(location.search);
   // Wege (Baustein 6): Zufahrt + Hofplatz + Wegplatten als eine Fläche im Grundboden (Entscheidungen 53/54).
-  // Bis die Spielwelt an den Spielstand angebunden ist (Objekte, Baustein 8), zeigt sie den Start-Hof.
-  const pathBox = { gx0: map.minGx, gy0: map.minGy, w: map.maxGx - map.minGx + 1, h: map.maxGy - map.minGy + 1 };
-  const pathsFor = (objects: readonly MapObject[]) => buildPathField(pathTiles(objects), CONTENT.paths.surfaces, pathBox);
-  const ground = new Ground(meadow(), Assets.get<Texture>('wiese'), Assets.get<Texture>('erde'), Assets.get<Texture>('steine'), pathsFor(createNewGame(Date.now()).objects));
+  // Bis die Spielwelt an den Spielstand angebunden ist (Baustein 12), zeigt sie den Start-Hof.
+  const ground = new Ground(startMeadow, Assets.get<Texture>('wiese'), Assets.get<Texture>('erde'), Assets.get<Texture>('steine'), startPaths);
   world.layer.grund.addChild(ground.view);
+  // Objekte + Kontaktschatten (Baustein 7, Entscheidung 62): Schattenbilder vorgebacken, keine Standfläche
+  const objects = new ObjectView(startObjects);
+  world.layer.kontaktschatten.addChild(objects.shadows);
+  world.layer.objekte.addChild(objects.objects);
   const coverView = (): void => {
     const a = camera.screenToWorld(0, 0), e = camera.screenToWorld(app.screen.width, app.screen.height);
     ground.cover({ x0: a.x, y0: a.y, x1: e.x, y1: e.y });

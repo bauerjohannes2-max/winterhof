@@ -7,11 +7,10 @@ import { Container } from 'pixi.js';
 export const LAYERS = [
   { id: 'grund', baked: true },           // 1 Schnee im Hof, Wildnis außen, Hofrand
   { id: 'bodenzeichnung', baked: true },  // 2 Wege, Plätze, Acker-Erde
-  { id: 'standflaechen', baked: true },   // 3 festgetretener Schnee unter jeder Grundfläche
-  { id: 'kontaktschatten', baked: true }, // 4 weicher Schatten an jeder Unterkante
-  { id: 'objekte', baked: false },        // 5 Gebäude, Bäume, Deko, Tiere, Figuren – nach Tiefe sortiert
-  { id: 'effekte', baked: false },        // 6 Rauch, Funkeln, Symbole, Ernte-Flug
-  { id: 'auswahl', baked: false }         // 7 Platzier-Vorschau, Markierung
+  { id: 'kontaktschatten', baked: true }, // 3 vorgebackene Schattenbilder je Objekt (Entsch. 62), keine Standfläche
+  { id: 'objekte', baked: false },        // 4 Gebäude, Bäume, Deko, Tiere, Figuren – nach Tiefe sortiert
+  { id: 'effekte', baked: false },        // 5 Rauch, Funkeln, Symbole, Ernte-Flug
+  { id: 'auswahl', baked: false }         // 6 Platzier-Vorschau, Markierung
 ] as const;
 
 export type LayerId = (typeof LAYERS)[number]['id'];

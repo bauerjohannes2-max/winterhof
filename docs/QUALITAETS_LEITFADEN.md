@@ -2,11 +2,16 @@
 
 Gilt für jede Sitzung, jeden Helfer und jede Zeile Code, jedes Bild und jeden Text. Er steht über Tempo, Bequemlichkeit und Gewohnheit.
 
-## 1. Grundregel (Entscheidung 13)
-**Winterhof wird das bestmögliche Spiel, mindestens auf dem Niveau von Hay Day und Clash of Clans, wo möglich besser.**
-- Keine Abkürzungen, keine Umwege, keine Pflaster. Qualität vor Tempo, immer.
-- **Das gilt auch gegen Hannes' eigene Bitte.** Will Hannes etwas schneller oder einfacher, als es richtig ist, widerspricht Claude klar: Was kostet die Abkürzung, was ist der beste Weg? Claude schlägt immer den besten Weg vor. Nur wenn Hannes danach ausdrücklich trotzdem anders entscheidet, wird das als bewusste Ausnahme mit Grund in `LEITUNG_CLAUDE.md` eingetragen.
-- „Besser als die Vorbilder“ heißt für uns: gleiche Sorgfalt bei Bedienung, Grafik und Spielgefühl, dazu eigene Stärken: gemütliche Weihnachtswelt, tierfreundlich, fair ohne Druck.
+## 1. Grundregel (Entscheidung 13, verschärft Entscheidung 64)
+**Winterhof wird ein einzigartiges AAA-Mobile-Game, mindestens auf dem Niveau von Hay Day, Clash of Clans und den erfolgreichsten Spielen des Genres – visuell UND codetechnisch, wo möglich besser.**
+- Keine Abkürzungen, keine Umwege, keine Pflaster, kein „passt schon“. Qualität vor Tempo, immer.
+- **Extrem kritische Selbstprüfung Pflicht (Entscheidung 64):** Jedes Ergebnis wird **selbst** mit extrem hoher Messlatte gegen Top-Spiele (visuell + Code + Spielgefühl) geprüft – inklusive Nahaufnahmen ohne Raster, Handy-Querformat und Live-Vorschau. Niemals „schau du mal“ abladen: selbst erkennbare Mängel (z. B. schwebende Objekte, falsche Schatten, fehlende Verankerung) werden sofort selbst gefunden und behoben, bevor Hannes etwas zur Abnahme bekommt.
+- **Das gilt auch gegen Hannes' eigene Bitte.** Will Hannes etwas schneller oder einfacher, als es richtig ist, widerspricht der Agent klar: Was kostet die Abkürzung, was ist der beste Weg? Es wird immer der beste Weg vorgeschlagen. Nur wenn Hannes danach ausdrücklich trotzdem anders entscheidet, wird das als bewusste Ausnahme mit Grund in `LEITUNG_CLAUDE.md` eingetragen.
+- **Einzigartige Winterhof-Identität (4 Säulen, Hannes 27.11., Entscheidung 64):**
+  1. Magische, lebendige Weihnachtswelt voller kleiner Geschichten und liebevoller Details (Maßstab: Hay Day + Animal Crossing).
+  2. Extrem knackiges Spielgefühl und „Juice“ (jedes Tippen, Ernten und Bauen fühlt sich rund und befriedigend an).
+  3. Kluge, tiefe Hof-Wirtschaft und spürbarer Fortschritt über alle Stufen (Maßstab: Clash + Hay Day).
+  4. Aufgeräumte, moderne Oberfläche – null überladen, sofort intuitiv am Handy quer.
 
 ## 1a. Grundlage vor Austauschbarem (Hannes 25.11., Entscheidung 39)
 Vor jeder Arbeit fragen: **Kann man das später ohne Umbau tauschen?**
@@ -57,6 +62,31 @@ Foren, KI-Blogs und Meinungsartikel nur als Hinweis, nie als alleinige Grundlage
 | Verlässlichkeit | Der Spielstand geht nie verloren (Migration, Sicherungskopie), offline spielbar, keine Konsolenfehler |
 | Geräte | iOS Safari, Chrome (Android/Desktop), Samsung Internet, nur Querformat |
 | Zugänglichkeit | Farbe ist nie die einzige Information, Text gut lesbar am Handy |
+
+## 5a. AAA-Benchmark-System (Entscheidung 64 – Pflicht-Tor vor jeder Abnahme)
+Damit am Ende garantiert ein außergewöhnliches Spiel auf AAA-Mobile-Niveau herauskommt, durchläuft **jeder Baustein** vor der Vorlage an Hannes eine verbindliche 4-Säulen-Benchmark-Prüfung. Bewertet wird gnadenlos auf einer Skala von **1–10** (10 = Spitzen-AAA-Mobile wie Hay Day / Clash of Clans / Township / Animal Crossing):
+
+| Säule | Benchmark-Vorbilder | Was extrem kritisch geprüft wird | AAA-Tor (Pflicht für Abnahme) |
+|---|---|---|---|
+| **1. Visuell & Atmosphäre** | Hay Day, Clash of Clans, Township, Animal Crossing | Bodenverankerung (nichts schwebt), Licht/Schatten aus einer Richtung, weiche Übergänge ohne Nähte, klare Silhouetten und Lesbarkeit bei Handy-Querformat (844 × 390), ruhiger Hintergrund mit klarem Fokus, eigener unverwechselbarer Winterhof-Charakter | **≥ 9/10** für den aktuellen Baustein (bewusste Platzhalter späterer Bausteine einzeln benannt) |
+| **2. Spielgefühl & Bedienung** | Hay Day, Clash of Clans, Apple HIG, Material Design | Sofortige Reaktion (< 16 ms), weiche Physik/Übergänge (Bild für Bild geprüft), Tippziele ≥ 44 pt / 48 dp, Daumen-Ergonomie, klare Rückmeldung (Bild, Bewegung, später Ton), ohne Anleitung selbsterklärend | **≥ 9/10** für jede berührte Interaktion / Bewegung |
+| **3. Code & Architektur** | Supercell-Architektur (Kern getrennt, datengetrieben, deterministisch), PixiJS v8 Best Practices | Strenge Kern/Render-Grenze (ESLint), eine Datenquelle (`winterhof.json`), deterministische Befehle ohne Nebeneffekte, keine Workarounds/Duplikate, saubere Modularität, harte Tests inkl. Randfälle & Migration | **≥ 9/10**, 0 Workarounds, `typecheck` + `lint` + alle Tests grün |
+| **4. Leistung & Verlässlichkeit** | Mittelklasse-Handy (4× gedrosselt, langsames Netz), WebGL-Budget | Kaltstart **Ziel ≤ 2,0 s** (harte Grenze < 3,0 s), ≥ 55–60 FPS ohne Ruckler, ≤ 60 Draw Calls, Texturspeicher ≤ 96 MB, Shader-Übersetzung ≤ 1 s, 0 Konsolenfehler, Spielstand sicher | **100 % grün** (kein Wert im roten Bereich, keine Ausreißer) |
+
+### K.O.-Kriterien (sofortiges Zurückweisen vor Abnahme)
+Ein Baustein darf Hannes **nicht** zur Abnahme vorgelegt werden, wenn auch nur **eines** zutrifft:
+- Ein Objekt schwebt, zeigt harte Kanten/Nähte oder verletzt Lichtrichtung/Maßstab.
+- Ein Ablauf ruckelt, blitzt auf, springt oder lädt stockend (Bild-für-Bild-Prüfung).
+- Code enthält ein Pflaster, einen Sonderweg, doppelte Logik oder bricht die Kern/Render-Grenze.
+- Eine Messgröße verletzt das Leistungsbudget (z. B. Kaltstart-Ausreißer > 3 s, FPS-Einbruch, überdimensionierte Atlanten).
+- Das Ergebnis wirkt wie ein „guter Prototyp“ statt wie ein fertiger Baustein eines Top-Store-Spiels.
+
+### Pflicht-Ausgabe bei jeder Abnahme
+Jede Abnahme-Vorlage an Hannes enthält kompakt:
+1. **Vorher/Nachher-Bild** (und Nahaufnahme / Ablauf-Prüfung) direkt im Chat.
+2. **AAA-Benchmark-Urteil** (Punkte je betroffener Säule + automatisch geloggte Messwerte aus `npm run check`: Startzeit, FPS, Draw Calls, Texturspeicher).
+3. **Ehrliche Schwächen-Liste:** Was fehlt noch zu 10/10 und in welchem Baustein genau wird es gelöst (nie stillschweigend übergehen).
+4. **Interaktive Fragen (`ask_question`)** mit klarer Empfehlung.
 
 ## 6. Verboten
 - Sonderwege, Schalter für Varianten oder „vorläufige“ Lösungen im Code.

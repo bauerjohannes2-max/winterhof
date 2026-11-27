@@ -3744,123 +3744,146 @@
   },
   "art": {
     "tilePx": 128,
-    "note": "Bilder je Objekt (Quelle art_src/spiel{m}/objekte{tps}, AssetPack). size = Schlüssel in sizes (Grundfläche + Bildhöhe, eine Quelle), anchorY = Bodenpunkt im Bild (0 oben, 1 unten). Breite ergibt sich IMMER aus dem Bild-Seitenverhältnis, nie verzerren. Prüfung: python scripts/pruefe_assets.py.",
+    "note": "Bilder je Objekt (Quelle art_src/spiel{m}/objekte{tps}, AssetPack). size = Schlüssel in sizes (Grundfläche + Bildhöhe, eine Quelle), anchorY = Bodenpunkt im Bild (0 oben, 1 unten). Breite ergibt sich IMMER aus dem Bild-Seitenverhältnis, nie verzerren. shadow = kontakt (Linie an der Unterkante) | fleck (+ weicher Fleck, Bäume/Laternen/Tiere) | bild (Bild bringt Schatten mit), Entsch. 62. Prüfung: python scripts/pruefe_assets.py.",
     "minSourcePxPerWorldPx": 1.6,
     "sprites": {
       "winter_chalet": {
         "file": "winter_chalet.png",
         "size": "chalet",
-        "anchorY": 0.86
+        "anchorY": 0.86,
+        "shadow": "kontakt"
       },
       "christmas_bakery": {
         "file": "christmas_bakery.png",
         "size": "bakery",
-        "anchorY": 0.86
+        "anchorY": 0.86,
+        "shadow": "kontakt"
       },
       "punch_stand": {
         "file": "punch_stand.png",
         "size": "teahouse",
-        "anchorY": 0.86
+        "anchorY": 0.86,
+        "shadow": "kontakt"
       },
       "patisserie_house": {
         "file": "patisserie_house.png",
         "size": "patisserie",
-        "anchorY": 0.86
+        "anchorY": 0.86,
+        "shadow": "kontakt"
       },
       "gift_workshop": {
         "file": "gift_workshop.png",
         "size": "gift_workshop",
-        "anchorY": 0.86
+        "anchorY": 0.86,
+        "shadow": "kontakt"
       },
       "christmas_tree": {
         "file": "christmas_tree.png",
         "size": "christmasTree",
-        "anchorY": 0.86
+        "anchorY": 0.86,
+        "shadow": "fleck"
       },
       "wishlist_board": {
         "file": "wishlist_board.png",
         "size": "wishlistBoard",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "gift_mailbox": {
         "file": "gift_mailbox.png",
         "size": "mailbox",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "reindeer_sleigh": {
         "file": "reindeer_sleigh.png",
         "size": "sleigh",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "treasure_chest": {
         "file": "treasure_chest.png",
         "size": "dailyChest",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "deco_pine": {
         "file": "deco_pine.png",
         "size": "pine",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "deco_snowman": {
         "file": "deco_snowman.png",
         "size": "snowman",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "deco_lantern": {
         "file": "deco_lantern.png",
         "size": "lantern",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "animal_chicken": {
         "file": "animal_chicken.png",
         "size": "chicken",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "animal_sheep": {
         "file": "animal_sheep.png",
         "size": "sheep",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "animal_reindeer": {
         "file": "animal_reindeer.png",
         "size": "reindeer",
-        "anchorY": 0.88
+        "anchorY": 0.88,
+        "shadow": "fleck"
       },
       "alpine_villager": {
         "file": "alpine_villager.png",
         "size": "person",
-        "anchorY": 0.92
+        "anchorY": 0.92,
+        "shadow": "fleck"
       },
       "alpine_villager_green": {
         "file": "alpine_villager_green.png",
         "size": "person",
-        "anchorY": 0.92
+        "anchorY": 0.92,
+        "shadow": "fleck"
       },
       "alpine_villager_navy": {
         "file": "alpine_villager_navy.png",
         "size": "person",
-        "anchorY": 0.92
+        "anchorY": 0.92,
+        "shadow": "fleck"
       },
       "crop_wheat": {
         "file": "crop_wheat.png",
         "size": "crop",
-        "anchorY": 0.72
+        "anchorY": 0.72,
+        "shadow": "fleck"
       },
       "crop_berries": {
         "file": "crop_berries.png",
         "size": "crop",
-        "anchorY": 0.72
+        "anchorY": 0.72,
+        "shadow": "fleck"
       },
       "crop_matcha": {
         "file": "crop_matcha.png",
         "size": "crop",
-        "anchorY": 0.72
+        "anchorY": 0.72,
+        "shadow": "fleck"
       },
       "snow_field_plot": {
         "file": "snow_field_plot.png",
         "size": "field",
-        "anchorY": 0.62
+        "anchorY": 0.62,
+        "shadow": "kontakt"
       }
     }
   },

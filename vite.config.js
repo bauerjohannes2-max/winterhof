@@ -2,14 +2,54 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 
+/** Kopiert aus assets/gen/ nur manifest.json und tatsächlich darin referenzierte Dateien (keine verwaisten AssetPack-Altlasten). */
+function copyGeneratedAssets(genSrc, genDst) {
+  const manifestPath = path.join(genSrc, 'manifest.json');
+  if (!fs.existsSync(manifestPath)) throw new Error('assets/gen/manifest.json fehlt (vorher npm run assets laufen lassen)');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const needed = new Set(['manifest.json']);
+  const queue = [];
+  for (const bundle of manifest.bundles ?? []) {
+    for (const asset of bundle.assets ?? []) {
+      const srcs = Array.isArray(asset.src) ? asset.src : [asset.src];
+      for (const rel of srcs) if (typeof rel === 'string') queue.push(rel);
+    }
+  }
+  while (queue.length > 0) {
+    const rel = queue.pop();
+    if (needed.has(rel)) continue;
+    const full = path.join(genSrc, rel);
+    if (!fs.existsSync(full)) throw new Error(`Manifest verweist auf fehlende Datei: assets/gen/${rel}`);
+    needed.add(rel);
+    if (rel.endsWith('.json')) {
+      const meta = JSON.parse(fs.readFileSync(full, 'utf8')).meta;
+      const dir = path.posix.dirname(rel);
+      const joinRel = (name) => (dir === '.' ? name : `${dir}/${name}`);
+      if (typeof meta?.image === 'string') queue.push(joinRel(meta.image));
+      for (const extra of meta?.related_multi_packs ?? []) {
+        if (typeof extra === 'string') queue.push(joinRel(extra));
+      }
+    }
+  }
+  for (const rel of needed) {
+    const dst = path.join(genDst, rel);
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.copyFileSync(path.join(genSrc, rel), dst);
+  }
+}
+
 function copyStaticFilesPlugin() {
   const staticEntries = ['assets', 'manifest.json', '.nojekyll'];
-  function copyRecursive(src, dst) {
+  function copyRecursive(src, dst, genDir) {
+    if (path.resolve(src) === genDir) {
+      copyGeneratedAssets(src, dst);
+      return;
+    }
     const stat = fs.statSync(src);
     if (stat.isDirectory()) {
       fs.mkdirSync(dst, { recursive: true });
       for (const entry of fs.readdirSync(src)) {
-        copyRecursive(path.join(src, entry), path.join(dst, entry));
+        copyRecursive(path.join(src, entry), path.join(dst, entry), genDir);
       }
     } else {
       fs.mkdirSync(path.dirname(dst), { recursive: true });
@@ -21,10 +61,11 @@ function copyStaticFilesPlugin() {
     closeBundle() {
       const root = process.cwd();
       const outDir = path.join(root, 'dist');
+      const genDir = path.resolve(root, 'assets', 'gen');
       for (const rel of staticEntries) {
         const src = path.join(root, rel);
         if (fs.existsSync(src)) {
-          copyRecursive(src, path.join(outDir, rel));
+          copyRecursive(src, path.join(outDir, rel), genDir);
         }
       }
     }
