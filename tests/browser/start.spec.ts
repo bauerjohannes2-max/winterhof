@@ -85,6 +85,7 @@ async function attachGpuBenchmark(page: Page): Promise<void> {
 
 test('startet sauber, Ebenen in fester Reihenfolge, Start unter 3 s', async ({ page }, info) => {
   const fehler = collectErrors(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await attachGpuBenchmark(page);
   await page.goto('/');
   const root = page.locator('#neu-root');
@@ -148,6 +149,7 @@ test('Kamera: Wischen verschiebt, kommt zur Ruhe; Hilfsraster mit G aus- und ein
 });
 
 test('Kamera: über den Rand gezogen federt sie zurück in die Grenzen', async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   const root = page.locator('#neu-root');
   await expect(root).toHaveAttribute('data-bereit', '1');

@@ -16,9 +16,10 @@ export { upgradeLayout, upgradeFromV8, plotsForOldLand, oldLandV8, oldLandV9, ZO
 export type { OldLand, LegacyAnimalObject } from './migrate';
 export {
   SCHEMA_VERSION, createNewGame, mapObstacles, obstacleId, levelForXp, levelProgress, storageOf, storageUsed, storageFree,
-  storageUpgradeCost, storageUpgradeMaterials, fieldReadyAt, isFieldReady, masteryOf, craftSeconds, getObject, countObjects,
-  goalReady, allGoals, activeChapter, dayKey, pensOf, animalCount, nextPen
+  storageUpgradeCost, storageUpgradeMaterials, fieldReadyAt, isFieldReady, fieldGrowth, unlockedCrops, masteryOf, craftSeconds,
+  getObject, countObjects, goalReady, allGoals, activeChapter, dayKey, pensOf, animalCount, nextPen
 } from './state';
+export type { CropStage, FieldGrowth } from './state';
 export { applyCommand, advanceTime, generateOrder } from './commands';
 export { composeOrder, makeableItems, itemTier, orderValueTarget } from './orders';
 export { animalPrice } from './state';

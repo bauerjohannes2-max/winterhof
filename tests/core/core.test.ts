@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CONTENT, GameSession, advanceTime, animalCount, applyCommand, canPlace, createNewGame, deserialize, getObject, terrainMap,
-  isFieldReady, serialize, storageUsed, storageUpgradeMaterials, validateContent, validateLayout, type Command, type GameState
+  CONTENT, GameSession, advanceTime, animalCount, applyCommand, canPlace, createNewGame, deserialize, fieldGrowth, getObject,
+  terrainMap, isFieldReady, serialize, storageUsed, storageUpgradeMaterials, unlockedCrops, validateContent, validateLayout,
+  type Command, type GameState
 } from '../../src/core';
 
 const T0 = Date.UTC(2026, 10, 23, 9, 0, 0);
@@ -60,6 +61,27 @@ describe('Felder', () => {
     let s = createNewGame(T0);
     s = ok(s, { type: 'harvest', fieldId: 'f_1' });
     expect(err(s, { type: 'plant', fieldId: 'f_1', crop: 'candycane' })).toBe('locked');
+  });
+  it('fieldGrowth liefert alle 4 Wachstumsstufen mit exakten Grenzen und Restzeit', () => {
+    let s = createNewGame(T0);
+    s = ok(s, { type: 'harvest', fieldId: 'f_1' });
+    expect(fieldGrowth(getObject(s, 'f_1', 'field')!, T0)).toBeNull();
+    s = ok(s, { type: 'plant', fieldId: 'f_1', crop: 'wheat' }); // growTime = 60 s
+    const f = getObject(s, 'f_1', 'field')!;
+    expect(fieldGrowth(f, T0)).toEqual({ crop: 'wheat', progress: 0, stage: 0, remainingMs: 60_000, ready: false });
+    expect(fieldGrowth(f, T0 + 14_999)?.stage).toBe(0);
+    expect(fieldGrowth(f, T0 + 15_000)?.stage).toBe(1);           // 25 %
+    expect(fieldGrowth(f, T0 + 38_999)?.stage).toBe(1);
+    expect(fieldGrowth(f, T0 + 39_000)?.stage).toBe(2);           // 65 %
+    expect(fieldGrowth(f, T0 + 59_999)).toMatchObject({ stage: 2, remainingMs: 1, ready: false });
+    expect(fieldGrowth(f, T0 + 60_000)).toEqual({ crop: 'wheat', progress: 1, stage: 3, remainingMs: 0, ready: true });
+    expect(fieldGrowth(f, T0 + 95_000)).toEqual({ crop: 'wheat', progress: 1, stage: 3, remainingMs: 0, ready: true });
+  });
+  it('unlockedCrops gibt nur für die Stufe freigeschaltete Feldfrüchte zurück', () => {
+    const s1 = createNewGame(T0);
+    expect(unlockedCrops(s1).map((c) => c.id)).toEqual(['wheat', 'berries']);
+    const s3 = { ...s1, level: 3 };
+    expect(unlockedCrops(s3).map((c) => c.id)).toEqual(['wheat', 'berries', 'matcha', 'cocoa', 'cinnamon']);
   });
 });
 

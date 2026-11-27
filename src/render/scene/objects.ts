@@ -64,17 +64,26 @@ export function shadowFrame(sprite: { width: number; height: number }, shadow: {
   };
 }
 
-/** Objekte + Schatten einer Objektliste. Ersetzt beim Neuaufbau alles (Bauen/Verschieben kommt in Baustein 12). */
+/** Objekte + Schatten einer Objektliste. Ersetzt beim Neuaufbau nur eigene Kinder, damit Felder in derselben Ebene mitsortieren. */
 export class ObjectView {
-  readonly objects = new Container({ label: 'objekt-bilder', sortableChildren: true });
-  readonly shadows = new Container({ label: 'schatten-bilder' });
+  readonly objects: Container;
+  readonly shadows: Container;
+  private ownObjects: Sprite[] = [];
+  private ownShadows: Sprite[] = [];
 
-  constructor(objects: readonly MapObject[]) { this.build(objects); }
+  constructor(objects: readonly MapObject[], targets?: { objects?: Container; shadows?: Container }) {
+    this.objects = targets?.objects ?? new Container({ label: 'objekt-bilder', sortableChildren: true });
+    this.shadows = targets?.shadows ?? new Container({ label: 'schatten-bilder' });
+    this.build(objects);
+  }
 
   build(objects: readonly MapObject[]): void {
-    this.objects.removeChildren().forEach((c) => c.destroy());
-    this.shadows.removeChildren().forEach((c) => c.destroy());
+    for (const c of this.ownObjects) { this.objects.removeChild(c); c.destroy(); }
+    for (const c of this.ownShadows) { this.shadows.removeChild(c); c.destroy(); }
+    this.ownObjects = [];
+    this.ownShadows = [];
     for (const obj of objects) {
+      if (obj.kind === 'field') continue; // Felder liegen als Erdwulst + 4 Stufen in FieldView
       const key = spriteFor(obj.type);
       if (!key) continue;
       const def = ART[key];
@@ -87,6 +96,7 @@ export class ObjectView {
       s.position.set(p.ground.x, p.ground.y);
       s.zIndex = p.depth;
       this.objects.addChild(s);
+      this.ownObjects.push(s);
       if (def.shadow === 'bild') continue;
       const sTex = Texture.from(`${key}_schatten`);
       const f = shadowFrame(tex.orig, sTex.orig, def.anchorY, p.height);
@@ -95,6 +105,7 @@ export class ObjectView {
       sh.height = f.height;
       sh.position.set(p.ground.x, p.ground.y);
       this.shadows.addChild(sh);
+      this.ownShadows.push(sh);
     }
   }
 }

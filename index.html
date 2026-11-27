@@ -87,6 +87,67 @@
     @keyframes drehen { 0%, 25% { transform: rotate(0deg); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0deg); } }
     @media (prefers-reduced-motion: reduce) { #hochkant-handy { animation: none; transform: rotate(-90deg); } #laden, #laden-bild, #laden-inhalt, #laden-balken { transition: none; } }
     @media (orientation: portrait) { #hochkant { display: flex; } }
+
+    /* Feld-Werkzeug (Baustein 9, Hay-Day-Sichel / Saat-Leiste / Wachstums-Info) */
+    #feld-werkzeug {
+      position: fixed; z-index: 5; pointer-events: none;
+      font-family: var(--schrift); color: #fff;
+      transition: opacity 0.14s ease, transform 0.14s ease;
+    }
+    #feld-werkzeug[hidden] { display: none; }
+    #feld-werkzeug.ziehen { opacity: 0.15; }
+    .fw-karte {
+      pointer-events: auto; display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 18px;
+      background: linear-gradient(to bottom, rgba(28, 49, 84, 0.95), rgba(16, 33, 60, 0.96));
+      border: 2px solid rgba(255, 224, 140, 0.72);
+      box-shadow: 0 8px 22px rgba(10, 20, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      max-width: min(460px, calc(100vw - 24px)); overflow-x: auto; scrollbar-width: none;
+      touch-action: none;
+    }
+    .fw-karte::-webkit-scrollbar { display: none; }
+    .fw-btn {
+      position: relative; flex: 0 0 auto; min-width: 56px; min-height: 56px;
+      padding: 6px 10px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.24);
+      background: linear-gradient(to bottom, rgba(54, 86, 134, 0.92), rgba(33, 57, 94, 0.95));
+      color: #fff; font: inherit; cursor: pointer; touch-action: none;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      box-shadow: 0 3px 0 rgba(10, 20, 38, 0.55);
+      transition: transform 0.1s ease;
+    }
+    .fw-btn:active { transform: scale(0.95); }
+    .fw-btn[data-tool="sichel"] {
+      flex-direction: row; gap: 8px; padding: 8px 14px;
+      background: linear-gradient(to bottom, #ffd86f, #e5a324);
+      border-color: #fff3c4; color: #3a1f05; font-weight: 900;
+    }
+    .fw-btn.knapp { opacity: 0.62; }
+    .fw-name { font-size: 11px; font-weight: 800; line-height: 1.1; white-space: nowrap; }
+    .fw-meta { font-size: 10px; font-weight: 700; opacity: 0.9; white-space: nowrap; }
+    .fw-badge {
+      position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px;
+      border-radius: 10px; background: #ffd76a; color: #2b1803; font-size: 11px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center; border: 1.5px solid #16294a;
+      box-sizing: border-box;
+    }
+    .fw-badge.preis { background: #ffe48f; }
+    .fw-info {
+      pointer-events: auto; min-width: 158px; padding: 10px 14px; border-radius: 16px;
+      background: linear-gradient(to bottom, rgba(28, 49, 84, 0.95), rgba(16, 33, 60, 0.96));
+      border: 2px solid rgba(255, 224, 140, 0.65);
+      box-shadow: 0 8px 20px rgba(10, 20, 38, 0.42);
+    }
+    .fw-info-kopf { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; font-weight: 800; margin-bottom: 6px; }
+    .fw-balken-spur { height: 10px; border-radius: 5px; background: rgba(10, 20, 38, 0.72); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.25); }
+    .fw-balken { height: 100%; background: linear-gradient(to right, #84db5c, #ffd76a); transition: width 0.25s linear; }
+    #feld-zieher {
+      position: fixed; z-index: 6; pointer-events: none; width: 52px; height: 52px;
+      margin: -26px 0 0 -26px; display: none; align-items: center; justify-content: center;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+      transition: transform 0.08s ease-out;
+    }
+    #feld-zieher.aktiv { display: flex; }
+    #feld-zieher.schwung { transform: rotate(-28deg) scale(1.18); }
   </style>
 </head>
 <body>

@@ -1,14 +1,18 @@
 // ============================================================================
 // Winterhof – neue Darstellung (Neustart, docs/NEUSTART_PLAN.md), Einstieg
-// Baustein 3: Technik-Gerüst – Pixi starten, Bilder über das Manifest laden, Ebenen anlegen,
-// Ladebild, Hochkant-Pause, Bildschärfe automatisch. Regeln: docs/GRAFIK_TECHNIK.md.
+// Baustein 3: Technik-Gerüst · Baustein 4: Kamera · Baustein 5/6: Boden & Wege ·
+// Baustein 7/7b: Kontaktschatten & Boden-Deko · Baustein 9: Felder + GameSession.
 // Liest den Kern nur über ../core, ändert den Spielstand nur über Befehle.
 // ============================================================================
 import { Application, Assets, type Container, type Texture, type WebGLRenderer } from 'pixi.js';
-import { buildPathField, CONTENT, createNewGame, meadow, pathTiles, terrainMap, type MapObject } from '../core';
+import {
+  buildPathField, CONTENT, GameSession, meadow, pathTiles, terrainMap, type FieldObject, type MapObject
+} from '../core';
 import { Camera, maxZoomForWidth } from './camera/camera';
 import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
+import { FieldEffects } from './scene/fieldEffects';
+import { fieldAtWorld, FieldView } from './scene/fields';
 import { GridOverlay } from './scene/grid';
 import { Ground } from './scene/ground';
 import { GroundDecoView } from './scene/groundDeco';
@@ -17,6 +21,7 @@ import { ObjectView } from './scene/objects';
 import { loadStartAssets } from './boot/assets';
 import { ATLAS_MAX, chooseQuality, renderResolution, SLOW_FPS, type Quality } from './boot/quality';
 import { createWorld, layerOrder } from './scene/layers';
+import { FieldTool } from './ui/fieldTool';
 import { openLoadingScreen } from './ui/loading';
 import { watchOrientation } from './ui/orientation';
 
@@ -29,6 +34,19 @@ function readFlag(key: string): boolean {
 }
 function writeFlag(key: string): void {
   try { localStorage.setItem(key, '1'); } catch { /* privates Fenster: nächster Start misst neu */ }
+}
+
+/** Speicheranbindung für GameSession (localStorage mit stillem Speicher-Fallback). */
+function browserStore(): { getItem(k: string): string | null; setItem(k: string, v: string): void } {
+  const fallback = new Map<string, string>();
+  return {
+    getItem(k: string): string | null {
+      try { return localStorage.getItem(k); } catch { return fallback.get(k) ?? null; }
+    },
+    setItem(k: string, v: string): void {
+      try { localStorage.setItem(k, v); } catch { fallback.set(k, v); }
+    }
+  };
 }
 
 /** Größte Textur der Grafikkarte direkt aus Pixis WebGL-Kontext (kein zweiter Wegwerf-Kontext beim Start). */
@@ -94,12 +112,13 @@ async function start(): Promise<void> {
   root.appendChild(app.canvas);
   loading.progress(0.45);
 
-  // Bilder laden und Kartendaten vorbereiten laufen parallel (Netz/Worker + CPU gleichzeitig)
+  // Bilder laden und Kartendaten + Spielstand vorbereiten laufen parallel
   const assetsReady = loadStartAssets(q, (p) => loading.progress(0.45 + p * 0.55));
+  const session = new GameSession({ store: browserStore() });
   const map = terrainMap();
   const pathBox = { gx0: map.minGx, gy0: map.minGy, w: map.maxGx - map.minGx + 1, h: map.maxGy - map.minGy + 1 };
   const pathsFor = (objects: readonly MapObject[]) => buildPathField(pathTiles(objects), CONTENT.paths.surfaces, pathBox);
-  const startObjects = createNewGame(Date.now()).objects;
+  const startObjects = session.state.objects;
   const startPaths = pathsFor(startObjects);
   const startMeadow = meadow();
   await assetsReady;
@@ -107,52 +126,104 @@ async function start(): Promise<void> {
   const world = createWorld();
   app.stage.addChild(world.root);
 
-  // Kamera (Baustein 4): Start immer am Hofplatz, Hilfsraster bis Baustein 12 zum Prüfen sichtbar
-  // Schärfe-Grenze: nie weiter rein, als die geladenen Bilder scharf hergeben (Bildstufe q / Zeichenauflösung)
   const camera = new Camera({ ...cameraConfig(map), maxSharpZoom: q / app.renderer.resolution });
   camera.resize(app.screen.width, app.screen.height);
   const sv = startView(map, app.screen.width, app.screen.height);
   camera.setView(sv.cx, sv.cy, sv.zoom);
-  // Grundboden (Baustein 5): ganzes Tal Wiese, außen Schnee (Entscheidung 40)
+
   const params = new URLSearchParams(location.search);
-  // Wege (Baustein 6): Zufahrt + Hofplatz + Wegplatten als eine Fläche im Grundboden (Entscheidungen 53/54).
-  // Bis die Spielwelt an den Spielstand angebunden ist (Baustein 12), zeigt sie den Start-Hof.
   const ground = new Ground(startMeadow, Assets.get<Texture>('wiese'), Assets.get<Texture>('erde'), Assets.get<Texture>('steine'), startPaths);
   world.layer.grund.addChild(ground.view);
-  // Boden-Deko (Baustein 7b, Entscheidungen 51/52): liegt unter Schatten und Objekten, weicht Wegen und Gebäuden aus
+
   const groundDeco = new GroundDecoView(startMeadow, startObjects, startPaths);
   world.layer.bodenzeichnung.addChild(groundDeco.view);
-  // Objekte + Kontaktschatten (Baustein 7, Entscheidung 62): Schattenbilder vorgebacken, keine Standfläche
-  const objects = new ObjectView(startObjects);
-  world.layer.kontaktschatten.addChild(objects.shadows);
-  world.layer.objekte.addChild(objects.objects);
+
+  // Objekte + Felder teilen sich `objekte` für exakte Vorn/Hinten-Tiefensortierung; Erdwülste liegen in `bodenzeichnung`.
+  new ObjectView(startObjects, { objects: world.layer.objekte, shadows: world.layer.kontaktschatten });
+  const fieldView = new FieldView(world.layer.bodenzeichnung, world.layer.objekte, startObjects, Date.now());
+  const fieldEffects = new FieldEffects();
+  world.layer.effekte.addChild(fieldEffects.view);
+
   const coverView = (): void => {
     const a = camera.screenToWorld(0, 0), e = camera.screenToWorld(app.screen.width, app.screen.height);
     ground.cover({ x0: a.x, y0: a.y, x1: e.x, y1: e.y });
   };
   const grid = new GridOverlay(map, params.get('raster') !== '0');
   world.layer.auswahl.addChild(grid.view);
+
+  const fieldTool = new FieldTool(app.canvas, camera, {
+    getState: () => session.state,
+    getNow: () => Date.now(),
+    onHarvest(field: FieldObject): boolean {
+      const res = session.dispatch({ type: 'harvest', fieldId: field.id });
+      if (!res.ok) {
+        fieldView.triggerShake(field.id);
+        fieldEffects.spawnWarning(field, res.error.message);
+        return false;
+      }
+      fieldView.triggerPop(field.id);
+      const hv = res.events.find((ev) => ev.type === 'harvested');
+      const xpEv = res.events.find((ev) => ev.type === 'xpGained');
+      if (hv && hv.type === 'harvested') {
+        fieldEffects.spawnHarvest(field, hv.crop, hv.qty, xpEv && xpEv.type === 'xpGained' ? xpEv.amount : 0);
+      }
+      return true;
+    },
+    onPlant(field: FieldObject, cropId: string): boolean {
+      const res = session.dispatch({ type: 'plant', fieldId: field.id, crop: cropId });
+      if (!res.ok) {
+        fieldView.triggerShake(field.id);
+        fieldEffects.spawnWarning(field, res.error.message);
+        return false;
+      }
+      fieldView.triggerPop(field.id);
+      fieldEffects.spawnPlant(field);
+      return true;
+    }
+  });
+
+  session.subscribe((_, state) => {
+    fieldView.sync(state.objects, Date.now());
+    fieldTool.refresh();
+  });
+
   app.renderer.on('resize', (w: number, h: number) => camera.resize(w, h));
   attachCameraInput(app.canvas, camera, {
-    toggleGrid: () => { grid.setShown(!grid.shown); root.dataset['raster'] = grid.shown ? '1' : '0'; }
+    toggleGrid: () => { grid.setShown(!grid.shown); root.dataset['raster'] = grid.shown ? '1' : '0'; },
+    onPanStart: () => fieldTool.close(),
+    onTap: (sx: number, sy: number) => {
+      const w = camera.screenToWorld(sx, sy);
+      const f = fieldAtWorld(session.state.objects, w.x, w.y);
+      if (f) fieldTool.open(f); else fieldTool.close();
+    }
   });
   root.dataset['raster'] = grid.shown ? '1' : '0';
-  // Nur im Entwicklungsmodus: Kamera je Bild mitschreiben, damit Abläufe Bild für Bild geprüft werden können (QUALITAETS_LEITFADEN §3)
+
   const trace: { t: number; cx: number; cy: number; z: number }[] | null = import.meta.env.DEV ? [] : null;
   if (trace) (window as unknown as { __kameraSpur: typeof trace }).__kameraSpur = trace;
-  // Nur im Entwicklungsmodus: Wegplatten für Prüfbilder und Browser-Tests setzen ([gx, gy, Deko-Typ])
   if (import.meta.env.DEV) {
     (window as unknown as { __wege: (l: [number, number, string][]) => void }).__wege = (list) => {
       const extra: MapObject[] = list.map(([gx, gy, type], i) => ({ id: `weg_${i}`, kind: 'deco', type, gx, gy }));
       const nextPaths = pathsFor(extra);
       ground.setPaths(nextPaths);
-      groundDeco.update([...startObjects, ...extra], nextPaths);
+      groundDeco.update([...session.state.objects, ...extra], nextPaths);
     };
   }
+
+  let paused = false;
+  window.setInterval(() => { if (!paused) session.tick(); }, 1000);
+  window.addEventListener('pagehide', () => session.flush());
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') session.flush(); });
+
   app.ticker.add((t) => {
     const dt = t.deltaMS / 1000;
+    const now = Date.now();
     camera.update(dt);
     grid.update(dt);
+    fieldView.sync(session.state.objects, now);
+    fieldView.update(dt);
+    fieldEffects.update(dt);
+    fieldTool.tick(now);
     applyCamera(world.root, camera, app.renderer.resolution, app.screen.width, app.screen.height);
     coverView();
     if (root.dataset['kamera'] !== camera.state) root.dataset['kamera'] = camera.state;
@@ -162,13 +233,12 @@ async function start(): Promise<void> {
   coverView();
 
   watchOrientation((portrait) => {
+    paused = portrait;
     if (portrait) app.ticker.stop(); else app.ticker.start();
     root.dataset['pausiert'] = portrait ? '1' : '0';
   });
   watchFirstSeconds(app, q);
 
-  // Erstes Bild noch unter dem Ladebild zeichnen: Dabei übersetzt die Grafikkarte die Shader (einmalig, gemessen
-  // ~0,6 s unter Windows für den Boden). Danach läuft das Spiel ohne Hänger los, statt im ersten Bild zu stocken.
   app.render();
 
   root.dataset['ebenen'] = layerOrder(world).join(',');
@@ -177,6 +247,7 @@ async function start(): Promise<void> {
   root.dataset['startms'] = String(Math.round(performance.now() - t0));
   loading.progress(1);
   await loading.close();
+  fieldView.enableAmbient();
   root.dataset['bereit'] = '1';
 }
 

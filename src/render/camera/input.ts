@@ -2,11 +2,15 @@
 // Eingabe → Kamera (Baustein 4): Zeigerereignisse (Finger, Maus, Stift) und Mausrad an das Kamera-Modell.
 // Kein Spielzustand hier, nur Weiterreichen mit Zeitstempel.
 // ============================================================================
-import type { Camera } from './camera';
+import { TOUCH_SLOP, type Camera } from './camera';
 
 export interface InputHooks {
   /** Hilfsraster umschalten (bis Baustein 12: Taste G, Drei-Finger-Tipp) */
   toggleGrid(): void;
+  /** Kurzer Tipp ohne Kamera-Verschieben (CSS-Pixel relativ zum Spielfeld) */
+  onTap?: (x: number, y: number) => void;
+  /** Beginn einer Wisch-/Ziehbewegung der Kamera */
+  onPanStart?: () => void;
 }
 
 export function attachCameraInput(el: HTMLElement, camera: Camera, hooks: InputHooks): () => void {
@@ -16,11 +20,14 @@ export function attachCameraInput(el: HTMLElement, camera: Camera, hooks: InputH
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
   let down = 0;
+  let tap: { id: number; x: number; y: number; moved: boolean; multi: boolean } | null = null;
 
   const onDown = (e: PointerEvent): void => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     el.setPointerCapture(e.pointerId);
     const p = pos(e);
+    if (down === 0) tap = { id: e.pointerId, x: p.x, y: p.y, moved: false, multi: false };
+    else if (tap) tap.multi = true;
     camera.pointerDown(e.pointerId, p.x, p.y, sec(e));
     down++;
     if (down === 3) hooks.toggleGrid();
@@ -30,6 +37,10 @@ export function attachCameraInput(el: HTMLElement, camera: Camera, hooks: InputH
     const list = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
     for (const c of list.length > 0 ? list : [e]) {
       const p = pos(c);
+      if (tap && tap.id === e.pointerId && !tap.moved && Math.hypot(p.x - tap.x, p.y - tap.y) >= TOUCH_SLOP) {
+        tap.moved = true;
+        hooks.onPanStart?.();
+      }
       camera.pointerMove(e.pointerId, p.x, p.y, sec(c));
     }
   };
@@ -37,6 +48,13 @@ export function attachCameraInput(el: HTMLElement, camera: Camera, hooks: InputH
     if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
     camera.pointerUp(e.pointerId, sec(e));
     down = Math.max(0, down - 1);
+    if (down === 0 && tap) {
+      if (e.type === 'pointerup' && !tap.moved && !tap.multi && tap.id === e.pointerId) {
+        const p = pos(e);
+        hooks.onTap?.(p.x, p.y);
+      }
+      tap = null;
+    }
   };
   const onWheel = (e: WheelEvent): void => {
     e.preventDefault();                      // Seite nicht scrollen/zoomen

@@ -3378,7 +3378,7 @@
       "group": "field",
       "w": 2,
       "h": 2,
-      "heightTiles": 1.35
+      "heightTiles": 1.15
     },
     "chicken_pen": {
       "group": "pen",
@@ -3882,8 +3882,8 @@
       "snow_field_plot": {
         "file": "snow_field_plot.png",
         "size": "field",
-        "anchorY": 0.62,
-        "shadow": "kontakt"
+        "anchorY": 0.506,
+        "shadow": "bild"
       }
     }
   },

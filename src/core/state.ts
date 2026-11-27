@@ -4,7 +4,7 @@
 import { CONTENT } from './content';
 import {
   STAT_KEYS, type FieldObject, type GameState, type GoalDef, type Condition, type PenObject,
-  type Inventory, type ItemId, type MapObject, type StationObject, type Stats, type StorageKind
+  type Inventory, type ItemDef, type ItemId, type MapObject, type StationObject, type Stats, type StorageKind
 } from './types';
 
 /** v10 (Baustein 5b): Größenkatalog, Landstücke 6×6, Felder 2×2, Tiere in Gehegen */
@@ -139,6 +139,35 @@ export function fieldReadyAt(f: FieldObject): number | null {
 export function isFieldReady(f: FieldObject, now: number): boolean {
   const r = fieldReadyAt(f);
   return r !== null && now >= r;
+}
+
+export type CropStage = 0 | 1 | 2 | 3;
+
+export interface FieldGrowth {
+  readonly crop: ItemId;
+  readonly progress: number;
+  readonly stage: CropStage;
+  readonly remainingMs: number;
+  readonly ready: boolean;
+}
+
+/** Reiner Wachstumsstand eines Felds für Darstellung und Werkzeug-Anzeige (4 Stufen: 0..3). */
+export function fieldGrowth(f: FieldObject, now: number): FieldGrowth | null {
+  if (!f.crop) return null;
+  const growMs = Math.max(0, (CONTENT.items[f.crop]?.growTime ?? 0) * 1000);
+  const elapsed = Math.max(0, now - f.plantedAt);
+  const progress = growMs <= 0 ? 1 : Math.min(1, elapsed / growMs);
+  const remainingMs = Math.max(0, f.plantedAt + growMs - now);
+  const ready = remainingMs === 0;
+  const stage: CropStage = ready ? 3 : progress >= 0.65 ? 2 : progress >= 0.25 ? 1 : 0;
+  return { crop: f.crop, progress, stage, remainingMs, ready };
+}
+
+/** Alle bereits freigeschalteten Feldfrüchte in fester Katalog-Reihenfolge. */
+export function unlockedCrops(state: Readonly<GameState>): ItemDef[] {
+  return CONTENT.cropIds
+    .map((id) => CONTENT.items[id])
+    .filter((it): it is ItemDef => Boolean(it && it.category === 'crop' && it.unlockLevel <= state.level));
 }
 
 export function masteryOf(craftedCount: number): { stars: number; speedMult: number; nextAt: number | null } {

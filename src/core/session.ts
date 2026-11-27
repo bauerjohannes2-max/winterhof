@@ -82,4 +82,9 @@ export class GameSession {
       else console.error('[Winterhof] Speichern fehlgeschlagen', e);
     }
   }
+
+  /** Schreibt nur, wenn noch eine verzögerte Speicherung aussteht (überschreibt sonst nichts beim Schließen). */
+  flush() {
+    if (this.saveTimer) this.saveNow();
+  }
 }

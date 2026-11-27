@@ -22,7 +22,7 @@
 - **GRÜN** `crop_wheat` → `crop`
 - **GRÜN** `crop_berries` → `crop`
 - **GRÜN** `crop_matcha` → `crop`
-- **GELB** `snow_field_plot` → `field` – Auflösung 1.16 px/Weltpunkt (min. 1.6)
+- **GRÜN** `snow_field_plot` → `field`
 
 ## Katalog-Einträge ohne Bild (Klötzchen in der Aufstellung)
 `wreath_shop`, `apple_stand`, `almond_hut`, `wichtel_post`, `toy_workshop`, `farmStand`, `chicken_pen`, `owl_pen`, `sheep_pen`, `reindeer_pen`, `donkey_pen`, `owl`, `donkey`, `pine_large`, `giftpile`, `light_reindeer`, `big_nutcracker`, `bench`, `lightarch`, `gingerbread_gate`, `drift_small`, `rock_small`, `ice_small`, `drift_large`, `rock_large`, `ice_large`, `pine_small`
