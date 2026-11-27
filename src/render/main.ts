@@ -11,6 +11,7 @@ import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
 import { GridOverlay } from './scene/grid';
 import { Ground } from './scene/ground';
+import { GroundDecoView } from './scene/groundDeco';
 import { ObjectView } from './scene/objects';
 
 import { loadStartAssets } from './boot/assets';
@@ -118,6 +119,9 @@ async function start(): Promise<void> {
   // Bis die Spielwelt an den Spielstand angebunden ist (Baustein 12), zeigt sie den Start-Hof.
   const ground = new Ground(startMeadow, Assets.get<Texture>('wiese'), Assets.get<Texture>('erde'), Assets.get<Texture>('steine'), startPaths);
   world.layer.grund.addChild(ground.view);
+  // Boden-Deko (Baustein 7b, Entscheidungen 51/52): liegt unter Schatten und Objekten, weicht Wegen und Gebäuden aus
+  const groundDeco = new GroundDecoView(startMeadow, startObjects, startPaths);
+  world.layer.bodenzeichnung.addChild(groundDeco.view);
   // Objekte + Kontaktschatten (Baustein 7, Entscheidung 62): Schattenbilder vorgebacken, keine Standfläche
   const objects = new ObjectView(startObjects);
   world.layer.kontaktschatten.addChild(objects.shadows);
@@ -139,7 +143,10 @@ async function start(): Promise<void> {
   // Nur im Entwicklungsmodus: Wegplatten für Prüfbilder und Browser-Tests setzen ([gx, gy, Deko-Typ])
   if (import.meta.env.DEV) {
     (window as unknown as { __wege: (l: [number, number, string][]) => void }).__wege = (list) => {
-      ground.setPaths(pathsFor(list.map(([gx, gy, type], i): MapObject => ({ id: `weg_${i}`, kind: 'deco', type, gx, gy }))));
+      const extra: MapObject[] = list.map(([gx, gy, type], i) => ({ id: `weg_${i}`, kind: 'deco', type, gx, gy }));
+      const nextPaths = pathsFor(extra);
+      ground.setPaths(nextPaths);
+      groundDeco.update([...startObjects, ...extra], nextPaths);
     };
   }
   app.ticker.add((t) => {
