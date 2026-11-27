@@ -71,4 +71,4 @@ Nie gleichzeitig mit Claude im Repo arbeiten. Wer arbeitet, steht in `docs/LEITU
 - Neue Qualitätsregel → `docs/QUALITAETS_LEITFADEN.md`. Neue oberste Regel → `CLAUDE.md`.
 - Stand eines Bausteins → `docs/NEUSTART_PLAN.md`. Technik-Regel → `docs/GRAFIK_TECHNIK.md`.
 - Jede Korrektur von Hannes gilt automatisch dauerhaft, auch für Verwandtes. Er muss nie „ab jetzt immer“ sagen.
-- Hörst du auf, schreibst du einen Start-Prompt für die nächste Sitzung (Stand, offene Fragen, nächste Schritte) nach `_Eingang/Start-Prompt_winterhof-<thema>.md` im OneDrive-Hauptordner und gibst ihn Hannes auch direkt im Chat.
+- **Tokenarm arbeiten – regelmäßig neue Sitzung vorschlagen (Entscheidung 67):** Nach jedem größeren Abschnitt (spätestens alle 1–2 abgeschlossenen Bausteine oder wenn die Sitzung spürbar lang wird) schlägst du Hannes **von selbst** eine neue Sitzung vor, speicherst den Stand nach `_Eingang/Start-Prompt_winterhof-<thema>.md` im OneDrive-Hauptordner und gibst den fertigen Übergabe-Prompt **immer direkt als Codeblock im Chat** zum Ein-Klick-Kopieren. Vor einer Übergabe keine neuen offenen Fragen mehr anhängen – offene Punkte gehören in den Start-Prompt.
