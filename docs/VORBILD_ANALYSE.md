@@ -110,3 +110,7 @@ Quellen angesehen: Hay-Day-Wiki (Farm-Karte, Gebäude-Einzelbilder), Clash-Wiki 
 ## 15. Felder, Wachstum & Wisch-Ernte (28.11., Baustein 9)
 - **Hay Day (Acker-Look & Reife-Signal):** Felder sind leicht erhöhte, weich gewölbte Erdwülste ohne Holzrahmen, Zaun oder weißen Leuchtrand. Direkt aneinandergesetzte Felder liegen ohne störende Lücke auf der Wiese; der Boden darunter trägt einen ganz zarten Kontaktschatten. Reife Pflanzen verraten sich durch sanftes Wiegen im Wind statt durch Glühen oder Icons.
 - **Hay Day (Bedienung & Spielgefühl):** Ein kurzer Tipp auf ein Feld öffnet das daumengroße Werkzeug (Sichel bei Reife, Saat-Leiste bei leerem Acker, Zeit-Anzeige beim Wachstum). Zieht man das Werkzeug über benachbarte Felder, werden alle überstrichenen Felder in einem Zug geerntet bzw. besät, ohne dass sich die Kamera versehentlich verschiebt. Jede Ernte liefert direkt Halm-Partikel und aufsteigendes Ertrags-/XP-Feedback.
+
+## 16. Tiere im Gehege (28.11., Baustein 11)
+- **Hay Day (Bewegung & Weide-Freizone):** Tiere bleiben im offenen Weidebereich ihres Geheges und halten Abstand zum Stall und Vorderzaun, sodass nichts in Wände oder Latten clippt.
+- **Hay Day (Zustände auf einen Blick):** Hungrige Tiere stehen ruhig und warten auf Futter; gefütterte/produzierende Tiere spazieren gemütlich mit Pausen und passender Blickrichtung; fertige Tiere wippen fröhlich und zeigen über eine kleine, klare Produkt-Blase sofort, was abholbereit ist.

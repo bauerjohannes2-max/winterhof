@@ -64,7 +64,7 @@ in vec2 vWorld;
 out vec4 finalColor;
 uniform sampler2D uGrass;
 uniform vec3 uWaves[${MAX_WAVES}];
-uniform float uWaveCount;
+uniform int uWaveCount;
 uniform vec4 uBox;
 uniform vec2 uCenter;
 uniform float uOffset;
@@ -77,6 +77,7 @@ uniform sampler2D uNoise;   // Zufallstabelle fürs Rauschen (noiseTable)
 // Schleifenlänge als Uniform statt Konstante: Der D3D-Übersetzer (ANGLE unter Windows) rollt Schleifen fester Länge samt
 // allem Eingebetteten aus (hier sechsmal die Wiesenform), das kostete Sekunden Übersetzungszeit beim Start (gemessen 26.11.). Werte setzt Ground.
 uniform int uEdgeSamples;   // immer 6: versetzte Proben der Schneekante
+uniform int uStoneCells;    // immer 4: 2×2 Steinchen-Zellen
 
 const float HW = ${TILE_W / 2}.0;
 const float HH = ${TILE_H / 2}.0;
@@ -138,8 +139,7 @@ vec2 flat2(vec2 w) { return vec2(w.x, w.y * 2.0); }
 float meadow(vec2 g) {
   float t = atan(g.y - uCenter.y, g.x - uCenter.x);
   float reach = uOffset;
-  for (int i = 0; i < ${MAX_WAVES}; i++) {
-    if (float(i) >= uWaveCount) break;
+  for (int i = 0; i < uWaveCount; i++) {
     vec3 wv = uWaves[i];
     reach += wv.y * cos(wv.x * t + wv.z);
   }
@@ -166,53 +166,11 @@ float edgeField(vec2 w) {
   return max(meadowField(w), pathSd(toGrid(w)));
 }
 
-// Zellen-Rauschen für Pflaster (Abstand zur Fuge, Zellwert)
-vec2 cells(vec2 p) {
-  vec2 i = floor(p), fr = fract(p);
-  float d1 = 8.0, d2 = 8.0; float id = 0.0;
-  for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
-    vec2 o = vec2(float(x), float(y));
-    vec2 q = o + 0.15 + 0.7 * hash22(i + o) - fr;
-    float d = dot(q, q);
-    if (d < d1) { d2 = d1; d1 = d; id = hash12(i + o + 7.0); } else if (d < d2) { d2 = d; }
-  }
-  return vec2(sqrt(d2) - sqrt(d1), id);
-}
-vec3 paving(vec2 g, float scale, vec3 base, float joint) {
-  vec2 c = cells(g / scale);
-  vec3 col = base * (0.9 + 0.2 * c.y);
-  return mix(col * 0.62, col, smoothstep(0.0, joint, c.x));
-}
-
-// Belag-Farbe (Platzhalter bis zur Grafik-Runde): Gewichte e0–e6 in der Reihenfolge SHADER_SURFACES
-vec3 pathLook(vec2 g, vec2 f, vec3 e012, vec4 e3456, float px, vec2 dxE, vec2 dyE) {
-  float grain = (noise(f / 2.5) - 0.5) * smoothstep(3.0, 1.0, px);
-  vec3 col = vec3(0.0);
-  // Erst nur Erdweg (Entsch. 55): alle Beläge zeigen vorerst Erde, eigene Bilder je Belag in der Grafik-Runde
+// Belag-Farbe (Entsch. 55: alle Beläge zeigen vorerst Erde, eigene Bilder je Belag in der Grafik-Runde)
+vec3 pathLook(vec2 f, vec3 e012, vec4 e3456, vec2 dxE, vec2 dyE) {
   float all = e012.x + e012.y + e012.z + e3456.x + e3456.y + e3456.z + e3456.w;
-  e012 = vec3(all, 0.0, 0.0); e3456 = vec4(0.0);
-  // Erde (Kufenspuren brauchen die Fahrtrichtung und kommen mit dem gemalten Erd-Bild in der Grafik-Runde)
-  // Erde: gemalte Textur (Gemini, Look 2b), Hex-Tiling gegen Wiederholung, große weiche Hell-Dunkel-Wolken darüber
-  if (e012.x > 0.003) col += hexSample(uEarth, f / ${EARTH_REPEAT}.0, dxE, dyE) * (1.0 + 0.06 * (noise(f / 40.0) - 0.5)) * e012.x;
-  if (e012.y > 0.003) col += vec3(226.0, 230.0, 236.0) / 255.0 * (1.0 + 0.05 * grain) * e012.y;   // Schneepfad
-  if (e012.z > 0.003) {                                       // Kies: helle und dunkle Körner
-    float k = hash12(floor(f / 2.2));
-    col += vec3(176.0, 168.0, 152.0) / 255.0 * (0.86 + 0.28 * k) * e012.z;
-  }
-  if (e3456.x > 0.003) {                                      // Holzbohlen quer
-    float seam = smoothstep(0.03, 0.0, abs(fract(g.x * 3.0) - 0.5) - 0.47);
-    vec3 c = vec3(168.0, 122.0, 74.0) / 255.0 * (1.0 + 0.1 * grain) * (0.92 + 0.16 * hash12(vec2(floor(g.x * 3.0), 3.0)));
-    col += c * (1.0 - 0.35 * seam) * e3456.x;
-  }
-  if (e3456.y > 0.003) col += paving(g, 0.22, vec3(146.0, 146.0, 154.0) / 255.0, 0.12) * e3456.y;  // Kopfstein
-  if (e3456.z > 0.003) col += paving(g, 0.48, vec3(182.0, 176.0, 166.0) / 255.0, 0.06) * e3456.z;  // Natursteinplatten
-  if (e3456.w > 0.003) {                                      // Sternenpflaster: Kopfstein dunkel, goldene Einlagen
-    vec2 c = cells(g / 0.22);
-    vec3 s = mix(vec3(118.0, 112.0, 140.0) / 255.0 * 0.62, vec3(118.0, 112.0, 140.0) / 255.0, smoothstep(0.0, 0.12, c.x));
-    s = mix(s, vec3(0.96, 0.78, 0.32), step(0.9, c.y) * smoothstep(0.1, 0.3, c.x));
-    col += s * e3456.w;
-  }
-  return col;
+  if (all <= 0.003) return vec3(0.0);
+  return hexSample(uEarth, f / ${EARTH_REPEAT}.0, dxE, dyE) * (1.0 + 0.06 * (noise(f / 40.0) - 0.5)) * all;
 }
 
 // Schneedecke 0…1 an einem Weltpunkt; soft = Weichheit in Kacheln. Keine losen Schollen auf der Wiese
@@ -297,7 +255,7 @@ void main() {
     float inPath = clamp(sd / aaS + 0.5, 0.0, 1.0);
     vec2 uv = pathUv(g);
     vec4 wa = textureLod(uPathA, uv, 0.0), wb = textureLod(uPathB, uv, 0.0);
-    vec3 pc = pathLook(g, f, wa.gba, wb, px, dxE, dyE);
+    vec3 pc = pathLook(f, wa.gba, wb, dxE, dyE);
     // Fließ-Streifen: Abstand zur Kante, weich verbogen, längs in Stücke gebrochen; hell und dunkel versetzt
     float along = dot(g, vec2(0.5, 0.5));
     float v = (sd < 0.5 ? sd * 6.0 : 3.0 + (sd - 0.5) * 4.0) + (noise(g * 0.9) - 0.5) * 1.4;   // schmale Wege (1 Kachel) bekommen genauso Rillen wie die Zufahrt
@@ -323,7 +281,7 @@ void main() {
     if (sd > 0.05) {
       const float C = 40.0, S = 26.0;
       vec2 c0 = floor((w - S * 0.6) / C);
-      for (int k = 0; k < 4; k++) {
+      for (int k = 0; k < uStoneCells; k++) {
         vec2 id = c0 + vec2(float(k & 1), float(k >> 1));
         vec2 an = (id + 0.2 + 0.6 * hash22(id + 47.0)) * C;
         float sc = 0.7 + 0.5 * hash12(id + 5.0);
@@ -378,12 +336,13 @@ export class Ground {
         uNoise: noiseTexture().source,
         boden: {
           uWaves: { value: u.waves, type: 'vec3<f32>', size: MAX_WAVES },
-          uWaveCount: { value: u.count, type: 'f32' },
+          uWaveCount: { value: u.count, type: 'i32' },
           uBox: { value: u.box, type: 'vec4<f32>' },
           uCenter: { value: u.center, type: 'vec2<f32>' },
           uOffset: { value: u.offset, type: 'f32' },
           uPathBox: { value: this.pathBox, type: 'vec4<f32>' },
-          uEdgeSamples: { value: 6, type: 'i32' }
+          uEdgeSamples: { value: 6, type: 'i32' },
+          uStoneCells: { value: 4, type: 'i32' }
         }
       }
     });
@@ -441,11 +400,23 @@ export function hash12(x: number, y: number): number {
 export function noiseTable(size = NOISE_SIZE): Uint8Array {
   const half = size / 2;
   const v = new Uint8Array(size * size);
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) v[y * size + x] = Math.round(hash12(x - half, y - half) * 255);
-  const at = (cx: number, cy: number): number => v[(cy % size) * size + (cx % size)] ?? 0;
+  for (let y = 0; y < size; y++) {
+    const row = y * size;
+    const fy = y - half;
+    for (let x = 0; x < size; x++) v[row + x] = Math.round(hash12(x - half, fy) * 255);
+  }
   const data = new Uint8Array(size * size * 4);
-  for (let cy = 0; cy < size; cy++) for (let cx = 0; cx < size; cx++) {
-    data.set([at(cx, cy), at(cx + 1, cy), at(cx, cy + 1), at(cx + 1, cy + 1)], (cy * size + cx) * 4);
+  for (let cy = 0; cy < size; cy++) {
+    const r0 = cy * size;
+    const r1 = ((cy + 1) % size) * size;
+    for (let cx = 0; cx < size; cx++) {
+      const c1 = (cx + 1) % size;
+      const idx = (r0 + cx) * 4;
+      data[idx] = v[r0 + cx] ?? 0;
+      data[idx + 1] = v[r0 + c1] ?? 0;
+      data[idx + 2] = v[r1 + cx] ?? 0;
+      data[idx + 3] = v[r1 + c1] ?? 0;
+    }
   }
   return data;
 }

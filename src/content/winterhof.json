@@ -3831,9 +3831,21 @@
         "anchorY": 0.88,
         "shadow": "fleck"
       },
+      "animal_owl": {
+        "file": "animal_owl.png",
+        "size": "owl",
+        "anchorY": 0.88,
+        "shadow": "fleck"
+      },
       "animal_sheep": {
         "file": "animal_sheep.png",
         "size": "sheep",
+        "anchorY": 0.88,
+        "shadow": "fleck"
+      },
+      "animal_donkey": {
+        "file": "animal_donkey.png",
+        "size": "donkey",
         "anchorY": 0.88,
         "shadow": "fleck"
       },
@@ -4039,6 +4051,21 @@
     "overlays": {
       "station_ribbon": {
         "file": "station_ribbon.png"
+      },
+      "badge_egg": {
+        "file": "badge_egg.png"
+      },
+      "badge_starmilk": {
+        "file": "badge_starmilk.png"
+      },
+      "badge_wool": {
+        "file": "badge_wool.png"
+      },
+      "badge_firewood": {
+        "file": "badge_firewood.png"
+      },
+      "badge_letter": {
+        "file": "badge_letter.png"
       }
     }
   },

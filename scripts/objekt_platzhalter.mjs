@@ -621,6 +621,119 @@ const BUILDERS = {
   obs_pine_small: () => {
     const c = makeCanvas('pine_small', 0.96, 0.86);
     return { svg: c.wrap(drawPineTree(c, 4, 0.14, 0.44, 1.08)), anchorY: c.anchorY, size: 'pine_small' };
+  },
+
+  // ---------------- 2 fehlende Tier-Platzhalter (Baustein 11) ----------------
+  animal_owl: () => {
+    const W = 148, H = 160;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+      <defs>
+        <radialGradient id="owlBody" cx="42%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="72%" stop-color="#e8eff7"/>
+          <stop offset="100%" stop-color="#c3d2e2"/>
+        </radialGradient>
+        <linearGradient id="owlScarf" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ef4444"/>
+          <stop offset="100%" stop-color="#b91c1c"/>
+        </linearGradient>
+      </defs>
+      <!-- Flauschiger Schwanz hinten links -->
+      <path d="M24 106 Q10 120 26 134 L48 124 Z" fill="#b8cadc" stroke="#687d94" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Runder Schneeeulen-Körper -->
+      <ellipse cx="74" cy="94" rx="46" ry="52" fill="url(#owlBody)" stroke="#6c8096" stroke-width="3"/>
+      <!-- Flügel rechts & links -->
+      <path d="M32 76 C22 96, 26 124, 46 130 C52 114, 52 92, 42 74 Z" fill="#dce7f2" stroke="#7d91a8" stroke-width="2.2"/>
+      <path d="M114 78 C126 98, 122 126, 102 132 C98 114, 98 92, 106 76 Z" fill="#d0dfee" stroke="#7d91a8" stroke-width="2.2"/>
+      <!-- Dezente Winter-Sprenkel auf Bauch & Flügel -->
+      <ellipse cx="64" cy="112" rx="4.5" ry="2.6" fill="#9fb2c7"/>
+      <ellipse cx="82" cy="116" rx="4.5" ry="2.6" fill="#9fb2c7"/>
+      <ellipse cx="73" cy="124" rx="4.5" ry="2.6" fill="#9fb2c7"/>
+      <!-- Runder Kopf mit Feder-Öhrchen -->
+      <path d="M38 36 L30 16 L54 28 Z" fill="#e5eef7" stroke="#6c8096" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M110 36 L118 16 L94 28 Z" fill="#dce7f2" stroke="#6c8096" stroke-width="2.5" stroke-linejoin="round"/>
+      <ellipse cx="76" cy="48" rx="40" ry="34" fill="url(#owlBody)" stroke="#6c8096" stroke-width="3"/>
+      <!-- Gesichtsschleier -->
+      <ellipse cx="62" cy="48" rx="14" ry="13" fill="#ffffff" stroke="#b9cadb" stroke-width="2"/>
+      <ellipse cx="92" cy="48" rx="14" ry="13" fill="#ffffff" stroke="#b9cadb" stroke-width="2"/>
+      <!-- Große warme Augen -->
+      <circle cx="63" cy="48" r="8.2" fill="#f59e0b" stroke="#451a03" stroke-width="2"/>
+      <circle cx="64" cy="48" r="4.6" fill="#1e1b18"/>
+      <circle cx="61.5" cy="45.5" r="2.2" fill="#ffffff"/>
+      <circle cx="91" cy="48" r="8.2" fill="#f59e0b" stroke="#451a03" stroke-width="2"/>
+      <circle cx="92" cy="48" r="4.6" fill="#1e1b18"/>
+      <circle cx="89.5" cy="45.5" r="2.2" fill="#ffffff"/>
+      <!-- Kleiner goldener Schnabel -->
+      <polygon points="73,53 83,53 78,63" fill="#f59e0b" stroke="#92400e" stroke-width="2" stroke-linejoin="round"/>
+      <!-- Roter Winterschal mit Fransen -->
+      <path d="M40 72 Q76 86 110 72 Q108 88 76 92 Q42 88 40 72 Z" fill="url(#owlScarf)" stroke="#7f1d1d" stroke-width="2.2"/>
+      <path d="M84 84 L96 112 L80 116 L72 86 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="2" stroke-linejoin="round"/>
+      <!-- Krallen ganz unten (<= 2% Rand) -->
+      <path d="M54 143 L50 156 M60 144 L60 157 M66 143 L69 156" stroke="#d97706" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M84 143 L81 156 M90 144 L90 157 M96 143 L100 156" stroke="#d97706" stroke-width="4.5" stroke-linecap="round"/>
+    </svg>`;
+    return { svg, anchorY: 0.88, size: 'owl' };
+  },
+
+  animal_donkey: () => {
+    const W = 256, H = 236;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+      <defs>
+        <linearGradient id="donkCoat" x1="20%" y1="0%" x2="80%" y2="100%">
+          <stop offset="0%" stop-color="#a8998c"/>
+          <stop offset="65%" stop-color="#87786c"/>
+          <stop offset="100%" stop-color="#695c51"/>
+        </linearGradient>
+        <linearGradient id="donkBlanket" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#dc2626"/>
+          <stop offset="100%" stop-color="#991b1b"/>
+        </linearGradient>
+      </defs>
+      <!-- Schwanz hinten links -->
+      <path d="M40 128 Q16 146 22 174" fill="none" stroke="#574a40" stroke-width="6" stroke-linecap="round"/>
+      <ellipse cx="23" cy="178" rx="7" ry="11" fill="#3b312a"/>
+      <!-- Hinteres Beinpaar (dunkler für Tiefe) -->
+      <rect x="64" y="150" width="17" height="62" rx="7" fill="#63564c" stroke="#3f362f" stroke-width="2.5"/>
+      <rect x="63" y="204" width="19" height="14" rx="5" fill="#2d2621"/>
+      <rect x="138" y="152" width="17" height="62" rx="7" fill="#63564c" stroke="#3f362f" stroke-width="2.5"/>
+      <rect x="137" y="206" width="19" height="14" rx="5" fill="#2d2621"/>
+      <!-- Runder freundlicher Körper -->
+      <ellipse cx="108" cy="134" rx="68" ry="42" fill="url(#donkCoat)" stroke="#4a3f37" stroke-width="3"/>
+      <!-- Heller Bauch -->
+      <path d="M58 152 Q108 174 156 148 Q128 164 82 162 Z" fill="#cfc3b8"/>
+      <!-- Rote Weihnachts-Satteldecke mit Goldborte -->
+      <path d="M68 100 Q108 90 144 102 L140 146 Q106 154 68 142 Z" fill="url(#donkBlanket)" stroke="#7f1d1d" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M72 138 Q106 148 138 142" fill="none" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
+      <!-- Vordere Beine fest am unteren Bildrand -->
+      <rect x="48" y="152" width="19" height="66" rx="8" fill="#827367" stroke="#4a3f37" stroke-width="2.5"/>
+      <rect x="46" y="210" width="23" height="16" rx="6" fill="#2b241f"/>
+      <rect x="152" y="156" width="19" height="68" rx="8" fill="#8a7a6e" stroke="#4a3f37" stroke-width="2.5"/>
+      <rect x="150" y="214" width="23" height="16" rx="6" fill="#2b241f"/>
+      <!-- Hals & zottelige Mähne -->
+      <path d="M140 120 Q156 76 172 64 L196 86 Q178 124 160 140 Z" fill="url(#donkCoat)" stroke="#4a3f37" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M136 104 L148 80 L156 86 L166 64 L176 74" fill="none" stroke="#3f342c" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Lange Eselsohren (nahtlos am Kopf angesetzt) -->
+      <path d="M170 54 C152 14, 172 4, 185 46 Z" fill="#8a7a6e" stroke="#4a3f37" stroke-width="2.8" stroke-linejoin="round"/>
+      <path d="M171 46 C161 24, 171 18, 179 42 Z" fill="#e2b4a6"/>
+      <path d="M187 52 C190 8, 214 10, 204 52 Z" fill="#7c6d62" stroke="#4a3f37" stroke-width="2.8" stroke-linejoin="round"/>
+      <path d="M191 46 C194 22, 206 22, 201 46 Z" fill="#d9a596"/>
+      <!-- Freundlicher Kopf & helle Schnauze (blickt nach rechts) -->
+      <ellipse cx="192" cy="70" rx="30" ry="24" fill="url(#donkCoat)" stroke="#4a3f37" stroke-width="3"/>
+      <ellipse cx="218" cy="82" rx="22" ry="17" fill="#e6d8cc" stroke="#4a3f37" stroke-width="2.6"/>
+      <!-- Nüstern & freundliches Lächeln -->
+      <circle cx="226" cy="77" r="3" fill="#4a3f37"/>
+      <circle cx="234" cy="79" r="2.6" fill="#4a3f37"/>
+      <path d="M212 90 Q222 96 230 89" fill="none" stroke="#4a3f37" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Warmes Auge -->
+      <circle cx="196" cy="64" r="7.5" fill="#ffffff" stroke="#4a3f37" stroke-width="2"/>
+      <circle cx="197.5" cy="64.5" r="4.5" fill="#2c2119"/>
+      <circle cx="195.5" cy="62.5" r="1.8" fill="#ffffff"/>
+      <!-- Goldenes Glöckchen am roten Halsband -->
+      <path d="M158 106 Q178 122 194 114" fill="none" stroke="#dc2626" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="188" cy="122" r="8" fill="#fbbf24" stroke="#92400e" stroke-width="2"/>
+      <circle cx="186" cy="119.5" r="2.2" fill="#fef3c7"/>
+    </svg>`;
+    return { svg, anchorY: 0.88, size: 'donkey' };
   }
 };
 
@@ -644,6 +757,57 @@ function buildRibbonSvg() {
   </svg>`;
 }
 
+function wrapBadge(innerSvg) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+    <defs>
+      <filter id="bshad" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter>
+      <radialGradient id="bgrad" cx="40%" cy="30%" r="70%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#fef3df"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="48" cy="84" rx="18" ry="6" fill="#1e293b" opacity="0.32" filter="url(#bshad)"/>
+    <path d="M39 73 L48 87 L57 73 Z" fill="#b45309"/>
+    <circle cx="48" cy="44" r="36" fill="url(#bgrad)" stroke="#b45309" stroke-width="5"/>
+    <circle cx="48" cy="44" r="31.5" fill="none" stroke="#f59e0b" stroke-width="2" opacity="0.75"/>
+    ${innerSvg}
+  </svg>`;
+}
+
+const BADGE_BUILDERS = {
+  badge_egg: () => wrapBadge(`
+    <path d="M48 20 C38 20, 31 36, 31 48 C31 60, 38 66, 48 66 C58 66, 65 60, 65 48 C65 36, 58 20, 48 20 Z" fill="#fef3c7" stroke="#b45309" stroke-width="3"/>
+    <ellipse cx="42" cy="36" rx="4.5" ry="9" transform="rotate(-14 42 36)" fill="#ffffff" opacity="0.85"/>
+  `),
+  badge_starmilk: () => wrapBadge(`
+    <rect x="35" y="34" width="26" height="32" rx="6" fill="#e0f2fe" stroke="#0369a1" stroke-width="2.8"/>
+    <rect x="40" y="22" width="16" height="12" rx="2" fill="#f8fafc" stroke="#0369a1" stroke-width="2.5"/>
+    <rect x="38" y="19" width="20" height="5" rx="2.5" fill="#dc2626"/>
+    <polygon points="48,40 50.8,45.8 57,46.6 52.4,50.8 53.6,57 48,54 42.4,57 43.6,50.8 39,46.6 45.2,45.8" fill="#fbbf24" stroke="#b45309" stroke-width="1.5" stroke-linejoin="round"/>
+  `),
+  badge_wool: () => wrapBadge(`
+    <circle cx="48" cy="45" r="20" fill="#f8fafc" stroke="#64748b" stroke-width="2.8"/>
+    <circle cx="37" cy="37" r="8" fill="#ffffff"/>
+    <circle cx="57" cy="36" r="8" fill="#ffffff"/>
+    <circle cx="58" cy="52" r="8" fill="#f1f5f9"/>
+    <path d="M32 42 Q48 52 64 40" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M34 51 Q48 60 62 49" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M34 32 Q48 40 60 30" fill="none" stroke="#dc2626" stroke-width="4" stroke-linecap="round"/>
+  `),
+  badge_firewood: () => wrapBadge(`
+    <rect x="27" y="42" width="42" height="13" rx="6" fill="#92400e" stroke="#451a03" stroke-width="2.4"/>
+    <rect x="27" y="31" width="42" height="13" rx="6" fill="#b45309" stroke="#451a03" stroke-width="2.4"/>
+    <circle cx="63" cy="37.5" r="5" fill="#fde68a" stroke="#78350f" stroke-width="1.5"/>
+    <circle cx="63" cy="48.5" r="5" fill="#fde68a" stroke="#78350f" stroke-width="1.5"/>
+    <rect x="44" y="29" width="7" height="28" rx="2" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>
+  `),
+  badge_letter: () => wrapBadge(`
+    <rect x="25" y="30" width="46" height="30" rx="4" fill="#fffbeb" stroke="#92400e" stroke-width="2.8"/>
+    <polyline points="26,31 48,48 70,31" fill="none" stroke="#92400e" stroke-width="2.6" stroke-linejoin="round"/>
+    <circle cx="48" cy="48" r="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.8"/>
+  `)
+};
+
 mkdirSync(OUT, { recursive: true });
 const meta = {};
 for (const [key, fn] of Object.entries(BUILDERS)) {
@@ -656,6 +820,9 @@ for (const [key, fn] of Object.entries(BUILDERS)) {
   meta[key] = { size: res.size, anchorY: res.anchorY, emptyPct: +(empty * 100).toFixed(1), px: `${buf.width}x${buf.height}` };
 }
 await sharp(Buffer.from(buildRibbonSvg())).png({ compressionLevel: 9 }).toFile(join(OUT, 'station_ribbon.png'));
+for (const [key, fn] of Object.entries(BADGE_BUILDERS)) {
+  await sharp(Buffer.from(fn())).png({ compressionLevel: 9 }).toFile(join(OUT, `${key}.png`));
+}
 
-console.log(`Objekt-Platzhalter: ${Object.keys(BUILDERS).length} Sprites + station_ribbon.png`);
+console.log(`Objekt-Platzhalter: ${Object.keys(BUILDERS).length} Sprites + ${Object.keys(BADGE_BUILDERS).length + 1} Overlays`);
 console.log(JSON.stringify(meta));

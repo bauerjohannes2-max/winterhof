@@ -11,6 +11,7 @@ import {
 import { Camera, maxZoomForWidth } from './camera/camera';
 import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
+import { AnimalView } from './scene/animals';
 import { boxesForObjects, computeDepthOrder } from './scene/depth';
 import { FieldEffects } from './scene/fieldEffects';
 import { fieldAtWorld, FieldView } from './scene/fields';
@@ -97,6 +98,8 @@ async function start(): Promise<void> {
     maxZoom: maxZoomForWidth(Math.max(root.clientWidth, root.clientHeight))
   };
   const prelimQ = chooseQuality({ ...deviceBase, maxTextureSize: ATLAS_MAX * 2 });
+  // Bild-Atlanten schon während der WebGL-Initialisierung parallel laden & dekodieren
+  let assetsReady = loadStartAssets(prelimQ, (p) => loading.progress(0.45 + p * 0.55));
 
   const app = new Application();
   await app.init({
@@ -109,12 +112,15 @@ async function start(): Promise<void> {
     powerPreference: 'high-performance'
   });
   const q = chooseQuality({ ...deviceBase, maxTextureSize: maxTextureSize(app) });
-  if (q !== prelimQ) app.renderer.resize(app.screen.width, app.screen.height, renderResolution(q, dpr));
+  if (q !== prelimQ) {
+    app.renderer.resize(app.screen.width, app.screen.height, renderResolution(q, dpr));
+    await assetsReady;
+    assetsReady = loadStartAssets(q, (p) => loading.progress(0.45 + p * 0.55));
+  }
   root.appendChild(app.canvas);
   loading.progress(0.45);
 
-  // Bilder laden und Kartendaten + Spielstand vorbereiten laufen parallel
-  const assetsReady = loadStartAssets(q, (p) => loading.progress(0.45 + p * 0.55));
+  // Kartendaten + Spielstand vorbereiten, während die Bilder im Hintergrund fertig werden
   const session = new GameSession({ store: browserStore() });
   const map = terrainMap();
   const pathBox = { gx0: map.minGx, gy0: map.minGy, w: map.maxGx - map.minGx + 1, h: map.maxGy - map.minGy + 1 };
@@ -151,9 +157,10 @@ async function start(): Promise<void> {
   let currentPaths = startPaths;
   let currentDepths = computeDepthOrder(boxesForObjects(startObjects));
 
-  // Objekte + Felder teilen sich `objekte` für exakte topologische Vorn/Hinten-Tiefensortierung; Erdwülste liegen in `bodenzeichnung`.
+  // Objekte + Felder + Tiere teilen sich `objekte` für exakte topologische Vorn/Hinten-Tiefensortierung; Erdwülste liegen in `bodenzeichnung`.
   const objectView = new ObjectView(startObjects, { objects: world.layer.objekte, shadows: world.layer.kontaktschatten }, currentDepths);
   const fieldView = new FieldView(world.layer.bodenzeichnung, world.layer.objekte, startObjects, Date.now(), currentDepths);
+  const animalView = new AnimalView(world.layer.objekte, world.layer.effekte, startObjects, currentDepths);
   const fieldEffects = new FieldEffects();
   world.layer.effekte.addChild(fieldEffects.view);
 
@@ -163,6 +170,7 @@ async function start(): Promise<void> {
     ground.cover(viewRect);
     objectView.cull(viewRect);
     fieldView.cull(viewRect);
+    animalView.cull(viewRect);
   };
   const grid = new GridOverlay(map, params.get('raster') !== '0');
   world.layer.auswahl.addChild(grid.view);
@@ -214,6 +222,7 @@ async function start(): Promise<void> {
       coverView();
     }
     fieldView.sync(state.objects, Date.now(), currentDepths);
+    animalView.sync(state.objects, currentDepths);
     fieldTool.refresh();
   });
 
@@ -252,6 +261,7 @@ async function start(): Promise<void> {
     grid.update(dt);
     fieldView.sync(session.state.objects, now, currentDepths);
     fieldView.update(dt);
+    animalView.update(dt);
     fieldEffects.update(dt);
     fieldTool.tick(now);
     applyCamera(world.root, camera, app.renderer.resolution, app.screen.width, app.screen.height);
@@ -278,6 +288,7 @@ async function start(): Promise<void> {
   loading.progress(1);
   await loading.close();
   fieldView.enableAmbient();
+  animalView.enableAmbient();
   root.dataset['bereit'] = '1';
 }
 

@@ -181,11 +181,12 @@ test('Ladebild: Motiv, Schriftzug, Tipp und Balken', async ({ page }) => {
   // Manifest zurückhalten, damit das Ladebild stehen bleibt (ohne Sonderweg im Spiel-Code)
   let release: () => void = () => undefined;
   const held = new Promise<void>((r) => { release = r; });
-  await page.route('**/assets/gen/manifest.json', async (route) => { await held; await route.continue(); });
+  await page.route('**/assets/gen/manifest.json*', async (route) => { await held; await route.continue(); });
   await page.goto('/');
   await expect(page.locator('#laden')).toHaveClass(/bereit/);
   await expect(page.locator('#laden-tipp')).not.toHaveText('');
   await expect(page.locator('#laden-logo')).toHaveText('Winterhof');
+  await expect(page.locator('#laden')).toHaveAttribute('aria-valuenow', '45');
   await expect(page).toHaveScreenshot('b03-ladebild.png');
   release();
   await expect(page.locator('#neu-root')).toHaveAttribute('data-bereit', '1');

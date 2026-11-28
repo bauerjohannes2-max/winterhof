@@ -14,7 +14,9 @@
 - **GRÜN** `deco_snowman` → `snowman`
 - **GRÜN** `deco_lantern` → `lantern`
 - **GRÜN** `animal_chicken` → `chicken`
+- **GRÜN** `animal_owl` → `owl`
 - **GRÜN** `animal_sheep` → `sheep`
+- **GRÜN** `animal_donkey` → `donkey`
 - **GRÜN** `animal_reindeer` → `reindeer`
 - **GRÜN** `alpine_villager` → `person`
 - **GRÜN** `alpine_villager_green` → `person`
@@ -50,7 +52,7 @@
 - **GRÜN** `obs_pine_small` → `pine_small`
 
 ## Katalog-Einträge ohne Bild (Klötzchen in der Aufstellung)
-`owl`, `donkey`
+- keine
 
 ## Bilder ohne Eintrag in art.sprites
 - keine

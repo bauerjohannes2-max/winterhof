@@ -20,24 +20,24 @@ In diesen Dateien steht oft „Claude“. Das gilt für dich genauso. Lies sie v
 Steht hier etwas anderes als dort, gelten die Dateien oben. Widersprüche meldest du Hannes und behebst sie.
 
 ## 3. So arbeitest du
-- **Ein Baustein nach dem anderen.** Ein Baustein ist erst fertig, wenn Hannes ihn abgenommen hat. Nie zwei Baustellen gleichzeitig.
-- **Erst das Konzept, dann der Code – viele interaktive Fragen (Entscheidung 64).** Vor jedem Baustein zuerst prüfen, ob das Konzept stimmt (nicht nur die Technik). Alle Konzept-, Design-, Spielgefühl- und Entscheidungsfragen stellst du Hannes **immer über die interaktiven Auswahlfragen im Chat (`ask_question`)**: klare Optionen, Empfehlung immer zuerst mit kurzem Grund, gern viele gezielte Fragen in mehreren Runden. Lieber eine Frage zu viel als eine Annahme.
-- **Erst Skizze, dann aufwendiges Bild** (Entscheidung 35): Gestaltungsfragen zuerst mit einer billigen Skizze klären (z. B. `scripts/standflaeche_skizze.py`, `scripts/weg_skizze.py`), erst nach Hannes' Wahl das echte Bild oder den echten Code.
-- **Grundlage vor Austauschbarem** (Entscheidung 39): Boden, Spielfeld, Kachelmaß, Größen, Datenmodell und Kern gründlich. Austauschbares (Kulisse, Deko, Tiere, Animationen) nur als Skizze oder Platzhalter, Feinschliff in der Grafik-Runde am Schluss.
-- **Bilder zeigen** (Entscheidung 61 & 71): Jede Frage zu Aussehen und jede Abnahme **immer im selben Beitrag** zuerst mit sichtbaren Bildern (Vorher/Nachher, Nahaufnahme) zeigen. Bei spielbaren/optischen Änderungen lädt der Agent die Vorschau selbst hoch (`npm run vorschau`) und gibt Hannes immer direkt den **klickbaren Link** `https://bauerjohannes2-max.github.io/winterhof-vorschau/` (niemals `npm …` als Anleitung nennen!). Dazu **immer in 2–3 einfachen Punkten sagen, worauf Hannes visuell achten soll** (keine Technik-Prüfung auf ihn abladen). Nie nur einen Pfad nennen und nie `ask_question` ohne sichtbare Bilder vorab schicken.
+- **Ein Baustein nach dem anderen.** Ein Baustein ist erst fertig, wenn er das AAA-Benchmark-Tor (§5a) sauber bestanden hat (Autonome Selbst-Abnahme, Entsch. 75). Nie zwei Baustellen gleichzeitig.
+- **Erst das Konzept, dann der Code – selbst entscheiden, nur bei echten Unklarheiten fragen (Entsch. 75).** Vor jedem Baustein zuerst prüfen, ob das Konzept stimmt (nicht nur die Technik). Alle Fragen, die sich aus den Regeln, Vorbildern (Hay Day / Clash of Clans), dem Benchmark-System und eigener strenger Prüfung selbst beantworten lassen, entscheidest du eigenständig. `ask_question` nutzt du **nur** bei echten offenen Grundsatz-/Geschmacksentscheidungen (dann immer mit Empfehlung + kurzem Grund).
+- **Erst Skizze, dann aufwendiges Bild** (Entscheidung 35): Gestaltungsfragen zuerst mit einer billigen Skizze klären (z. B. `scripts/standflaeche_skizze.py`, `scripts/weg_skizze.py`), erst danach das echte Bild oder den echten Code.
+- **Grundlage vor Austauschbarem** (Entscheidung 39 & 74): Boden, Spielfeld, Kachelmaß, Größen, Datenmodell und Kern gründlich. Austauschbares (Kulisse, Deko, Tiere, Animationen) nur als Skizze oder Platzhalter, Feinschliff in der Grafik-Runde am Schluss.
+- **Bilder & Vorschau-Link zeigen** (Entscheidung 61, 71 & 75): Bei Vorlagen oder Rückfragen zu Aussehen und bei jeder Ergebnis-/Übergabemeldung nach abgeschlossenen Bausteinen zeigst du sichtbare Bilder direkt im Chat, lädst die Handy-Vorschau selbst hoch (`npm run vorschau`) und gibst immer direkt den **klickbaren Link** `https://bauerjohannes2-max.github.io/winterhof-vorschau/` (niemals `npm …` als Anleitung nennen!).
 - **Vorbilder prüfen (visuell + Code):** Wie machen es Hay Day, Clash of Clans und andere Top-Mobile-Spiele (z. B. Township, Stardew Valley, Animal Crossing)? Beobachtung in `docs/VORBILD_ANALYSE.md`. Technik nur nach offizieller Doku der aktuellen Version (PixiJS 8, Playwright, Vitest, MDN).
-- **Extrem kritisch SELBST prüfen & AAA-Benchmark-System (Entscheidung 64):** Messlatte extrem hoch setzen, nie wohlwollend abnicken und nie einfach Hannes zum Prüfen schicken. Vor jeder Abnahme **selbst** Desktop-, Handy-Quer- und Nahaufnahmen (auch ohne Hilfsraster) sowie Live-Vorschau ansehen, Abläufe Bild für Bild prüfen, jeden sichtbaren Fehler sofort selbst beheben und erst danach mit Bildern + gnadenlosem AAA-Urteil nach `docs/QUALITAETS_LEITFADEN.md` §5a vorlegen. Bei jeder `ask_question`-Runde immer die Bilder und das Urteil im selben Beitrag sichtbar mitgeben.
+- **Extrem kritisch SELBST prüfen & AAA-Benchmark-System (Entscheidungen 64 & 75):** Messlatte extrem hoch setzen, nie wohlwollend abnicken. Vor jeder Abnahme **selbst** Desktop-, Handy-Quer- und Nahaufnahmen (auch ohne Hilfsraster) sowie Live-Vorschau ansehen, Abläufe Bild für Bild prüfen, jeden sichtbaren Fehler sofort selbst beheben und gegen `docs/QUALITAETS_LEITFADEN.md` §5a gnadenlos bewerten. Besteht der Baustein alle 4 Säulen ≥ 9/10 bei 0 K.O.-Kriterien und grünem `npm run check`, nimmst du ihn selbst ab, erneuerst die Vergleichsbilder, committest auf `test` und machst direkt weiter.
 - **Widersprechen:** Schlägt Hannes eine Abkürzung vor, nennst du klar den besseren Weg. Eine Ausnahme gibt es nur nach seiner ausdrücklichen Entscheidung, eingetragen in `LEITUNG_CLAUDE.md`.
 
 ### In Antigravity
-- Arbeite im **Planning-Modus**: vor jedem Baustein einen Umsetzungsplan als Artefakt (Ziel in 1 Satz, beste Lösung + verworfene Alternative, betroffene Dateien, Tests, Prüfbild). Code erst nach Hannes' OK zum Plan.
+- Arbeite im **Planning-Modus**: vor jedem Baustein einen Umsetzungsplan als Artefakt (Ziel in 1 Satz, beste Lösung + verworfene Alternative, betroffene Dateien, Tests, Prüfbild).
 - Prüfbilder machst du mit dem Browser des Agenten oder per Playwright (`npm run dev`, Port 8085) und legst sie unter `docs/qa/neustart/bXX_*.jpg` ab.
 - Die Skills „caveman“ und „token-optimization“ hier **nicht** verwenden: Doku, Commit-Texte und Antworten an Hannes sind ganze, klare deutsche Sätze.
 
 ## 4. Mit Hannes reden
 - Deutsch, Du, kurz und klar. Ergebnis zuerst, dann höchstens 3–5 Stichpunkte. Keine Fachwörter ohne Not, keine langen Erklärungen.
-- Am Ende jeder Antwort mit offenen Entscheidungen nutzt du die **interaktiven Auswahlfragen (`ask_question`)** mit deiner Empfehlung an erster Stelle.
-- Bei jeder Abnahme sagst du kurz, was als Nächstes kommt (2–3 Bausteine).
+- Bei echten offenen Grundsatzentscheidungen nutzt du die **interaktiven Auswahlfragen (`ask_question`)** mit deiner Empfehlung an erster Stelle; bei Ergebnismeldungen immer mit klickbarem Link `https://bauerjohannes2-max.github.io/winterhof-vorschau/`.
+- Bei jeder Abschluss-/Übergabemeldung sagst du kurz, was als Nächstes kommt (2–3 Bausteine).
 - Bevor du etwas startest, das eine Windows-Sicherheitsmeldung auslösen kann (neues Programm, Installation, Firewall, Admin-Rechte), kündigst du es Hannes vorher an: was genau und warum.
 
 ## 5. Technik in Kürze
@@ -53,7 +53,7 @@ Steht hier etwas anderes als dort, gelten die Dateien oben. Widersprüche meldes
 - Spiel lokal: `npm run dev` → http://127.0.0.1:8085
 - Handy-Vorschau für Hannes: `npm run vorschau` (lädt eine Testfassung in das eigene Vorschau-Repo, Entscheidung 23).
 - Werkzeuge nur über `npm run …` oder `node ./node_modules/…` starten. Playwright nutzt den installierten Chrome, keine Browser herunterladen.
-- **Vergleichsbilder nur nach Hannes' Abnahme erneuern** (`node ./node_modules/@playwright/test/cli.js test --update-snapshots`). Nie einen Test abschwächen oder ein Vergleichsbild erneuern, nur damit es grün wird.
+- **Vergleichsbilder erst nach bestandener AAA-Selbst-Abnahme (Entsch. 75) erneuern** (`node ./node_modules/@playwright/test/cli.js test --update-snapshots`). Nie einen Test abschwächen oder ein Vergleichsbild erneuern, nur damit es grün wird.
 - Messhilfen `scripts/_*.mjs` (z. B. `_shaderzeit.mjs`, `_startzeit.mjs`) sind nur für dich und werden nicht committet.
 
 ## 7. Git und Veröffentlichen
@@ -61,7 +61,7 @@ Steht hier etwas anderes als dort, gelten die Dateien oben. Widersprüche meldes
 - Committen nur bei grüner Gesamtprüfung, je Baustein ein eigener kleiner Commit, Text auf Deutsch im Stil der bisherigen Commits („Test: …“, Entscheidungsnummer nennen).
 - Push auf `main` nur, wenn alles grün ist **und** Hannes es für genau diesen Stand freigegeben hat.
 - Git hat auf diesem PC keine eigene Identität: `git -c user.name="<Name wie in git log>" -c user.email="<E-Mail wie in git log>" commit …`. `gh` ist nicht installiert.
-- Der Ordner liegt im OneDrive: Bei „Datei gesperrt“ kurz warten und erneut versuchen, nichts mit Gewalt löschen. Alter Rest `.git/worktrees/wt_main` → bei Gelegenheit `git worktree prune`.
+- Der Ordner liegt lokal unter `C:\Projekte\winterhof\` (aus OneDrive umgezogen, Entscheidung 77). Alter Rest `.git/worktrees/wt_main` per `git worktree prune` bereinigen.
 
 ## 8. Wer arbeitet gerade
 Nie gleichzeitig mit Claude im Repo arbeiten. Wer arbeitet, steht in `docs/LEITUNG_CLAUDE.md` unter „Wer arbeitet gerade“. Pflege die Zeile, wenn du anfängst und wenn du aufhörst.
