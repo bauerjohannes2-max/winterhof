@@ -105,7 +105,18 @@ def main():
     used = {sp['size'] for sp in content['art']['sprites'].values()}
     no_img = [k for k, v in content['sizes'].items() if k not in used and v['heightTiles'] > 0]
     lines += ['', '## Katalog-Einträge ohne Bild (Klötzchen in der Aufstellung)', ', '.join(f'`{k}`' for k in no_img) or '- keine']
-    known = {sp['file'] for sp in content['art']['sprites'].values()}
+    overlays = content['art'].get('overlays', {})
+    for ok, ov in overlays.items():
+        opath = SPR / ov['file']
+        if not opath.exists():
+            lines.append(f'- **ROT** Overlay `{ok}` fehlt: {ov["file"]}')
+            worst = 'ROT'
+        else:
+            oimg = Image.open(opath)
+            if 'A' not in oimg.getbands():
+                lines.append(f'- **ROT** Overlay `{ok}` ohne Alpha-Kanal')
+                worst = 'ROT'
+    known = {sp['file'] for sp in content['art']['sprites'].values()} | {ov['file'] for ov in overlays.values()}
     extra = sorted(p.name for p in SPR.glob('*.png') if p.name not in known)
     lines += ['', '## Bilder ohne Eintrag in art.sprites'] + ([f'- {e}' for e in extra] or ['- keine'])
 

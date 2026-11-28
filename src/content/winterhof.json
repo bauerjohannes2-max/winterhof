@@ -3822,7 +3822,7 @@
       "deco_lantern": {
         "file": "deco_lantern.png",
         "size": "lantern",
-        "anchorY": 0.88,
+        "anchorY": 0.92,
         "shadow": "fleck"
       },
       "animal_chicken": {
@@ -3884,6 +3884,161 @@
         "size": "field",
         "anchorY": 0.506,
         "shadow": "bild"
+      },
+      "farm_stand": {
+        "file": "farm_stand.png",
+        "size": "farmStand",
+        "anchorY": 0.629,
+        "shadow": "kontakt"
+      },
+      "apple_stand": {
+        "file": "apple_stand.png",
+        "size": "apple_stand",
+        "anchorY": 0.653,
+        "shadow": "kontakt"
+      },
+      "almond_hut": {
+        "file": "almond_hut.png",
+        "size": "almond_hut",
+        "anchorY": 0.653,
+        "shadow": "kontakt"
+      },
+      "wreath_shop": {
+        "file": "wreath_shop.png",
+        "size": "wreath_shop",
+        "anchorY": 0.692,
+        "shadow": "kontakt"
+      },
+      "wichtel_post": {
+        "file": "wichtel_post.png",
+        "size": "wichtel_post",
+        "anchorY": 0.708,
+        "shadow": "kontakt"
+      },
+      "toy_workshop": {
+        "file": "toy_workshop.png",
+        "size": "toy_workshop",
+        "anchorY": 0.723,
+        "shadow": "kontakt"
+      },
+      "pen_chicken": {
+        "file": "pen_chicken.png",
+        "size": "chicken_pen",
+        "anchorY": 0.591,
+        "shadow": "kontakt"
+      },
+      "pen_owl": {
+        "file": "pen_owl.png",
+        "size": "owl_pen",
+        "anchorY": 0.591,
+        "shadow": "kontakt"
+      },
+      "pen_sheep": {
+        "file": "pen_sheep.png",
+        "size": "sheep_pen",
+        "anchorY": 0.569,
+        "shadow": "kontakt"
+      },
+      "pen_reindeer": {
+        "file": "pen_reindeer.png",
+        "size": "reindeer_pen",
+        "anchorY": 0.569,
+        "shadow": "kontakt"
+      },
+      "pen_donkey": {
+        "file": "pen_donkey.png",
+        "size": "donkey_pen",
+        "anchorY": 0.569,
+        "shadow": "kontakt"
+      },
+      "deco_pine_large": {
+        "file": "deco_pine_large.png",
+        "size": "pine_large",
+        "anchorY": 0.87,
+        "shadow": "fleck"
+      },
+      "deco_giftpile": {
+        "file": "deco_giftpile.png",
+        "size": "giftpile",
+        "anchorY": 0.64,
+        "shadow": "kontakt"
+      },
+      "deco_light_reindeer": {
+        "file": "deco_light_reindeer.png",
+        "size": "light_reindeer",
+        "anchorY": 0.81,
+        "shadow": "fleck"
+      },
+      "deco_big_nutcracker": {
+        "file": "deco_big_nutcracker.png",
+        "size": "big_nutcracker",
+        "anchorY": 0.87,
+        "shadow": "fleck"
+      },
+      "deco_bench": {
+        "file": "deco_bench.png",
+        "size": "bench",
+        "anchorY": 0.58,
+        "shadow": "fleck"
+      },
+      "deco_lightarch": {
+        "file": "deco_lightarch.png",
+        "size": "lightarch",
+        "anchorY": 0.78,
+        "shadow": "fleck"
+      },
+      "deco_gingerbread_gate": {
+        "file": "deco_gingerbread_gate.png",
+        "size": "gingerbread_gate",
+        "anchorY": 0.79,
+        "shadow": "fleck"
+      },
+      "obs_drift_small": {
+        "file": "obs_drift_small.png",
+        "size": "drift_small",
+        "anchorY": 0.74,
+        "shadow": "kontakt"
+      },
+      "obs_drift_large": {
+        "file": "obs_drift_large.png",
+        "size": "drift_large",
+        "anchorY": 0.72,
+        "shadow": "kontakt"
+      },
+      "obs_rock_small": {
+        "file": "obs_rock_small.png",
+        "size": "rock_small",
+        "anchorY": 0.78,
+        "shadow": "kontakt"
+      },
+      "obs_rock_large": {
+        "file": "obs_rock_large.png",
+        "size": "rock_large",
+        "anchorY": 0.76,
+        "shadow": "kontakt"
+      },
+      "obs_ice_small": {
+        "file": "obs_ice_small.png",
+        "size": "ice_small",
+        "anchorY": 0.78,
+        "shadow": "kontakt"
+      },
+      "obs_ice_large": {
+        "file": "obs_ice_large.png",
+        "size": "ice_large",
+        "anchorY": 0.76,
+        "shadow": "kontakt"
+      },
+      "obs_pine_small": {
+        "file": "obs_pine_small.png",
+        "size": "pine_small",
+        "anchorY": 0.86,
+        "shadow": "fleck"
+      }
+    },
+    "overlays": {
+      "station_ribbon": {
+        "file": "station_ribbon.png"
       }
     }
   },

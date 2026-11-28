@@ -81,12 +81,13 @@ Ein Baustein darf Hannes **nicht** zur Abnahme vorgelegt werden, wenn auch nur *
 - Eine Messgröße verletzt das Leistungsbudget (z. B. Kaltstart-Ausreißer > 3 s, FPS-Einbruch, überdimensionierte Atlanten).
 - Das Ergebnis wirkt wie ein „guter Prototyp“ statt wie ein fertiger Baustein eines Top-Store-Spiels.
 
-### Pflicht-Ausgabe bei jeder Abnahme
-Jede Abnahme-Vorlage an Hannes enthält kompakt:
-1. **Vorher/Nachher-Bild** (und Nahaufnahme / Ablauf-Prüfung) direkt im Chat.
-2. **AAA-Benchmark-Urteil** (Punkte je betroffener Säule + automatisch geloggte Messwerte aus `npm run check`: Startzeit, FPS, Draw Calls, Texturspeicher).
-3. **Ehrliche Schwächen-Liste:** Was fehlt noch zu 10/10 und in welchem Baustein genau wird es gelöst (nie stillschweigend übergehen).
-4. **Interaktive Fragen (`ask_question`)** mit klarer Empfehlung.
+### Pflicht-Ausgabe bei jeder Abnahme (Entscheidungen 64 & 71)
+Jede Abnahme-Vorlage an Hannes enthält kompakt – **immer sichtbar vor/mit `ask_question`**:
+1. **Vorher/Nachher-Bild** (und Nahaufnahme / Ablauf-Prüfung) direkt im Chat sowie bei Bedarf ein konkreter Spiel-/Vorschau-Link (`npm run vorschau` für Handy bzw. lokal `http://127.0.0.1:8085`).
+2. **Konkrete Sicht-Prüfpunkte für Hannes (2–3 einfache Stichpunkte):** Was genau er sich anschauen soll (z. B. Bodenhaftung, Überdeckung, Lesbarkeit am Handy) – reine Technik prüft der Agent komplett selbst.
+3. **AAA-Benchmark-Urteil** (Punkte je betroffener Säule + automatisch geloggte Messwerte aus `npm run check`: Startzeit, FPS, Draw Calls, Texturspeicher).
+4. **Ehrliche Schwächen-Liste:** Was fehlt noch zu 10/10 und in welchem Baustein genau wird es gelöst (nie stillschweigend übergehen).
+5. **Interaktive Fragen (`ask_question`)** mit klarer Empfehlung (auch mit Option „erst aufs Handy laden“).
 
 ## 6. Verboten
 - Sonderwege, Schalter für Varianten oder „vorläufige“ Lösungen im Code.

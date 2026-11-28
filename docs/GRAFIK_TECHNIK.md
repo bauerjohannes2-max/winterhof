@@ -28,7 +28,7 @@ Vorbild: Hay Day (Bilder bringen ihren Boden mit) und Clash of Clans (jede Grund
 
 - **Keine Standfläche** (Entsch. 62): Gebäude bringen ihren Vorplatz im Bild mit, unter Objekten liegt nur Wiese.
 - **Gebacken** heißt: Ebenen 1–2 werden einmal in Bild-Kacheln von 8 × 8 Rasterfeldern vorgerechnet und nur neu gemalt, wenn sich dort etwas ändert (Bauen, Verschieben). Das spart am Handy am meisten Leistung.
-- **Tiefe (vorn/hinten)** in Ebene 4: Sortiert wird nach der vordersten Ecke der Grundfläche (`gx + gy + w + h`), bei Gleichstand nach Bildschirmhöhe. Figuren werden nach ihrem Fußpunkt sortiert. Das prüft ein Test.
+- **Tiefe (vorn/hinten)** in Ebene 4: Exakte topologische Tiefensortierung (`render/scene/depth.ts`, Guibas-Yao DAG) auf disjunkten Grundflächen (`A ≺ B`, sobald `(ax1 <= bx0 && ay0 < by1) || (ay1 <= by0 && ax0 < bx1)`), aufgelöst per deterministischem Kahn-Sort (Gleichstand nach `ground.y`, `gx`, `id`), da eine reine Skalarformel wie `gx + gy + w + h` kleine Objekte vor größeren Gebäuden (`1×1` vor `3×3`/`4×4`) oder versetzte `2×1`-Objekte falsch sortiert. Bewegte Figuren und Tiere (Baustein 11) nutzen dieselbe Ordnung. Das prüft ein Test.
 
 ## 4. Bild-Vertrag je Objekt (Größe in `winterhof.json` → `sizes`, Bild in `art.sprites`, Baustein 5b)
 | Feld | Bedeutung |

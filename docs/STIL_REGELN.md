@@ -43,7 +43,8 @@ Geprüft wird automatisch mit `python scripts/pruefe_assets.py`. Es wird nur ver
 ## 5. Kamera, Licht, Boden
 - Eine Kamera für alles: isometrisch 2:1, gleicher Blickwinkel von schräg oben, keine Frontal- oder Seitenansichten.
 - **Licht immer von oben links**, Schatten fallen nach unten rechts. Jedes Objekt bekommt einen weichen Kontaktschatten.
-- **Bodenlinie:** Jedes Bild ist eng zugeschnitten. Unten sind höchstens 4 % leer, sonst schwebt das Objekt. Der Bodenpunkt sitzt genau auf der Mitte seiner Grundfläche.
+- **Bodenlinie & Kachel-Zentrierung (Entsch. 72):** Jedes Bild ist eng zugeschnitten. Unten sind höchstens 4 % leer, sonst schwebt das Objekt. Der Bodenpunkt und der sichtbare Fuß (z. B. Laternenmast, Baumstamm) sitzen **exakt mittig** auf der Grundfläche und sauber im isometrischen 2:1-Winkel (nichts wirkt schief).
+- **Handy-Klarheit (Hay Day / Clash of Clans, Entsch. 72):** Jedes Objekt bleibt auch auf dem kleinen Handy-Bildschirm sofort erkennbar – klare Silhouetten, deutliche Formen, nicht zu winzig oder überladen (z. B. Schlitten mit Rentieren klar lesbar).
 - Nichts ragt auf Wege, Wasser oder Zäune (prüft der Logik-Kern bei jeder Platzierung).
 
 ## 6. Bildqualität

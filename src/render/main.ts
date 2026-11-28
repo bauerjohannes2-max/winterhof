@@ -1,7 +1,7 @@
 // ============================================================================
 // Winterhof – neue Darstellung (Neustart, docs/NEUSTART_PLAN.md), Einstieg
 // Baustein 3: Technik-Gerüst · Baustein 4: Kamera · Baustein 5/6: Boden & Wege ·
-// Baustein 7/7b: Kontaktschatten & Boden-Deko · Baustein 9: Felder + GameSession.
+// Baustein 7/7b: Kontaktschatten & Boden-Deko · Baustein 9: Felder · Baustein 10: Alle Objekte & Tiefe.
 // Liest den Kern nur über ../core, ändert den Spielstand nur über Befehle.
 // ============================================================================
 import { Application, Assets, type Container, type Texture, type WebGLRenderer } from 'pixi.js';
@@ -11,6 +11,7 @@ import {
 import { Camera, maxZoomForWidth } from './camera/camera';
 import { attachCameraInput } from './camera/input';
 import { cameraConfig, startView } from './camera/mapView';
+import { boxesForObjects, computeDepthOrder } from './scene/depth';
 import { FieldEffects } from './scene/fieldEffects';
 import { fieldAtWorld, FieldView } from './scene/fields';
 import { GridOverlay } from './scene/grid';
@@ -138,15 +139,30 @@ async function start(): Promise<void> {
   const groundDeco = new GroundDecoView(startMeadow, startObjects, startPaths);
   world.layer.bodenzeichnung.addChild(groundDeco.view);
 
-  // Objekte + Felder teilen sich `objekte` für exakte Vorn/Hinten-Tiefensortierung; Erdwülste liegen in `bodenzeichnung`.
-  new ObjectView(startObjects, { objects: world.layer.objekte, shadows: world.layer.kontaktschatten });
-  const fieldView = new FieldView(world.layer.bodenzeichnung, world.layer.objekte, startObjects, Date.now());
+  const objectSig = (objects: readonly MapObject[]): string => objects.map((o) => (
+    o.kind === 'station' ? `${o.id}:${o.type}:${o.gx},${o.gy}:${o.wrapped ? 1 : 0}` : `${o.id}:${o.type}:${o.gx},${o.gy}`
+  )).join('|');
+  const pathSig = (objects: readonly MapObject[]): string => objects
+    .filter((o) => o.kind === 'deco' && CONTENT.decorations[o.type]?.group === 'path')
+    .map((o) => `${o.id}:${o.type}:${o.gx},${o.gy}`).join('|');
+
+  let lastObjectSig = objectSig(startObjects);
+  let lastPathSig = pathSig(startObjects);
+  let currentPaths = startPaths;
+  let currentDepths = computeDepthOrder(boxesForObjects(startObjects));
+
+  // Objekte + Felder teilen sich `objekte` für exakte topologische Vorn/Hinten-Tiefensortierung; Erdwülste liegen in `bodenzeichnung`.
+  const objectView = new ObjectView(startObjects, { objects: world.layer.objekte, shadows: world.layer.kontaktschatten }, currentDepths);
+  const fieldView = new FieldView(world.layer.bodenzeichnung, world.layer.objekte, startObjects, Date.now(), currentDepths);
   const fieldEffects = new FieldEffects();
   world.layer.effekte.addChild(fieldEffects.view);
 
   const coverView = (): void => {
     const a = camera.screenToWorld(0, 0), e = camera.screenToWorld(app.screen.width, app.screen.height);
-    ground.cover({ x0: a.x, y0: a.y, x1: e.x, y1: e.y });
+    const viewRect = { x0: a.x, y0: a.y, x1: e.x, y1: e.y };
+    ground.cover(viewRect);
+    objectView.cull(viewRect);
+    fieldView.cull(viewRect);
   };
   const grid = new GridOverlay(map, params.get('raster') !== '0');
   world.layer.auswahl.addChild(grid.view);
@@ -183,7 +199,21 @@ async function start(): Promise<void> {
   });
 
   session.subscribe((_, state) => {
-    fieldView.sync(state.objects, Date.now());
+    const sig = objectSig(state.objects);
+    if (sig !== lastObjectSig) {
+      lastObjectSig = sig;
+      currentDepths = computeDepthOrder(boxesForObjects(state.objects));
+      objectView.sync(state.objects, currentDepths);
+      const pSig = pathSig(state.objects);
+      if (pSig !== lastPathSig) {
+        lastPathSig = pSig;
+        currentPaths = pathsFor(state.objects);
+        ground.setPaths(currentPaths);
+      }
+      groundDeco.update(state.objects, currentPaths);
+      coverView();
+    }
+    fieldView.sync(state.objects, Date.now(), currentDepths);
     fieldTool.refresh();
   });
 
@@ -220,7 +250,7 @@ async function start(): Promise<void> {
     const now = Date.now();
     camera.update(dt);
     grid.update(dt);
-    fieldView.sync(session.state.objects, now);
+    fieldView.sync(session.state.objects, now, currentDepths);
     fieldView.update(dt);
     fieldEffects.update(dt);
     fieldTool.tick(now);

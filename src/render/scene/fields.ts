@@ -8,8 +8,8 @@ import { Container, Sprite, Texture } from 'pixi.js';
 import {
   fieldGrowth, footprintOf, type CropStage, type FieldObject, type MapObject
 } from '../../core';
-import { gridToWorld, TILE_H, TILE_W, worldToGrid, type Point } from './iso';
-import { placement, spriteDefs } from './objects';
+import { gridAreaBounds, gridToWorld, TILE_H, TILE_W, worldToGrid, type Point, type Rect } from './iso';
+import { isVisibleInView, placement, spriteDefs } from './objects';
 
 const CROP_ANCHOR_Y = 0.84;
 const STAGE_HEIGHT_TILES: Record<CropStage, number> = {
@@ -113,10 +113,10 @@ export class FieldView {
   private ambientWeight = 0;
   private clock = 0;
 
-  constructor(bedsParent: Container, cropsParent: Container, objects: readonly MapObject[], now: number) {
+  constructor(bedsParent: Container, cropsParent: Container, objects: readonly MapObject[], now: number, depths?: ReadonlyMap<string, number>) {
     this.cropsParent = cropsParent;
     bedsParent.addChild(this.beds);
-    this.sync(objects, now);
+    this.sync(objects, now, depths);
   }
 
   /** Sanftes Wind-Wiegen erst nach dem Ladebild weich anlaufen lassen (deterministischer Start-Screenshot). */
@@ -134,7 +134,7 @@ export class FieldView {
     if (v) v.shake = 1;
   }
 
-  sync(objects: readonly MapObject[], now: number): void {
+  sync(objects: readonly MapObject[], now: number, depths?: ReadonlyMap<string, number>): void {
     const seen = new Set<string>();
     for (const o of objects) {
       if (o.kind !== 'field') continue;
@@ -152,6 +152,8 @@ export class FieldView {
         v.gy = o.gy;
         this.positionVisual(v, o);
       }
+      const depth = depths?.get(o.id) ?? fieldCropDepth(o);
+      if (v.cropWrap.zIndex !== depth) v.cropWrap.zIndex = depth;
       if (v.crop !== crop || v.stage !== stage) {
         v.crop = crop;
         v.stage = stage;
@@ -165,6 +167,17 @@ export class FieldView {
       this.cropsParent.removeChild(v.cropWrap);
       v.cropWrap.destroy({ children: true });
       this.items.delete(id);
+    }
+  }
+
+  /** Blendet Felder außerhalb des sichtbaren Kamera-Bereichs aus (Culling, GRAFIK_TECHNIK §7). */
+  cull(view: Rect, pad = TILE_W * 2): void {
+    for (const v of this.items.values()) {
+      const fp = footprintOf({ type: 'field' });
+      const b = gridAreaBounds(v.gx, v.gy, v.gx + fp.w - 1, v.gy + fp.h - 1);
+      const vis = isVisibleInView({ x0: b.x0, y0: b.y0 - TILE_W, x1: b.x1, y1: b.y1 }, view, pad);
+      if (v.bed.visible !== vis) v.bed.visible = vis;
+      if (v.cropWrap.visible !== vis) v.cropWrap.visible = vis;
     }
   }
 

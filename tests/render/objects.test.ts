@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { CONTENT, footprintOf } from '../../src/core';
 import { gridToWorld, TILE_W } from '../../src/render/scene/iso';
-import { placement, shadowFrame, spriteDefs, spriteFor } from '../../src/render/scene/objects';
+import { isVisibleInView, placement, RIBBON_SPRITE, shadowFrame, spriteDefs, spriteFor } from '../../src/render/scene/objects';
 
 describe('Objekte + Kontaktschatten (Baustein 7, Entscheidung 62)', () => {
   test('jedes Bild hat eine gültige Schatten-Art und eine Größe mit Höhe', () => {
@@ -44,5 +44,32 @@ describe('Objekte + Kontaktschatten (Baustein 7, Entscheidung 62)', () => {
     for (const t of ['chalet', 'christmasTree', 'lantern', 'bakery']) expect(spriteFor(t), t).not.toBeNull();
     expect(spriteDefs()[spriteFor('lantern') ?? '']?.shadow).toBe('fleck');
     expect(spriteDefs()[spriteFor('chalet') ?? '']?.shadow).toBe('kontakt');
+  });
+
+  test('Vollständigkeit (Baustein 10): jeder stehende platzierbare Typ hat ein Bild + Schleifen-Overlay', () => {
+    const defs = spriteDefs();
+    const standTypes = [
+      ...Object.keys(CONTENT.stations),
+      ...Object.keys(CONTENT.pens),
+      ...Object.entries(CONTENT.decorations).filter(([, d]) => d.group !== 'path').map(([id]) => id),
+      ...Object.keys(CONTENT.obstacles),
+      ...CONTENT.start.objects.map((o) => o.type)
+    ];
+    for (const t of new Set(standTypes)) {
+      const key = spriteFor(t);
+      expect(key, `Typ ${t} fehlt in art.sprites`).not.toBeNull();
+      const def = defs[key!];
+      expect(def?.file, key!).toBe(`${key}.png`);
+      expect(CONTENT.sizes[def!.size]?.heightTiles, key!).toBeGreaterThan(0);
+    }
+    const overlays = (CONTENT as unknown as { art: { overlays?: Record<string, { file: string }> } }).art.overlays;
+    expect(overlays?.[RIBBON_SPRITE]?.file).toBe(`${RIBBON_SPRITE}.png`);
+  });
+
+  test('Viewport-Culling erkennt sichtbare, randnahe und entfernte Objekte korrekt', () => {
+    const view = { x0: -400, y0: -200, x1: 400, y1: 200 };
+    expect(isVisibleInView({ x0: -50, y0: -50, x1: 50, y1: 50 }, view, 0)).toBe(true);
+    expect(isVisibleInView({ x0: 450, y0: 0, x1: 520, y1: 80 }, view, 100)).toBe(true);
+    expect(isVisibleInView({ x0: 600, y0: 0, x1: 700, y1: 80 }, view, 100)).toBe(false);
   });
 });
